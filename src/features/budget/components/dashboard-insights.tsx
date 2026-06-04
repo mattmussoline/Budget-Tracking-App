@@ -27,14 +27,14 @@ export function DashboardInsights({
       className: "bg-emerald-100 text-emerald-950"
     },
   ];
-  const providerTotal = model.providers.reduce((total, provider) => total + provider.totalCents, 0);
+  const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
   let runningPercent = 0;
   const providerStops = model.providers.map((provider, index) => {
     const color = getProviderColor(provider.provider, providerColorOverrides);
     const nextPercent =
       index === model.providers.length - 1
         ? 100
-        : runningPercent + Math.round((provider.totalCents / Math.max(providerTotal, 1)) * 100);
+        : runningPercent + Math.round((provider.licenseCount / Math.max(providerTotal, 1)) * 100);
     const stop = `${color.hex} ${runningPercent}% ${nextPercent}%`;
     runningPercent = nextPercent;
     return stop;
@@ -44,7 +44,7 @@ export function DashboardInsights({
 
   const providerLabel = [
     `${model.insights.providerCount} active provider${model.insights.providerCount === 1 ? "" : "s"}`,
-    providerTotal > 0 ? formatCurrency(providerTotal) : "No provider spend"
+    providerTotal > 0 ? `${providerTotal} content piece${providerTotal === 1 ? "" : "s"}` : "No provider content"
   ];
 
   return (
@@ -84,7 +84,6 @@ export function DashboardInsights({
               ) : (
                 topProviders.map((provider) => {
                   const color = getProviderColor(provider.provider, providerColorOverrides);
-                  const percent = providerTotal > 0 ? Math.round((provider.totalCents / providerTotal) * 100) : 0;
 
                   return (
                     <div key={provider.provider} className="flex items-center justify-between gap-3 text-sm font-extrabold">
@@ -92,7 +91,7 @@ export function DashboardInsights({
                         <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
                         <span className="truncate">{provider.provider}</span>
                       </span>
-                      <span>{percent}%</span>
+                      <span>{provider.licenseSharePercent}%</span>
                     </div>
                   );
                 })

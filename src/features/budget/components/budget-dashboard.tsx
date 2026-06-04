@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CadenceSummary } from "./cadence-summary";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
@@ -21,13 +22,14 @@ type FiscalYearRow = {
 
 type BudgetDashboardProps = {
   fiscalYear: FiscalYearRow | null;
+  fiscalYears: FiscalYearRow[];
   model: DashboardModel | null;
   licenses: ContentLicense[];
   providerColorOverrides?: ProviderColorOverrides;
   mode: "demo" | "live";
 };
 
-export function BudgetDashboard({ fiscalYear, model, licenses, providerColorOverrides = {}, mode }: BudgetDashboardProps) {
+export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, providerColorOverrides = {}, mode }: BudgetDashboardProps) {
   const isDemo = mode === "demo";
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
@@ -45,6 +47,26 @@ export function BudgetDashboard({ fiscalYear, model, licenses, providerColorOver
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-6xl">
               {fiscalYear?.label ?? "Licensing Budget"}
             </h1>
+            {fiscalYears.length > 0 ? (
+              <nav className="mt-5 flex flex-wrap gap-2" aria-label="Fiscal year budgets">
+                {fiscalYears.map((year) => {
+                  const isActive = year.id === fiscalYear?.id;
+
+                  return (
+                    <Link
+                      key={year.id}
+                      href={`/dashboard?fy=${year.id}`}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`rounded-md px-3 py-2 text-sm font-extrabold transition ${
+                        isActive ? "bg-white text-blue-700" : "bg-blue-400 text-white hover:bg-white/20"
+                      }`}
+                    >
+                      FY{String(year.fiscal_year).slice(-2)}
+                    </Link>
+                  );
+                })}
+              </nav>
+            ) : null}
             </div>
             <div className="grid max-w-xl gap-3">
             <p className="text-base font-semibold leading-7 text-blue-50">

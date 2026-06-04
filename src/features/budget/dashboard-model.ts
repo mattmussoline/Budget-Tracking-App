@@ -1,4 +1,4 @@
-import { calculateLicenseSchedule, getCurrentFiscalMonthIndex, getFiscalMonths } from "./budget-math";
+import { calculateLicenseSchedule, getCurrentFiscalMonthIndex, getFiscalMonths, getQuarterForFiscalMonth } from "./budget-math";
 import type { ContentLicense, LicensePayment } from "./budget-types";
 
 export type DashboardModel = {
@@ -9,6 +9,7 @@ export type DashboardModel = {
   percentUsed: number;
   remainingPercent: number;
   currentFiscalMonth: number | null;
+  currentFiscalQuarter: number | null;
   cadenceTotals: {
     quarterlyCents: number;
     yearlyCents: number;
@@ -31,6 +32,7 @@ export type DashboardModel = {
     provider: string;
     totalCents: number;
     licenseCount: number;
+    licenseSharePercent: number;
   }>;
 };
 
@@ -38,12 +40,14 @@ export function buildDashboardModel({
   fiscalYear,
   fiscalYearStartMonth,
   budgetCents,
-  licenses
+  licenses,
+  now
 }: {
   fiscalYear: number;
   fiscalYearStartMonth: number;
   budgetCents: number;
   licenses: ContentLicense[];
+  now?: Date;
 }): DashboardModel {
   const schedules = licenses.map((license) => ({
     license,
@@ -78,7 +82,16 @@ export function buildDashboardModel({
   });
 
   const providers = Array.from(providerTotals.entries())
-    .map(([provider, totalCents]) => ({ provider, totalCents, licenseCount: providerLicenseCounts.get(provider)?.size ?? 0 }))
+    .map(([provider, totalCents]) => {
+      const licenseCount = providerLicenseCounts.get(provider)?.size ?? 0;
+
+      return {
+        provider,
+        totalCents,
+        licenseCount,
+        licenseSharePercent: licenses.length > 0 ? Math.round((licenseCount / licenses.length) * 100) : 0
+      };
+    })
     .sort((a, b) => b.totalCents - a.totalCents);
 
   const cadenceTotals = schedules.reduce(
@@ -98,6 +111,7 @@ export function buildDashboardModel({
   const remainingCents = budgetCents - totalSpentCents;
   const remainingPercent = budgetCents > 0 ? Math.round((remainingCents / budgetCents) * 100) : 0;
   const quarterlyLicenseCount = licenses.filter((license) => license.cadence === "quarterly").length;
+  const currentFiscalMonth = getCurrentFiscalMonthIndex({ fiscalYear, fiscalYearStartMonth, now });
 
   return {
     fiscalYear,
@@ -106,7 +120,8 @@ export function buildDashboardModel({
     remainingCents,
     percentUsed,
     remainingPercent,
-    currentFiscalMonth: getCurrentFiscalMonthIndex({ fiscalYear, fiscalYearStartMonth }),
+    currentFiscalMonth,
+    currentFiscalQuarter: currentFiscalMonth ? getQuarterForFiscalMonth(currentFiscalMonth) : null,
     cadenceTotals,
     insights: {
       licenseCount: licenses.length,

@@ -50,11 +50,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-4. Enable email magic-link auth in Supabase.
+4. Enable Microsoft Azure/Outlook OAuth in Supabase Auth.
 5. Sign in once as Matt.
 6. Create the fiscal year.
 7. Ask the boss to sign in once.
 8. Add the boss's Supabase user id as an editor from the Share panel.
+
+The app only accepts signed-in users whose email ends in `@augustineinstitute.org` or `@augustine.edu`.
 
 ## Vercel Deployment
 

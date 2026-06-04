@@ -66,9 +66,9 @@ describe("buildDashboardModel", () => {
     });
 
     expect(model.providers).toEqual([
-      { provider: "Provider B", totalCents: 1800000, licenseCount: 1 },
-      { provider: "Provider A", totalCents: 566667, licenseCount: 1 },
-      { provider: "Provider C", totalCents: 60000, licenseCount: 1 }
+      { provider: "Provider B", totalCents: 1800000, licenseCount: 1, licenseSharePercent: 33 },
+      { provider: "Provider A", totalCents: 566667, licenseCount: 1, licenseSharePercent: 33 },
+      { provider: "Provider C", totalCents: 60000, licenseCount: 1, licenseSharePercent: 33 }
     ]);
   });
 
@@ -87,5 +87,18 @@ describe("buildDashboardModel", () => {
       quarterlyLicenseCount: 2,
       yearlyLicenseCount: 1
     });
+  });
+
+  it("identifies the current fiscal quarter from the current fiscal month", () => {
+    const model = buildDashboardModel({
+      fiscalYear: 2026,
+      fiscalYearStartMonth: 7,
+      budgetCents: 3000000,
+      licenses,
+      now: new Date(2025, 9, 15)
+    });
+
+    expect(model.currentFiscalMonth).toBe(4);
+    expect(model.currentFiscalQuarter).toBe(2);
   });
 });

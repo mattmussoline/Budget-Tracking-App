@@ -72,7 +72,7 @@ export async function createFiscalYear(formData: FormData) {
     redirect("/login");
   }
 
-  const { error } = await admin
+  const { data: fiscalYear, error } = await admin
     .from("fiscal_years")
     .insert({
       owner_id: userData.user.id,
@@ -89,6 +89,7 @@ export async function createFiscalYear(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
+  redirect(`/dashboard?fy=${fiscalYear.id}`);
 }
 
 export async function addContentLicense(formData: FormData) {
@@ -300,7 +301,7 @@ export async function addCollaborator(formData: FormData) {
 
   const collaborator = usersData.users.find((user) => user.email?.toLowerCase() === parsed.data.email.toLowerCase());
   if (!collaborator) {
-    throw new Error("That person needs to sign in with Google once before you can add them.");
+    throw new Error("That person needs to sign in with Outlook once before you can add them.");
   }
 
   const { error } = await admin.from("fiscal_year_members").upsert({

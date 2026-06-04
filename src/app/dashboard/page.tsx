@@ -4,9 +4,17 @@ import { demoFiscalYear, demoLicenses } from "@/features/budget/demo-data";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
+import { isAllowedWorkEmail } from "@/lib/auth/domain-access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<{
+    fy?: string;
+  }>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const selectedFiscalYearId = (await searchParams)?.fy;
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
@@ -20,6 +28,7 @@ export default async function DashboardPage() {
     return (
       <BudgetDashboard
         fiscalYear={demoFiscalYear}
+        fiscalYears={[demoFiscalYear]}
         model={model}
         licenses={demoLicenses}
         mode="demo"
@@ -33,6 +42,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (!isAllowedWorkEmail(userData.user.email)) {
+    await supabase.auth.signOut();
+    redirect("/login?error=domain");
+  }
+
   const { data: fiscalYears, error: fiscalYearsError } = await supabase
     .from("fiscal_years")
     .select("id,label,fiscal_year,fiscal_year_start_month,budget_cents")
@@ -42,10 +56,11 @@ export default async function DashboardPage() {
     throw new Error(fiscalYearsError.message);
   }
 
-  const activeFiscalYear = fiscalYears?.[0] ?? null;
+  const activeFiscalYear =
+    fiscalYears?.find((fiscalYear) => fiscalYear.id === selectedFiscalYearId) ?? fiscalYears?.[0] ?? null;
 
   if (!activeFiscalYear) {
-    return <BudgetDashboard fiscalYear={null} model={null} licenses={[]} mode="live" />;
+    return <BudgetDashboard fiscalYear={null} fiscalYears={[]} model={null} licenses={[]} mode="live" />;
   }
 
   const { data: licenseRows, error: licensesError } = await supabase
@@ -90,6 +105,7 @@ export default async function DashboardPage() {
   return (
     <BudgetDashboard
       fiscalYear={activeFiscalYear}
+      fiscalYears={fiscalYears ?? []}
       model={model}
       licenses={licenses}
       providerColorOverrides={providerColorOverrides}

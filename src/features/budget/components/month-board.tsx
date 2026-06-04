@@ -9,17 +9,30 @@ type MonthBoardProps = {
 };
 
 export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
-  const quarters = [1, 2, 3, 4].map((quarter) => ({
+  const quarterNumbers = [1, 2, 3, 4];
+  const orderedQuarterNumbers = model.currentFiscalQuarter
+    ? [model.currentFiscalQuarter, ...quarterNumbers.filter((quarter) => quarter !== model.currentFiscalQuarter)]
+    : quarterNumbers;
+  const quarters = orderedQuarterNumbers.map((quarter) => ({
     quarter,
+    isCurrentQuarter: model.currentFiscalQuarter === quarter,
     months: model.months.filter((month) => month.quarter === quarter)
   }));
 
   return (
     <div className="grid gap-6">
       {quarters.map((quarter) => (
-        <SoftSurface key={quarter.quarter} className="bg-gray-100 p-5 md:p-6">
+        <SoftSurface
+          key={quarter.quarter}
+          className={`p-5 md:p-6 ${quarter.isCurrentQuarter ? "bg-amber-50 outline outline-4 outline-amber-300" : "bg-gray-100"}`}
+        >
           <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="font-display text-xl font-extrabold tracking-tight">Quarter {quarter.quarter}</h2>
+            <div>
+              {quarter.isCurrentQuarter ? (
+                <p className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Current quarter</p>
+              ) : null}
+              <h2 className="font-display text-xl font-extrabold tracking-tight">Quarter {quarter.quarter}</h2>
+            </div>
             <p className="rounded-md bg-white px-4 py-2 text-sm font-extrabold text-muted">
               {formatCurrency(quarter.months.reduce((total, month) => total + month.totalCents, 0))}
             </p>
