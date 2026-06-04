@@ -45,25 +45,23 @@ export function MonthBoard({ model }: MonthBoardProps) {
                   ) : (
                     month.payments.map((payment) => {
                       const providerColor = getProviderColor(payment.provider);
-                      const tileClass = payment.isFirstPayment
-                        ? "bg-emerald-500 text-white"
-                        : `${providerColor.bg} ${providerColor.text}`;
+                      const tileClass = `${providerColor.bg} ${providerColor.text}`;
 
                       return (
                       <div key={`${payment.licenseId}-${payment.fiscalMonth}`} className={`rounded-lg p-3 ${tileClass}`}>
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <p className="text-sm font-extrabold">{payment.title}</p>
                           {payment.isFirstPayment ? (
-                            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">
+                            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
                               first
                             </span>
                           ) : null}
                         </div>
-                        <p className={`text-xs font-bold ${payment.isFirstPayment ? "text-emerald-50" : "opacity-80"}`}>{payment.provider}</p>
+                        <p className="text-xs font-bold opacity-80">{payment.provider}</p>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-sm font-extrabold">{formatCurrency(payment.amountCents)}</span>
                           {payment.isProrated ? (
-                            <span className={`rounded-md px-2 py-1 text-xs font-extrabold ${payment.isFirstPayment ? "bg-white text-emerald-700" : "bg-white/70"}`}>
+                            <span className="rounded-md bg-white/70 px-2 py-1 text-xs font-extrabold">
                               prorated
                             </span>
                           ) : null}

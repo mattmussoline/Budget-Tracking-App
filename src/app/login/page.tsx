@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chrome } from "lucide-react";
+import { allowedEmailDomainText } from "@/lib/auth/domain-access";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -12,6 +13,13 @@ export default function LoginPage() {
   const hasSupabaseEnv = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "domain") {
+      setMessage(`Please sign in with ${allowedEmailDomainText()}.`);
+    }
+  }, []);
 
   async function signInWithGoogle() {
     if (!hasSupabaseEnv) {
@@ -44,7 +52,7 @@ export default function LoginPage() {
             <Chrome className="h-6 w-6 text-accent" aria-hidden="true" />
           </div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">Licensing Budget</h1>
-          <p className="text-muted">Use your Google account to manage fiscal-year content licensing spend.</p>
+          <p className="text-muted">Use an Augustine Google account to manage fiscal-year content licensing spend.</p>
         </div>
         <div className="grid gap-5">
           <SoftButton type="button" variant="primary" disabled={isSending} onClick={signInWithGoogle}>

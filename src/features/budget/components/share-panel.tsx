@@ -20,13 +20,22 @@ export function SharePanel({ fiscalYearId, isDemo }: SharePanelProps) {
         <div>
           <h2 className="font-display text-2xl font-extrabold tracking-tight">Collaborators</h2>
           <p className="text-sm font-medium text-muted">
-            {isDemo ? "Connect Supabase to invite your boss as an editor." : "Your boss signs in with Google once, then you add his email here."}
+            {isDemo
+              ? "Connect Supabase to invite your boss as an editor."
+              : "Share the app link. They sign in with an Augustine email once, then you add that email here."}
           </p>
         </div>
       </div>
       <form action={addCollaborator} className="grid gap-4">
         <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-        <SoftInput label="Collaborator email" name="email" type="email" placeholder="boss@example.com" required disabled={isDemo} />
+        <SoftInput
+          label="Collaborator email"
+          name="email"
+          type="email"
+          placeholder="name@augustineinstitute.org"
+          required
+          disabled={isDemo}
+        />
         <SoftSelect
           label="Role"
           name="role"

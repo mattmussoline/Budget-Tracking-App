@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { allowedEmailDomainText, isAllowedWorkEmail } from "@/lib/auth/domain-access";
 import { dollarsToCents } from "@/lib/currency";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -269,6 +270,10 @@ export async function addCollaborator(formData: FormData) {
   const parsed = collaboratorSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error("Choose a valid collaborator email and role.");
+  }
+
+  if (!isAllowedWorkEmail(parsed.data.email)) {
+    throw new Error(`Collaborators must use ${allowedEmailDomainText()} email addresses.`);
   }
 
   const { data: userData, error: userError } = await supabase.auth.getUser();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAllowedWorkEmail } from "@/lib/auth/domain-access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -14,6 +15,12 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     if (supabase) {
       await supabase.auth.exchangeCodeForSession(code);
+      const { data } = await supabase.auth.getUser();
+
+      if (!isAllowedWorkEmail(data.user?.email)) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(new URL("/login?error=domain", requestUrl.origin));
+      }
     }
   }
 
