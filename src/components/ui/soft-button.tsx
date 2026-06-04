@@ -12,17 +12,16 @@ export function SoftButton({
   ...props
 }: SoftButtonProps) {
   const variantClass = {
-    primary:
-      "bg-accent text-white shadow-[5px_5px_10px_rgb(89_82_215_/_0.35),-5px_-5px_10px_rgb(139_132_255_/_0.45)] active:shadow-[inset_3px_3px_6px_rgb(61_54_180_/_0.45),inset_-3px_-3px_6px_rgb(139_132_255_/_0.45)]",
-    secondary: "bg-surface text-foreground soft-raised-sm active:soft-inset-sm",
-    ghost: "bg-surface text-muted soft-inset-sm"
+    primary: "bg-blue-500 text-white hover:bg-blue-600",
+    secondary: "bg-gray-100 text-foreground hover:bg-gray-200",
+    ghost: "bg-transparent text-muted hover:bg-gray-100"
   }[variant];
 
   return (
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold transition duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide shadow-none transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100",
         variantClass,
         className
       )}

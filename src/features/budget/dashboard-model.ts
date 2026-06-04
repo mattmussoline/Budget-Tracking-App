@@ -1,4 +1,4 @@
-import { calculateLicenseSchedule, getFiscalMonths } from "./budget-math";
+import { calculateLicenseSchedule, getCurrentFiscalMonthIndex, getFiscalMonths } from "./budget-math";
 import type { ContentLicense, LicensePayment } from "./budget-types";
 
 export type DashboardModel = {
@@ -6,9 +6,19 @@ export type DashboardModel = {
   budgetCents: number;
   totalSpentCents: number;
   remainingCents: number;
+  percentUsed: number;
+  remainingPercent: number;
+  currentFiscalMonth: number | null;
   cadenceTotals: {
     quarterlyCents: number;
     yearlyCents: number;
+  };
+  insights: {
+    licenseCount: number;
+    providerCount: number;
+    averageInstallmentCents: number;
+    quarterlyLicenseCount: number;
+    yearlyLicenseCount: number;
   };
   months: Array<{
     index: number;
@@ -20,6 +30,7 @@ export type DashboardModel = {
   providers: Array<{
     provider: string;
     totalCents: number;
+    licenseCount: number;
   }>;
 };
 
@@ -57,12 +68,17 @@ export function buildDashboardModel({
   });
 
   const providerTotals = new Map<string, number>();
+  const providerLicenseCounts = new Map<string, Set<string>>();
   payments.forEach((payment) => {
     providerTotals.set(payment.provider, (providerTotals.get(payment.provider) ?? 0) + payment.amountCents);
+    if (!providerLicenseCounts.has(payment.provider)) {
+      providerLicenseCounts.set(payment.provider, new Set());
+    }
+    providerLicenseCounts.get(payment.provider)?.add(payment.licenseId);
   });
 
   const providers = Array.from(providerTotals.entries())
-    .map(([provider, totalCents]) => ({ provider, totalCents }))
+    .map(([provider, totalCents]) => ({ provider, totalCents, licenseCount: providerLicenseCounts.get(provider)?.size ?? 0 }))
     .sort((a, b) => b.totalCents - a.totalCents);
 
   const cadenceTotals = schedules.reduce(
@@ -78,12 +94,30 @@ export function buildDashboardModel({
     { quarterlyCents: 0, yearlyCents: 0 }
   );
 
+  const percentUsed = budgetCents > 0 ? Math.round((totalSpentCents / budgetCents) * 100) : 0;
+  const remainingCents = budgetCents - totalSpentCents;
+  const remainingPercent = budgetCents > 0 ? Math.round((remainingCents / budgetCents) * 100) : 0;
+  const quarterlyLicenseCount = licenses.filter((license) => license.cadence === "quarterly").length;
+
   return {
     fiscalYear,
     budgetCents,
     totalSpentCents,
-    remainingCents: budgetCents - totalSpentCents,
+    remainingCents,
+    percentUsed,
+    remainingPercent,
+    currentFiscalMonth: getCurrentFiscalMonthIndex({ fiscalYear, fiscalYearStartMonth }),
     cadenceTotals,
+    insights: {
+      licenseCount: licenses.length,
+      providerCount: providers.length,
+      averageInstallmentCents:
+        licenses.length > 0
+          ? Math.round(licenses.reduce((total, license) => total + license.installmentCents, 0) / licenses.length)
+          : 0,
+      quarterlyLicenseCount,
+      yearlyLicenseCount: licenses.length - quarterlyLicenseCount
+    },
     months,
     providers
   };

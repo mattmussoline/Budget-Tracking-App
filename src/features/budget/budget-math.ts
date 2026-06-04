@@ -50,7 +50,8 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
         fiscalMonth: license.addedFiscalMonth,
         quarter: getQuarterForFiscalMonth(license.addedFiscalMonth),
         amountCents: license.installmentCents,
-        isProrated: false
+        isProrated: false,
+        isFirstPayment: true
       }
     ];
   }
@@ -65,7 +66,8 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
       fiscalMonth: license.addedFiscalMonth,
       quarter: firstQuarter,
       amountCents: firstAmount,
-      isProrated: firstAmount !== license.installmentCents
+      isProrated: firstAmount !== license.installmentCents,
+      isFirstPayment: true
     }
   ];
 
@@ -77,11 +79,32 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
       fiscalMonth: (quarter - 1) * 3 + 1,
       quarter,
       amountCents: license.installmentCents,
-      isProrated: false
+      isProrated: false,
+      isFirstPayment: false
     });
   }
 
   return payments;
+}
+
+export function getCurrentFiscalMonthIndex({
+  fiscalYear,
+  fiscalYearStartMonth,
+  now = new Date()
+}: {
+  fiscalYear: number;
+  fiscalYearStartMonth: number;
+  now?: Date;
+}) {
+  const fiscalYearStart = new Date(fiscalYear - 1, fiscalYearStartMonth - 1, 1);
+  const fiscalYearEnd = new Date(fiscalYear, fiscalYearStartMonth - 1, 1);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (monthStart < fiscalYearStart || monthStart >= fiscalYearEnd) {
+    return null;
+  }
+
+  return (now.getFullYear() - fiscalYearStart.getFullYear()) * 12 + now.getMonth() - fiscalYearStart.getMonth() + 1;
 }
 
 function assertFiscalMonth(fiscalMonth: number) {

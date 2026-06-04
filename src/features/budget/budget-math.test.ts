@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateLicenseSchedule,
+  getCurrentFiscalMonthIndex,
   getFiscalMonths,
   getQuarterPaymentFraction
 } from "./budget-math";
@@ -104,8 +105,31 @@ describe("calculateLicenseSchedule", () => {
         fiscalMonth: 10,
         quarter: 4,
         amountCents: 240000,
-        isProrated: false
+        isProrated: false,
+        isFirstPayment: true
       }
     ]);
+  });
+});
+
+describe("getCurrentFiscalMonthIndex", () => {
+  it("returns the current fiscal month for a July-start FY26", () => {
+    expect(
+      getCurrentFiscalMonthIndex({
+        fiscalYear: 2026,
+        fiscalYearStartMonth: 7,
+        now: new Date(2026, 5, 4)
+      })
+    ).toBe(12);
+  });
+
+  it("returns null when today is outside that fiscal year", () => {
+    expect(
+      getCurrentFiscalMonthIndex({
+        fiscalYear: 2026,
+        fiscalYearStartMonth: 7,
+        now: new Date(2026, 6, 1)
+      })
+    ).toBeNull();
   });
 });

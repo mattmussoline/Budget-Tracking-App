@@ -26,8 +26,20 @@ const licenseSchema = z.object({
 
 const collaboratorSchema = z.object({
   fiscalYearId: z.string().uuid(),
-  userId: z.string().uuid(),
+  email: z.string().email(),
   role: z.enum(["editor", "viewer"])
+});
+
+const updateFiscalYearSchema = fiscalYearSchema.extend({
+  fiscalYearId: z.string().uuid()
+});
+
+const updateLicenseSchema = licenseSchema.extend({
+  licenseId: z.string().uuid()
+});
+
+const deleteLicenseSchema = z.object({
+  licenseId: z.string().uuid()
 });
 
 export async function createFiscalYear(formData: FormData) {
@@ -93,14 +105,8 @@ export async function addContentLicense(formData: FormData) {
     redirect("/login");
   }
 
-  const { data: membership, error: membershipError } = await admin
-    .from("fiscal_year_members")
-    .select("role")
-    .eq("fiscal_year_id", parsed.data.fiscalYearId)
-    .eq("user_id", userData.user.id)
-    .single();
-
-  if (membershipError || !membership || !["owner", "editor"].includes(membership.role)) {
+  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
+  if (!canEdit) {
     throw new Error("You do not have permission to add content to this fiscal year.");
   }
 
@@ -121,6 +127,138 @@ export async function addContentLicense(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export async function updateFiscalYear(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
+    return;
+  }
+
+  const parsed = updateFiscalYearSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Check the fiscal year, start month, and budget fields.");
+  }
+
+  const budgetCents = dollarsToCents(parsed.data.budget);
+  if (budgetCents === null) {
+    throw new Error("Budget must be a positive dollar amount.");
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
+  if (!canEdit) {
+    throw new Error("You do not have permission to edit this fiscal year.");
+  }
+
+  const { error } = await admin
+    .from("fiscal_years")
+    .update({
+      label: parsed.data.label,
+      fiscal_year: parsed.data.fiscalYear,
+      fiscal_year_start_month: parsed.data.fiscalYearStartMonth,
+      budget_cents: budgetCents
+    })
+    .eq("id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
+
+export async function updateContentLicense(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
+    return;
+  }
+
+  const parsed = updateLicenseSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Check the title, provider, payment amount, cadence, and added month.");
+  }
+
+  const installmentCents = dollarsToCents(parsed.data.installment);
+  if (installmentCents === null) {
+    throw new Error("Payment amount must be a positive dollar amount.");
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
+  if (!canEdit) {
+    throw new Error("You do not have permission to edit this content.");
+  }
+
+  const { error } = await admin
+    .from("content_licenses")
+    .update({
+      title: parsed.data.title,
+      provider: parsed.data.provider,
+      installment_cents: installmentCents,
+      cadence: parsed.data.cadence,
+      added_fiscal_month: parsed.data.addedFiscalMonth,
+      notes: parsed.data.notes || null
+    })
+    .eq("id", parsed.data.licenseId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
+
+export async function deleteContentLicense(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
+    return;
+  }
+
+  const parsed = deleteLicenseSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid content title to delete.");
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const { data: license, error: licenseError } = await admin
+    .from("content_licenses")
+    .select("fiscal_year_id")
+    .eq("id", parsed.data.licenseId)
+    .single();
+
+  if (licenseError || !license) {
+    throw new Error("Could not find that content title.");
+  }
+
+  const canEdit = await hasFiscalYearRole(admin, license.fiscal_year_id, userData.user.id, ["owner", "editor"]);
+  if (!canEdit) {
+    throw new Error("You do not have permission to delete this content.");
+  }
+
+  const { error } = await admin.from("content_licenses").delete().eq("id", parsed.data.licenseId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
+
 export async function addCollaborator(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
@@ -130,7 +268,7 @@ export async function addCollaborator(formData: FormData) {
 
   const parsed = collaboratorSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error("Choose a valid collaborator user id and role.");
+    throw new Error("Choose a valid collaborator email and role.");
   }
 
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -138,20 +276,24 @@ export async function addCollaborator(formData: FormData) {
     redirect("/login");
   }
 
-  const { data: membership, error: membershipError } = await admin
-    .from("fiscal_year_members")
-    .select("role")
-    .eq("fiscal_year_id", parsed.data.fiscalYearId)
-    .eq("user_id", userData.user.id)
-    .single();
-
-  if (membershipError || !membership || membership.role !== "owner") {
+  const isOwner = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner"]);
+  if (!isOwner) {
     throw new Error("Only the fiscal year owner can add collaborators.");
+  }
+
+  const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (usersError) {
+    throw new Error(usersError.message);
+  }
+
+  const collaborator = usersData.users.find((user) => user.email?.toLowerCase() === parsed.data.email.toLowerCase());
+  if (!collaborator) {
+    throw new Error("That person needs to sign in with Google once before you can add them.");
   }
 
   const { error } = await admin.from("fiscal_year_members").upsert({
     fiscal_year_id: parsed.data.fiscalYearId,
-    user_id: parsed.data.userId,
+    user_id: collaborator.id,
     role: parsed.data.role
   });
 
@@ -160,4 +302,20 @@ export async function addCollaborator(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
+}
+
+async function hasFiscalYearRole(
+  admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  fiscalYearId: string,
+  userId: string,
+  roles: string[]
+) {
+  const { data: membership, error } = await admin
+    .from("fiscal_year_members")
+    .select("role")
+    .eq("fiscal_year_id", fiscalYearId)
+    .eq("user_id", userId)
+    .single();
+
+  return !error && membership ? roles.includes(membership.role) : false;
 }

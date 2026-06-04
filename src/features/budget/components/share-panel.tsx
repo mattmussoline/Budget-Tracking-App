@@ -12,21 +12,21 @@ type SharePanelProps = {
 
 export function SharePanel({ fiscalYearId, isDemo }: SharePanelProps) {
   return (
-    <SoftSurface className="p-6 md:p-8">
+    <SoftSurface className="bg-gray-100 p-6 md:p-8">
       <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl soft-inset-deep">
-          <Users className="h-5 w-5 text-accent" aria-hidden="true" />
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-emerald-500">
+          <Users className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Share</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight">Collaborators</h2>
           <p className="text-sm font-medium text-muted">
-            {isDemo ? "Connect Supabase to invite your boss as an editor." : "Add your boss after he signs in once."}
+            {isDemo ? "Connect Supabase to invite your boss as an editor." : "Your boss signs in with Google once, then you add his email here."}
           </p>
         </div>
       </div>
       <form action={addCollaborator} className="grid gap-4">
         <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-        <SoftInput label="Collaborator user id" name="userId" placeholder="Supabase user id" required disabled={isDemo} />
+        <SoftInput label="Collaborator email" name="email" type="email" placeholder="boss@example.com" required disabled={isDemo} />
         <SoftSelect
           label="Role"
           name="role"

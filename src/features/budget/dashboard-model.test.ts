@@ -66,9 +66,26 @@ describe("buildDashboardModel", () => {
     });
 
     expect(model.providers).toEqual([
-      { provider: "Provider B", totalCents: 1800000 },
-      { provider: "Provider A", totalCents: 566667 },
-      { provider: "Provider C", totalCents: 60000 }
+      { provider: "Provider B", totalCents: 1800000, licenseCount: 1 },
+      { provider: "Provider A", totalCents: 566667, licenseCount: 1 },
+      { provider: "Provider C", totalCents: 60000, licenseCount: 1 }
     ]);
+  });
+
+  it("builds high-level dashboard insights", () => {
+    const model = buildDashboardModel({
+      fiscalYear: 2026,
+      fiscalYearStartMonth: 7,
+      budgetCents: 3000000,
+      licenses
+    });
+
+    expect(model.insights).toMatchObject({
+      licenseCount: 3,
+      providerCount: 3,
+      averageInstallmentCents: 276667,
+      quarterlyLicenseCount: 2,
+      yearlyLicenseCount: 1
+    });
   });
 });

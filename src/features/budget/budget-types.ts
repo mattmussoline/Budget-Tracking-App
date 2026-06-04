@@ -18,6 +18,7 @@ export type LicensePayment = {
   quarter: number;
   amountCents: number;
   isProrated: boolean;
+  isFirstPayment: boolean;
 };
 
 export type FiscalMonth = {

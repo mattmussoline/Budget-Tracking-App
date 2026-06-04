@@ -3,23 +3,29 @@ import { cn } from "./soft-surface";
 type SoftSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   options: Array<{ label: string; value: string }>;
+  placeholder?: string;
   error?: string;
 };
 
-export function SoftSelect({ label, options, error, className, id, ...props }: SoftSelectProps) {
+export function SoftSelect({ label, options, placeholder, error, className, id, ...props }: SoftSelectProps) {
   const fieldId = id ?? props.name;
 
   return (
-    <label className="grid gap-2 text-sm font-bold text-foreground" htmlFor={fieldId}>
+    <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={fieldId}>
       {label}
       <select
         id={fieldId}
         className={cn(
-          "min-h-12 w-full rounded-2xl border-0 bg-surface px-4 text-base text-foreground soft-inset focus:soft-inset-deep disabled:cursor-not-allowed disabled:opacity-70",
+          "min-h-12 w-full rounded-md border-0 bg-gray-100 px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70",
           className
         )}
         {...props}
       >
+        {placeholder ? (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        ) : null}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
