@@ -59,6 +59,41 @@ begin
 end;
 $$;
 
+create or replace function public.is_fiscal_year_member(target_fiscal_year_id uuid, target_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.fiscal_year_members members
+    where members.fiscal_year_id = target_fiscal_year_id
+      and members.user_id = target_user_id
+  );
+$$;
+
+create or replace function public.has_fiscal_year_role(
+  target_fiscal_year_id uuid,
+  target_user_id uuid,
+  allowed_roles text[]
+)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.fiscal_year_members members
+    where members.fiscal_year_id = target_fiscal_year_id
+      and members.user_id = target_user_id
+      and members.role = any(allowed_roles)
+  );
+$$;
+
 drop trigger if exists fiscal_years_set_updated_at on public.fiscal_years;
 create trigger fiscal_years_set_updated_at
 before update on public.fiscal_years
@@ -80,13 +115,7 @@ alter table public.content_licenses enable row level security;
 
 create policy "members can read fiscal years"
 on public.fiscal_years for select
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = fiscal_years.id
-      and members.user_id = auth.uid()
-  )
-);
+using (public.is_fiscal_year_member(fiscal_years.id, auth.uid()));
 
 create policy "owners can create fiscal years"
 on public.fiscal_years for insert
@@ -94,69 +123,22 @@ with check (owner_id = auth.uid());
 
 create policy "owners and editors can update fiscal years"
 on public.fiscal_years for update
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = fiscal_years.id
-      and members.user_id = auth.uid()
-      and members.role in ('owner', 'editor')
-  )
-);
+using (public.has_fiscal_year_role(fiscal_years.id, auth.uid(), array['owner', 'editor']));
 
 create policy "members can read memberships"
 on public.fiscal_year_members for select
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = fiscal_year_members.fiscal_year_id
-      and members.user_id = auth.uid()
-  )
-);
+using (public.is_fiscal_year_member(fiscal_year_members.fiscal_year_id, auth.uid()));
 
 create policy "owners can manage memberships"
 on public.fiscal_year_members for all
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = fiscal_year_members.fiscal_year_id
-      and members.user_id = auth.uid()
-      and members.role = 'owner'
-  )
-)
-with check (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = fiscal_year_members.fiscal_year_id
-      and members.user_id = auth.uid()
-      and members.role = 'owner'
-  )
-);
+using (public.has_fiscal_year_role(fiscal_year_members.fiscal_year_id, auth.uid(), array['owner']))
+with check (public.has_fiscal_year_role(fiscal_year_members.fiscal_year_id, auth.uid(), array['owner']));
 
 create policy "members can read content licenses"
 on public.content_licenses for select
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = content_licenses.fiscal_year_id
-      and members.user_id = auth.uid()
-  )
-);
+using (public.is_fiscal_year_member(content_licenses.fiscal_year_id, auth.uid()));
 
 create policy "owners and editors can manage content licenses"
 on public.content_licenses for all
-using (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = content_licenses.fiscal_year_id
-      and members.user_id = auth.uid()
-      and members.role in ('owner', 'editor')
-  )
-)
-with check (
-  exists (
-    select 1 from public.fiscal_year_members members
-    where members.fiscal_year_id = content_licenses.fiscal_year_id
-      and members.user_id = auth.uid()
-      and members.role in ('owner', 'editor')
-  )
-);
+using (public.has_fiscal_year_role(content_licenses.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(content_licenses.fiscal_year_id, auth.uid(), array['owner', 'editor']));
