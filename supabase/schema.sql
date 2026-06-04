@@ -31,8 +31,18 @@ create table if not exists public.content_licenses (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.provider_color_overrides (
+  fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
+  provider text not null,
+  color_key text not null check (color_key in ('blue', 'emerald', 'amber', 'rose', 'violet', 'cyan', 'lime')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (fiscal_year_id, provider)
+);
+
 create index if not exists content_licenses_fiscal_year_id_idx on public.content_licenses(fiscal_year_id);
 create index if not exists fiscal_year_members_user_id_idx on public.fiscal_year_members(user_id);
+create index if not exists provider_color_overrides_fiscal_year_id_idx on public.provider_color_overrides(fiscal_year_id);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -104,6 +114,11 @@ create trigger content_licenses_set_updated_at
 before update on public.content_licenses
 for each row execute function public.set_updated_at();
 
+drop trigger if exists provider_color_overrides_set_updated_at on public.provider_color_overrides;
+create trigger provider_color_overrides_set_updated_at
+before update on public.provider_color_overrides
+for each row execute function public.set_updated_at();
+
 drop trigger if exists fiscal_years_create_owner_membership on public.fiscal_years;
 create trigger fiscal_years_create_owner_membership
 after insert on public.fiscal_years
@@ -112,6 +127,7 @@ for each row execute function public.create_owner_membership_for_fiscal_year();
 alter table public.fiscal_years enable row level security;
 alter table public.fiscal_year_members enable row level security;
 alter table public.content_licenses enable row level security;
+alter table public.provider_color_overrides enable row level security;
 
 create policy "members can read fiscal years"
 on public.fiscal_years for select
@@ -142,3 +158,12 @@ create policy "owners and editors can manage content licenses"
 on public.content_licenses for all
 using (public.has_fiscal_year_role(content_licenses.fiscal_year_id, auth.uid(), array['owner', 'editor']))
 with check (public.has_fiscal_year_role(content_licenses.fiscal_year_id, auth.uid(), array['owner', 'editor']));
+
+create policy "members can read provider color overrides"
+on public.provider_color_overrides for select
+using (public.is_fiscal_year_member(provider_color_overrides.fiscal_year_id, auth.uid()));
+
+create policy "owners and editors can manage provider color overrides"
+on public.provider_color_overrides for all
+using (public.has_fiscal_year_role(provider_color_overrides.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(provider_color_overrides.fiscal_year_id, auth.uid(), array['owner', 'editor']));

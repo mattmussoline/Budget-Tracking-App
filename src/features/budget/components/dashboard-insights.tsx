@@ -2,9 +2,15 @@ import { GalleryHorizontalEnd, Gauge } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
-import { getProviderColor } from "../provider-colors";
+import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
 
-export function DashboardInsights({ model }: { model: DashboardModel }) {
+export function DashboardInsights({
+  model,
+  providerColorOverrides
+}: {
+  model: DashboardModel;
+  providerColorOverrides: ProviderColorOverrides;
+}) {
   const items = [
     {
       label: "Content pieces",
@@ -24,7 +30,7 @@ export function DashboardInsights({ model }: { model: DashboardModel }) {
   const providerTotal = model.providers.reduce((total, provider) => total + provider.totalCents, 0);
   let runningPercent = 0;
   const providerStops = model.providers.map((provider, index) => {
-    const color = getProviderColor(provider.provider);
+    const color = getProviderColor(provider.provider, providerColorOverrides);
     const nextPercent =
       index === model.providers.length - 1
         ? 100
@@ -77,7 +83,7 @@ export function DashboardInsights({ model }: { model: DashboardModel }) {
                 <p className="text-sm font-bold opacity-75">Providers appear here after content is added.</p>
               ) : (
                 topProviders.map((provider) => {
-                  const color = getProviderColor(provider.provider);
+                  const color = getProviderColor(provider.provider, providerColorOverrides);
                   const percent = providerTotal > 0 ? Math.round((provider.totalCents / providerTotal) * 100) : 0;
 
                   return (

@@ -1,13 +1,14 @@
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
-import { getProviderColor } from "../provider-colors";
+import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
 
 type MonthBoardProps = {
   model: DashboardModel;
+  providerColorOverrides: ProviderColorOverrides;
 };
 
-export function MonthBoard({ model }: MonthBoardProps) {
+export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
   const quarters = [1, 2, 3, 4].map((quarter) => ({
     quarter,
     months: model.months.filter((month) => month.quarter === quarter)
@@ -44,7 +45,7 @@ export function MonthBoard({ model }: MonthBoardProps) {
                     <p className="text-sm font-medium text-muted">No payments</p>
                   ) : (
                     month.payments.map((payment) => {
-                      const providerColor = getProviderColor(payment.provider);
+                      const providerColor = getProviderColor(payment.provider, providerColorOverrides);
                       const tileClass = `${providerColor.bg} ${providerColor.text}`;
 
                       return (

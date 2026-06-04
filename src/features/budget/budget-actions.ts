@@ -7,6 +7,7 @@ import { allowedEmailDomainText, isAllowedWorkEmail } from "@/lib/auth/domain-ac
 import { dollarsToCents } from "@/lib/currency";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { providerColorOptions } from "./provider-colors";
 
 const fiscalYearSchema = z.object({
   label: z.string().min(1),
@@ -41,6 +42,12 @@ const updateLicenseSchema = licenseSchema.extend({
 
 const deleteLicenseSchema = z.object({
   licenseId: z.string().uuid()
+});
+
+const providerColorSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  provider: z.string().trim().min(1),
+  colorKey: z.enum(providerColorOptions.map((color) => color.key) as [string, ...string[]])
 });
 
 export async function createFiscalYear(formData: FormData) {
@@ -300,6 +307,41 @@ export async function addCollaborator(formData: FormData) {
     fiscal_year_id: parsed.data.fiscalYearId,
     user_id: collaborator.id,
     role: parsed.data.role
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
+
+export async function updateProviderColor(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
+    return;
+  }
+
+  const parsed = providerColorSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid provider color.");
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
+  if (!canEdit) {
+    throw new Error("You do not have permission to change provider colors.");
+  }
+
+  const { error } = await admin.from("provider_color_overrides").upsert({
+    fiscal_year_id: parsed.data.fiscalYearId,
+    provider: parsed.data.provider,
+    color_key: parsed.data.colorKey
   });
 
   if (error) {

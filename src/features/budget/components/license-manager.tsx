@@ -6,7 +6,7 @@ import { SoftSurface } from "@/components/ui/soft-surface";
 import { deleteContentLicense, updateContentLicense } from "../budget-actions";
 import { getFiscalMonths } from "../budget-math";
 import type { ContentLicense } from "../budget-types";
-import { getProviderColor } from "../provider-colors";
+import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
 
 type LicenseManagerProps = {
   fiscalYearId: string;
@@ -14,6 +14,7 @@ type LicenseManagerProps = {
   fiscalYearStartMonth: number;
   licenses: ContentLicense[];
   providerOptions: string[];
+  providerColorOverrides: ProviderColorOverrides;
   isDemo?: boolean;
 };
 
@@ -23,6 +24,7 @@ export function LicenseManager({
   fiscalYearStartMonth,
   licenses,
   providerOptions,
+  providerColorOverrides,
   isDemo
 }: LicenseManagerProps) {
   const monthOptions = getFiscalMonths(fiscalYear, fiscalYearStartMonth).map((month) => ({
@@ -51,7 +53,7 @@ export function LicenseManager({
           <p className="rounded-lg bg-gray-100 p-4 text-sm font-bold text-muted">Added content will appear here for editing.</p>
         ) : (
           licenses.map((license, index) => {
-            const providerColor = getProviderColor(license.provider);
+            const providerColor = getProviderColor(license.provider, providerColorOverrides);
 
             return (
             <div key={license.id} className="overflow-hidden rounded-lg bg-white">

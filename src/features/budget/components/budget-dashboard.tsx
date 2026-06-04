@@ -9,6 +9,7 @@ import { SharePanel } from "./share-panel";
 import { SummaryMetrics } from "./summary-metrics";
 import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
+import type { ProviderColorOverrides } from "../provider-colors";
 
 type FiscalYearRow = {
   id: string;
@@ -22,10 +23,11 @@ type BudgetDashboardProps = {
   fiscalYear: FiscalYearRow | null;
   model: DashboardModel | null;
   licenses: ContentLicense[];
+  providerColorOverrides?: ProviderColorOverrides;
   mode: "demo" | "live";
 };
 
-export function BudgetDashboard({ fiscalYear, model, licenses, mode }: BudgetDashboardProps) {
+export function BudgetDashboard({ fiscalYear, model, licenses, providerColorOverrides = {}, mode }: BudgetDashboardProps) {
   const isDemo = mode === "demo";
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
@@ -62,7 +64,7 @@ export function BudgetDashboard({ fiscalYear, model, licenses, mode }: BudgetDas
         ) : (
           <div className="grid gap-8">
             <SummaryMetrics model={model} />
-            <DashboardInsights model={model} />
+            <DashboardInsights model={model} providerColorOverrides={providerColorOverrides} />
             <div className="grid gap-8 xl:grid-cols-[420px_1fr]">
               <div className="grid content-start gap-8">
                 <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
@@ -73,19 +75,25 @@ export function BudgetDashboard({ fiscalYear, model, licenses, mode }: BudgetDas
                   providerOptions={providerOptions}
                   isDemo={isDemo}
                 />
-                <ProviderSummary model={model} />
+                <ProviderSummary
+                  model={model}
+                  fiscalYearId={fiscalYear.id}
+                  providerColorOverrides={providerColorOverrides}
+                  isDemo={isDemo}
+                />
                 <CadenceSummary model={model} />
                 <SharePanel fiscalYearId={fiscalYear.id} isDemo={isDemo} />
                 <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
               </div>
               <div className="grid gap-8">
-                <MonthBoard model={model} />
+                <MonthBoard model={model} providerColorOverrides={providerColorOverrides} />
                 <LicenseManager
                   fiscalYearId={fiscalYear.id}
                   fiscalYear={fiscalYear.fiscal_year}
                   fiscalYearStartMonth={fiscalYear.fiscal_year_start_month}
                   licenses={licenses}
                   providerOptions={providerOptions}
+                  providerColorOverrides={providerColorOverrides}
                   isDemo={isDemo}
                 />
               </div>

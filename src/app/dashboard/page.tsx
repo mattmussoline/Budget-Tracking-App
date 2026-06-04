@@ -3,6 +3,7 @@ import { BudgetDashboard } from "@/features/budget/components/budget-dashboard";
 import { demoFiscalYear, demoLicenses } from "@/features/budget/demo-data";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
+import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -57,6 +58,15 @@ export default async function DashboardPage() {
     throw new Error(licensesError.message);
   }
 
+  const { data: providerColorRows, error: providerColorError } = await supabase
+    .from("provider_color_overrides")
+    .select("provider,color_key")
+    .eq("fiscal_year_id", activeFiscalYear.id);
+
+  if (providerColorError) {
+    throw new Error(providerColorError.message);
+  }
+
   const licenses: ContentLicense[] = (licenseRows ?? []).map((license) => ({
     id: license.id,
     title: license.title,
@@ -66,6 +76,9 @@ export default async function DashboardPage() {
     addedFiscalMonth: license.added_fiscal_month,
     notes: license.notes
   }));
+  const providerColorOverrides: ProviderColorOverrides = Object.fromEntries(
+    (providerColorRows ?? []).map((row) => [row.provider, row.color_key as ProviderColorKey])
+  );
 
   const model = buildDashboardModel({
     fiscalYear: activeFiscalYear.fiscal_year,
@@ -74,5 +87,13 @@ export default async function DashboardPage() {
     licenses
   });
 
-  return <BudgetDashboard fiscalYear={activeFiscalYear} model={model} licenses={licenses} mode="live" />;
+  return (
+    <BudgetDashboard
+      fiscalYear={activeFiscalYear}
+      model={model}
+      licenses={licenses}
+      providerColorOverrides={providerColorOverrides}
+      mode="live"
+    />
+  );
 }
