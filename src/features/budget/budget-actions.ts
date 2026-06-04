@@ -50,7 +50,7 @@ export async function createFiscalYear(formData: FormData) {
     redirect("/login");
   }
 
-  const { data: fiscalYear, error } = await supabase
+  const { error } = await supabase
     .from("fiscal_years")
     .insert({
       owner_id: userData.user.id,
@@ -64,16 +64,6 @@ export async function createFiscalYear(formData: FormData) {
 
   if (error) {
     throw new Error(error.message);
-  }
-
-  const { error: memberError } = await supabase.from("fiscal_year_members").insert({
-    fiscal_year_id: fiscalYear.id,
-    user_id: userData.user.id,
-    role: "owner"
-  });
-
-  if (memberError) {
-    throw new Error(memberError.message);
   }
 
   revalidatePath("/dashboard");
