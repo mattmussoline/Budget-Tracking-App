@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { dollarsToCents } from "@/lib/currency";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const fiscalYearSchema = z.object({
@@ -31,7 +32,8 @@ const collaboratorSchema = z.object({
 
 export async function createFiscalYear(formData: FormData) {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
     return;
   }
 
@@ -50,7 +52,7 @@ export async function createFiscalYear(formData: FormData) {
     redirect("/login");
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("fiscal_years")
     .insert({
       owner_id: userData.user.id,
@@ -71,7 +73,8 @@ export async function createFiscalYear(formData: FormData) {
 
 export async function addContentLicense(formData: FormData) {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
     return;
   }
 
@@ -85,7 +88,23 @@ export async function addContentLicense(formData: FormData) {
     throw new Error("Payment amount must be a positive dollar amount.");
   }
 
-  const { error } = await supabase.from("content_licenses").insert({
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const { data: membership, error: membershipError } = await admin
+    .from("fiscal_year_members")
+    .select("role")
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (membershipError || !membership || !["owner", "editor"].includes(membership.role)) {
+    throw new Error("You do not have permission to add content to this fiscal year.");
+  }
+
+  const { error } = await admin.from("content_licenses").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
     title: parsed.data.title,
     provider: parsed.data.provider,
@@ -104,7 +123,8 @@ export async function addContentLicense(formData: FormData) {
 
 export async function addCollaborator(formData: FormData) {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const admin = createSupabaseAdminClient();
+  if (!supabase || !admin) {
     return;
   }
 
@@ -113,7 +133,23 @@ export async function addCollaborator(formData: FormData) {
     throw new Error("Choose a valid collaborator user id and role.");
   }
 
-  const { error } = await supabase.from("fiscal_year_members").upsert({
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
+
+  const { data: membership, error: membershipError } = await admin
+    .from("fiscal_year_members")
+    .select("role")
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (membershipError || !membership || membership.role !== "owner") {
+    throw new Error("Only the fiscal year owner can add collaborators.");
+  }
+
+  const { error } = await admin.from("fiscal_year_members").upsert({
     fiscal_year_id: parsed.data.fiscalYearId,
     user_id: parsed.data.userId,
     role: parsed.data.role
