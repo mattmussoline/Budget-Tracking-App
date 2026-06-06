@@ -1,6 +1,6 @@
 create table if not exists public.fiscal_years (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null references auth.users(id) on delete cascade,
+  owner_id uuid not null,
   label text not null,
   fiscal_year integer not null,
   fiscal_year_start_month integer not null default 7 check (fiscal_year_start_month between 1 and 12),
@@ -12,7 +12,7 @@ create table if not exists public.fiscal_years (
 
 create table if not exists public.fiscal_year_members (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null,
   role text not null check (role in ('owner', 'editor', 'viewer')),
   created_at timestamptz not null default now(),
   primary key (fiscal_year_id, user_id)
@@ -23,6 +23,11 @@ create table if not exists public.content_licenses (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   title text not null,
   provider text not null,
+  content_type text not null default 'standalone' check (content_type in ('standalone', 'series')),
+  episode_count integer check (
+    (content_type = 'series' and episode_count is not null and episode_count > 0)
+    or (content_type = 'standalone' and episode_count is null)
+  ),
   installment_cents integer not null check (installment_cents >= 0),
   cadence text not null check (cadence in ('quarterly', 'yearly')),
   added_fiscal_month integer not null check (added_fiscal_month between 1 and 12),
@@ -39,6 +44,21 @@ create table if not exists public.provider_color_overrides (
   updated_at timestamptz not null default now(),
   primary key (fiscal_year_id, provider)
 );
+
+create table if not exists public.app_access_invites (
+  email text primary key,
+  invited_by_email text not null,
+  created_at timestamptz not null default now(),
+  constraint app_access_invites_lowercase_email check (email = lower(email)),
+  constraint app_access_invites_allowed_domain check (
+    email like '%@augustineinstitute.org'
+    or email like '%@augustine.edu'
+  )
+);
+
+insert into public.app_access_invites (email, invited_by_email)
+values ('matt.mussoline@augustineinstitute.org', 'matt.mussoline@augustineinstitute.org')
+on conflict (email) do nothing;
 
 create index if not exists content_licenses_fiscal_year_id_idx on public.content_licenses(fiscal_year_id);
 create index if not exists fiscal_year_members_user_id_idx on public.fiscal_year_members(user_id);

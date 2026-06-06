@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -25,6 +28,24 @@ export function ContentLicenseForm({
     label: month.label,
     value: String(month.index)
   }));
+  const [contentType, setContentType] = useState("standalone");
+  const [amount, setAmount] = useState("");
+  const fieldClassName = "bg-white";
+  const formatAmount = () => {
+    const parsedAmount = Number(amount.replace(/[$,]/g, "").trim());
+    if (!Number.isFinite(parsedAmount) || amount.trim() === "") {
+      return;
+    }
+
+    setAmount(
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(parsedAmount)
+    );
+  };
 
   return (
     <SoftSurface className="bg-blue-50 p-6 md:p-8">
@@ -39,22 +60,70 @@ export function ContentLicenseForm({
       </div>
       <form action={addContentLicense} className="grid gap-4">
         <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-        <SoftInput label="Title" name="title" placeholder="Jesus Thirsts" required disabled={isDemo} />
-        <SoftInput label="Provider" name="provider" list="provider-options" placeholder="Provider name" required disabled={isDemo} />
+        <SoftInput label="Title" name="title" placeholder="Jesus Thirsts" required disabled={isDemo} className={fieldClassName} />
+        <SoftInput
+          label="Provider"
+          name="provider"
+          list="provider-options"
+          placeholder="Provider name"
+          required
+          disabled={isDemo}
+          className={fieldClassName}
+        />
         <datalist id="provider-options">
           {providerOptions.map((provider) => (
             <option key={provider} value={provider} />
           ))}
         </datalist>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SoftSelect
+            label="Type"
+            name="contentType"
+            value={contentType}
+            required
+            disabled={isDemo}
+            className={fieldClassName}
+            onChange={(event) => setContentType(event.currentTarget.value)}
+            options={[
+              { label: "Standalone", value: "standalone" },
+              { label: "Series", value: "series" }
+            ]}
+          />
+          {contentType === "series" ? (
+            <SoftInput
+              label="Episode Count"
+              name="episodeCount"
+              type="number"
+              min={1}
+              step={1}
+              placeholder="8"
+              required
+              disabled={isDemo}
+              className={fieldClassName}
+            />
+          ) : null}
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <SoftInput label="Payment amount" name="installment" inputMode="decimal" placeholder="1200" required disabled={isDemo} />
+          <SoftInput
+            label="Amount"
+            name="installment"
+            inputMode="decimal"
+            placeholder="$1,200"
+            value={amount}
+            onBlur={formatAmount}
+            onChange={(event) => setAmount(event.currentTarget.value)}
+            required
+            disabled={isDemo}
+            className={fieldClassName}
+          />
           <SoftSelect
             label="Cadence"
             name="cadence"
             defaultValue=""
-            placeholder="Select cadence"
+            placeholder="Select"
             required
             disabled={isDemo}
+            className={fieldClassName}
             options={[
               { label: "Quarterly", value: "quarterly" },
               { label: "Yearly", value: "yearly" }
@@ -64,13 +133,14 @@ export function ContentLicenseForm({
             label="Added month"
             name="addedFiscalMonth"
             defaultValue=""
-            placeholder="Select month"
+            placeholder="Select"
             options={monthOptions}
             required
             disabled={isDemo}
+            className={fieldClassName}
           />
         </div>
-        <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} />
+        <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} className={fieldClassName} />
         <SoftButton type="submit" variant="primary" disabled={isDemo}>
           Add title
         </SoftButton>

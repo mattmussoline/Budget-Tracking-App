@@ -1,9 +1,12 @@
 export type PaymentCadence = "quarterly" | "yearly";
+export type ContentType = "standalone" | "series";
 
 export type ContentLicense = {
   id: string;
   title: string;
   provider: string;
+  contentType: ContentType;
+  episodeCount?: number | null;
   installmentCents: number;
   cadence: PaymentCadence;
   addedFiscalMonth: number;

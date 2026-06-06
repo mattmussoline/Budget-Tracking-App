@@ -33,9 +33,9 @@ export function LicenseManager({
   }));
 
   return (
-    <SoftSurface className="overflow-hidden bg-gray-900">
+    <SoftSurface className="self-start overflow-hidden bg-gray-900">
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-gray-900 p-6 text-white marker:hidden md:p-8">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-gray-900 px-5 py-4 text-white marker:hidden md:px-6">
           <span className="flex min-w-0 items-center gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-500 text-white">
               <Pencil className="h-5 w-5" aria-hidden="true" />

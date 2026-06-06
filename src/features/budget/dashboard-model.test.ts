@@ -7,6 +7,8 @@ const licenses: ContentLicense[] = [
     id: "frassati",
     title: "Frassati",
     provider: "Provider A",
+    contentType: "standalone",
+    episodeCount: null,
     installmentCents: 170000,
     cadence: "quarterly",
     addedFiscalMonth: 3
@@ -15,6 +17,8 @@ const licenses: ContentLicense[] = [
     id: "ben",
     title: "Ben Cello",
     provider: "Provider B",
+    contentType: "series",
+    episodeCount: 10,
     installmentCents: 600000,
     cadence: "quarterly",
     addedFiscalMonth: 4
@@ -23,6 +27,8 @@ const licenses: ContentLicense[] = [
     id: "heart",
     title: "A Father's Heart",
     provider: "Provider C",
+    contentType: "standalone",
+    episodeCount: null,
     installmentCents: 60000,
     cadence: "yearly",
     addedFiscalMonth: 11

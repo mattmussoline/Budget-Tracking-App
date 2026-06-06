@@ -7,7 +7,8 @@ export default defineConfig({
     trace: "on-first-retry"
   },
   webServer: {
-    command: "npm run dev",
+    command:
+      "APP_PASSWORD=playwright-password NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= npm run dev",
     url: "http://127.0.0.1:5173",
     reuseExistingServer: true,
     timeout: 120_000
