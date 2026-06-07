@@ -31,11 +31,11 @@ const categoryStrip: Record<RoadmapRelease["category"], string> = {
 };
 
 const categoryLegendItems = [
-  { label: "Parish", colorClass: "bg-blue-500" },
   { label: "Adult", colorClass: "bg-amber-500" },
+  { label: "Parish", colorClass: "bg-blue-500" },
   { label: "Kids", colorClass: "bg-emerald-500" },
-  { label: "Progress", colorClass: "bg-violet-500" },
-  { label: "Risk", colorClass: "bg-red-500" }
+  { label: "In Discussion", colorClass: "bg-violet-500" },
+  { label: "Strategic Need", colorClass: "bg-red-500" }
 ];
 
 export function RoadmapPage() {
@@ -299,14 +299,17 @@ function RoadmapTimeline({
 
 function CategoryLegend() {
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Roadmap category color key">
+    <div className="flex flex-wrap items-center justify-end gap-2" aria-label="Roadmap category color key">
       {categoryLegendItems.map((item) => (
         <span
           key={item.label}
-          className={cn("h-9 w-14 rounded-md shadow-sm ring-2 ring-white", item.colorClass)}
+          className={cn(
+            "inline-flex min-h-10 min-w-[5.25rem] items-center justify-center rounded-md px-3 py-2 text-center text-xs font-bold leading-tight text-white shadow-sm ring-2 ring-white",
+            item.colorClass
+          )}
           title={item.label}
         >
-          <span className="sr-only">{item.label}</span>
+          {item.label}
         </span>
       ))}
     </div>
