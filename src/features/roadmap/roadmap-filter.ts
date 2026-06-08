@@ -39,7 +39,7 @@ function matchesSearch(release: RoadmapRelease, normalizedSearch: string) {
     return true;
   }
 
-  const searchableText = [release.title, release.series, release.genre, release.format, release.notes]
+  const searchableText = [release.title, release.series, release.genre, release.useCase, release.format, release.notes]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

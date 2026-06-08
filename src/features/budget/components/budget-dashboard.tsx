@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Map, Plus } from "lucide-react";
+import { ClipboardCheck, LogOut, Map, Plus } from "lucide-react";
 import { CadenceSummary } from "./cadence-summary";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
@@ -123,6 +123,13 @@ export function BudgetDashboard({
               >
                 <Map className="h-4 w-4" aria-hidden="true" />
                 Content Roadmap
+              </Link>
+              <Link
+                href="/content-review"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md bg-blue-400 px-5 py-3 text-sm font-extrabold uppercase text-white transition hover:scale-[1.03] hover:bg-white/20"
+              >
+                <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+                Content Review
               </Link>
               <form action={logout}>
                 <button className="inline-flex min-h-12 items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-extrabold uppercase text-blue-700 transition hover:scale-[1.03] hover:bg-blue-50" type="submit">

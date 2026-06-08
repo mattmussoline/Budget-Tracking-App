@@ -9,6 +9,7 @@ export type ReleaseFieldOptions = {
   formats: string[];
   statuses: string[];
   genres: string[];
+  useCases: string[];
   series: string[];
 };
 
@@ -19,8 +20,8 @@ type RoadmapEditDialogProps =
       value: RoadmapRelease;
       months: RoadmapMonth[];
       options: ReleaseFieldOptions;
-      selectedMonthId: string;
-      onMonthChange: (monthId: string) => void;
+      selectedMonthLabel: string;
+      onMonthChange: (monthLabel: string) => void;
       onChange: (value: RoadmapRelease) => void;
       onSave: () => void;
       onClose: () => void;
@@ -64,7 +65,7 @@ export function RoadmapEditDialog(props: RoadmapEditDialogProps) {
 function ReleaseEditor({
   value,
   months,
-  selectedMonthId,
+  selectedMonthLabel,
   onMonthChange,
   options,
   onChange,
@@ -80,20 +81,7 @@ function ReleaseEditor({
       }}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-gray-900">
-          Month
-          <select
-            className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-bold normal-case tracking-normal text-gray-950 focus:bg-white focus:outline focus:outline-2 focus:outline-blue-500"
-            value={selectedMonthId}
-            onChange={(event) => onMonthChange(event.target.value)}
-          >
-            {months.map((month) => (
-              <option key={month.id} value={month.id}>
-                {month.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ComboField label="Month" value={selectedMonthLabel} options={months.map((month) => month.label)} onChange={onMonthChange} />
         <Field label="Title" value={value.title} onChange={(title) => onChange({ ...value, title })} />
         <ComboField label="Audience" value={value.audience} options={options.audiences} onChange={(audience) => onChange({ ...value, audience })} />
         <ComboField label="Format" value={value.format} options={options.formats} onChange={(format) => onChange({ ...value, format })} />
@@ -101,6 +89,7 @@ function ReleaseEditor({
         <ComboField label="Status" value={value.status} options={options.statuses} onChange={(status) => onChange({ ...value, status })} />
         <ComboField label="Genre" value={value.genre} options={options.genres} onChange={(genre) => onChange({ ...value, genre })} />
         <ComboField label="Series" value={value.series ?? ""} options={options.series} onChange={(series) => onChange({ ...value, series })} />
+        <ComboField label="Use Case" value={value.useCase} options={options.useCases} onChange={(useCase) => onChange({ ...value, useCase })} />
       </div>
       <TextArea label="Notes" value={value.notes} onChange={(notes) => onChange({ ...value, notes })} />
       <DialogActions onClose={onClose} />
@@ -120,9 +109,7 @@ function ComboField({
   onChange: (value: string) => void;
 }) {
   const inputId = useId();
-  const optionValues = Array.from(new Set([value, ...options].map((option) => option.trim()).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const optionValues = uniqueOptions([value, ...options]);
 
   return (
     <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-gray-900">
@@ -140,6 +127,22 @@ function ComboField({
       </datalist>
     </label>
   );
+}
+
+function uniqueOptions(options: string[]) {
+  const seen = new Set<string>();
+
+  return options
+    .map((option) => option.trim())
+    .filter((option) => {
+      const key = option.toLowerCase();
+      if (!option || seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
 }
 
 function SeriesEditor({ value, onChange, onSave, onClose }: Extract<RoadmapEditDialogProps, { mode: "series" }>) {

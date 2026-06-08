@@ -37,24 +37,29 @@ test("roadmap hides past months and supports click-to-edit planning items", asyn
   await expect(page.getByLabel("Status")).toBeVisible();
   await expect(page.getByLabel("Genre")).toBeVisible();
   await expect(page.getByLabel("Series")).toBeVisible();
+  await expect(page.getByLabel("Use Case")).toBeVisible();
   await expect(page.getByLabel("Feast")).toHaveCount(0);
   await expect(page.getByLabel("Notes")).toBeVisible();
-  await page.getByLabel("Audience").fill("Catechists");
-  await page.getByLabel("Format").fill("Retreat");
-  await page.getByLabel("Status").fill("Ready");
-  await page.getByLabel("Genre").fill("formation");
+  await page.getByLabel("Audience").fill("Teens/YA");
+  await page.getByLabel("Format").fill("Small Group Study");
+  await page.getByLabel("Status").fill("Finalized");
+  await page.getByLabel("Genre").fill("Leader Formation");
   await page.getByLabel("Series").fill("New Series");
-  await page.getByLabel("Month").selectOption("july-26");
+  await page.getByLabel("Use Case").fill("Parish");
+  await page.getByLabel("Month").fill("September 26");
   await page.getByLabel("Title").fill("New July Roadmap Item");
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: /New July Roadmap Item/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "September 26" })).toBeVisible();
 
   await page.getByRole("button", { name: /New July Roadmap Item/ }).click();
-  await expect(page.getByLabel("Audience")).toHaveValue("Catechists");
-  await expect(page.getByLabel("Format")).toHaveValue("Retreat");
-  await expect(page.getByLabel("Status")).toHaveValue("Ready");
-  await expect(page.getByLabel("Genre")).toHaveValue("formation");
+  await expect(page.getByLabel("Audience")).toHaveValue("Teens/YA");
+  await expect(page.getByLabel("Format")).toHaveValue("Small Group Study");
+  await expect(page.getByLabel("Status")).toHaveValue("Finalized");
+  await expect(page.getByLabel("Genre")).toHaveValue("Leader Formation");
   await expect(page.getByLabel("Series")).toHaveValue("New Series");
+  await expect(page.getByLabel("Use Case")).toHaveValue("Parish");
+  await expect(page.getByLabel("Month")).toHaveValue("September 26");
   await page.getByRole("button", { name: "Save Changes" }).click();
 
   await page.getByRole("button", { name: "Timeline View" }).click();

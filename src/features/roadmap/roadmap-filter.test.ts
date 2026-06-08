@@ -12,11 +12,12 @@ const months: RoadmapMonth[] = [
       {
         id: "wcb-fasting",
         title: "Fasting | What Catholics Believe",
-        audience: "Adult",
-        format: "Formation",
+        audience: "Adults",
+        format: "Formation Series",
         releaseDate: "March 4",
-        status: "Scheduled",
-        genre: "adult",
+        status: "Finalized",
+        genre: "Lent and Easter",
+        useCase: "Individual",
         notes: "Lenten formation",
         series: "What Catholics Believe"
       },
@@ -24,10 +25,11 @@ const months: RoadmapMonth[] = [
         id: "ben-cell",
         title: "Ben Cell Ep. 5 & 6",
         audience: "Kids",
-        format: "Series",
+        format: "Kids Show",
         releaseDate: "March 18",
-        status: "Scheduled",
-        genre: "kids",
+        status: "Finalized",
+        genre: "Kids' Christian Living",
+        useCase: "Individual",
         notes: "Family release",
         series: "Ben Cell"
       }
@@ -42,11 +44,12 @@ const months: RoadmapMonth[] = [
       {
         id: "cabrini",
         title: "Cabrini",
-        audience: "Adult",
-        format: "Film",
+        audience: "Adults",
+        format: "Movie",
         releaseDate: "Needs date",
         status: "Strategic Need",
-        genre: "risk",
+        genre: "Biography",
+        useCase: "Individual",
         notes: "Needs decision before launch window"
       }
     ]
@@ -64,9 +67,9 @@ describe("filterRoadmapMonths", () => {
   });
 
   it("searches title, series, genre, format, and notes", () => {
-    expect(filterRoadmapMonths(months, "All", "adult")[0]?.releases[0]?.title).toContain("Fasting");
+    expect(filterRoadmapMonths(months, "All", "lent")[0]?.releases[0]?.title).toContain("Fasting");
     expect(filterRoadmapMonths(months, "All", "ben cell")[0]?.releases[0]?.title).toContain("Ben Cell");
-    expect(filterRoadmapMonths(months, "All", "film")[0]?.releases[0]?.title).toBe("Cabrini");
+    expect(filterRoadmapMonths(months, "All", "movie")[0]?.releases[0]?.title).toBe("Cabrini");
     expect(filterRoadmapMonths(months, "All", "decision")[0]?.releases[0]?.title).toBe("Cabrini");
   });
 });

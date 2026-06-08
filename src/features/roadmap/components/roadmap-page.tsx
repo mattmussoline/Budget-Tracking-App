@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardCheck, Eye, EyeOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import { RoadmapFilters } from "./roadmap-filters";
@@ -16,7 +16,7 @@ import { buildFiscalYearStats, getCurrentFiscalYear, getVisibleRoadmapMonths } f
 import type { OngoingSeries, RoadmapFilter, RoadmapMonth, RoadmapRelease } from "../roadmap-types";
 
 type EditorState =
-  | { mode: "release"; monthId: string; releaseId: string; draft: RoadmapRelease; isNew: boolean }
+  | { mode: "release"; monthLabel: string; releaseId: string; draft: RoadmapRelease; isNew: boolean }
   | { mode: "series"; seriesId: string; draft: OngoingSeries };
 
 type ViewMode = "board" | "timeline";
@@ -36,6 +36,88 @@ const genreLegendItems = [
   { label: "Kids", colorClass: "bg-emerald-500" },
   { label: "In Discussion", colorClass: "bg-violet-500" },
   { label: "Strategic Need", colorClass: "bg-red-500" }
+];
+
+const audienceOptions = ["Kids", "Teens/YA", "Adults"];
+
+const formatOptions = [
+  "Movie",
+  "Documentary",
+  "Prayer",
+  "Kids Movie",
+  "Music Video",
+  "Presentation",
+  "TV Show",
+  "Docu-Series",
+  "Conversations",
+  "Kids Show",
+  "Reflection",
+  "Formation Series",
+  "Sacramental Prep",
+  "Small Group Study",
+  "Ministry Resource"
+];
+
+const statusOptions = ["In Discussion", "Strategic Need", "In Progress", "Finalized"];
+
+const useCaseOptions = ["Individual", "Parish"];
+
+const genreOptions = [
+  "Scripture Reflection",
+  "Spanish",
+  "Scripture Reading",
+  "Scripture Study",
+  "Everyday Living",
+  "Interview Show",
+  "Kids' Christian Living",
+  "Catechism of the Catholic Church",
+  "Apologetics",
+  "Women's Conference",
+  "Spanish Kids",
+  "Second Millennium Saints",
+  "Lent and Easter",
+  "Leader Formation",
+  "Kids' Scripture",
+  "Advent and Christmas",
+  "Prayer Recordings",
+  "First Millennium Saints",
+  "Church History",
+  "Evangelization",
+  "Portuguese",
+  "Kids' Saints",
+  "Pro-Life",
+  "How to Pray",
+  "Scripture Conference",
+  "Sacraments of Healing",
+  "Kids' Education",
+  "Testimony",
+  "Kids' Music",
+  "Morality and Virtue",
+  "Mental Health",
+  "Parenting and Family Life",
+  "Vocational Discernment",
+  "Faith and Science",
+  "Human Sexuality",
+  "Narrative Fiction",
+  "Liturgy",
+  "Sacraments of Initiation",
+  "Path to Sainthood",
+  "Third Millennium Saints",
+  "Sacraments of Service",
+  "Liturgical Living",
+  "Sacred Art",
+  "Biography",
+  "Young Adult Conference",
+  "Scripture Drama",
+  "Christian Music",
+  "Hymns",
+  "French",
+  "Historical Fiction",
+  "Men's Conference",
+  "Polish",
+  "Italian",
+  "Ordinary Time",
+  "Kids' Prayer"
 ];
 
 export function RoadmapPage() {
@@ -72,6 +154,13 @@ export function RoadmapPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to budget tracker
           </Link>
+          <Link
+            href="/content-review"
+            className="inline-flex items-center gap-2 rounded-md bg-gray-100 px-4 py-3 text-sm font-extrabold uppercase tracking-wide text-gray-950 transition-all duration-200 hover:scale-[1.03] hover:bg-gray-200"
+          >
+            <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+            Content Review
+          </Link>
           <p className="text-xs font-extrabold uppercase tracking-wide text-gray-500">
             Stats scoped to {fiscalYear.label}: July {Number(fiscalYear.start.slice(0, 4))} - June {Number(fiscalYear.end.slice(0, 4))}
           </p>
@@ -106,8 +195,8 @@ export function RoadmapPage() {
           value={editor.draft}
           months={roadmapMonths}
           options={releaseFieldOptions}
-          selectedMonthId={editor.monthId}
-          onMonthChange={(monthId) => setEditor({ ...editor, monthId })}
+          selectedMonthLabel={editor.monthLabel}
+          onMonthChange={(monthLabel) => setEditor({ ...editor, monthLabel })}
           onChange={(draft) => setEditor({ ...editor, draft })}
           onSave={saveReleaseEditor}
           onClose={() => setEditor(null)}
@@ -127,12 +216,13 @@ export function RoadmapPage() {
   );
 
   function openReleaseEditor(monthId: string, releaseId: string) {
-    const release = roadmapMonths.find((month) => month.id === monthId)?.releases.find((item) => item.id === releaseId);
-    if (!release) {
+    const month = roadmapMonths.find((item) => item.id === monthId);
+    const release = month?.releases.find((item) => item.id === releaseId);
+    if (!month || !release) {
       return;
     }
 
-    setEditor({ mode: "release", monthId, releaseId, draft: { ...release }, isNew: false });
+    setEditor({ mode: "release", monthLabel: month.label, releaseId, draft: { ...release }, isNew: false });
   }
 
   function openSeriesEditor(seriesId: string) {
@@ -150,33 +240,50 @@ export function RoadmapPage() {
     }
 
     setRoadmapMonths((months) => {
+      const targetMonthLabel = normalizeMonthLabel(editor.monthLabel);
       const originalMonthId = months.find((month) => month.releases.some((release) => release.id === editor.releaseId))?.id;
+      const targetMonth = months.find((month) => month.label.toLowerCase() === targetMonthLabel.toLowerCase());
+      const targetMonthId = targetMonth?.id ?? createMonthId(targetMonthLabel, months);
+      const monthsWithTarget = targetMonth
+        ? months
+        : [
+            ...months,
+            {
+              id: targetMonthId,
+              label: targetMonthLabel,
+              monthStart: getMonthStart(targetMonthLabel),
+              launchCount: 0,
+              releases: []
+            }
+          ];
 
-      return months.map((month) => {
-        const isOriginalMonth = month.id === originalMonthId;
-        const isTargetMonth = month.id === editor.monthId;
-        const hasRelease = month.releases.some((release) => release.id === editor.releaseId);
+      return monthsWithTarget
+        .map((month) => {
+          const isOriginalMonth = month.id === originalMonthId;
+          const isTargetMonth = month.id === targetMonthId;
+          const hasRelease = month.releases.some((release) => release.id === editor.releaseId);
 
-        if (isTargetMonth) {
-          return {
-            ...month,
-            launchCount: hasRelease ? month.launchCount : month.launchCount + 1,
-            releases: hasRelease
-              ? month.releases.map((release) => (release.id === editor.releaseId ? editor.draft : release))
-              : [...month.releases, editor.draft]
-          };
-        }
+          if (isTargetMonth) {
+            return {
+              ...month,
+              launchCount: hasRelease ? month.launchCount : month.launchCount + 1,
+              releases: hasRelease
+                ? month.releases.map((release) => (release.id === editor.releaseId ? editor.draft : release))
+                : [...month.releases, editor.draft]
+            };
+          }
 
-        if (isOriginalMonth) {
-          return {
-            ...month,
-            launchCount: Math.max(0, month.launchCount - 1),
-            releases: month.releases.filter((release) => release.id !== editor.releaseId)
-          };
-        }
+          if (isOriginalMonth) {
+            return {
+              ...month,
+              launchCount: Math.max(0, month.launchCount - 1),
+              releases: month.releases.filter((release) => release.id !== editor.releaseId)
+            };
+          }
 
-        return month;
-      });
+          return month;
+        })
+        .sort((left, right) => Date.parse(`${left.monthStart}T00:00:00Z`) - Date.parse(`${right.monthStart}T00:00:00Z`));
     });
     setEditor(null);
   }
@@ -327,22 +434,23 @@ function EmptyRoadmapState({ isFiltered }: { isFiltered: boolean }) {
 }
 
 function createNewReleaseEditor(month: RoadmapMonth | undefined): EditorState {
-  const monthId = month?.id ?? "june-26";
+  const monthLabel = month?.label ?? "June 26";
   const releaseId = `release-${Date.now()}`;
 
   return {
     mode: "release",
-    monthId,
+    monthLabel,
     releaseId,
     isNew: true,
     draft: {
       id: releaseId,
       title: "New Release",
-      audience: "Parish",
-      format: "Formation",
+      audience: "Adults",
+      format: "Formation Series",
       releaseDate: "TBD",
-      status: "Needs Date",
-      genre: "parish",
+      status: "In Discussion",
+      genre: "Scripture Study",
+      useCase: "Individual",
       notes: "Add planning notes here."
     }
   };
@@ -352,18 +460,77 @@ function getReleaseFieldOptions(months: RoadmapMonth[]): ReleaseFieldOptions {
   const releases = months.flatMap((month) => month.releases);
 
   return {
-    audiences: uniqueReleaseValues(releases.map((release) => release.audience)),
-    formats: uniqueReleaseValues(releases.map((release) => release.format)),
-    statuses: uniqueReleaseValues(releases.map((release) => release.status)),
-    genres: uniqueReleaseValues(releases.map((release) => release.genre)),
+    audiences: mergeReleaseValues(audienceOptions, releases.map((release) => release.audience)),
+    formats: mergeReleaseValues(formatOptions, releases.map((release) => release.format)),
+    statuses: mergeReleaseValues(statusOptions, releases.map((release) => release.status)),
+    genres: mergeReleaseValues(genreOptions, releases.map((release) => release.genre)),
+    useCases: mergeReleaseValues(useCaseOptions, releases.map((release) => release.useCase)),
     series: uniqueReleaseValues(releases.map((release) => release.series ?? ""))
   };
 }
 
-function uniqueReleaseValues(values: string[]) {
-  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+function mergeReleaseValues(preferredValues: string[], savedValues: Array<string | undefined>) {
+  const preferredKeys = new Set(preferredValues.map((value) => value.toLowerCase()));
+  const extraValues = uniqueReleaseValues(savedValues).filter((value) => !preferredKeys.has(value.toLowerCase()));
+
+  return [...preferredValues, ...extraValues];
+}
+
+function uniqueReleaseValues(values: Array<string | undefined>) {
+  return Array.from(new Set(values.map((value) => value?.trim() ?? "").filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
 function getGenreStripClass(genre: string) {
   return genreStrip[genre.toLowerCase()] ?? "bg-slate-500";
 }
+
+function normalizeMonthLabel(monthLabel: string) {
+  const trimmed = monthLabel.trim();
+  return trimmed.length > 0 ? trimmed : "Unscheduled";
+}
+
+function createMonthId(monthLabel: string, months: RoadmapMonth[]) {
+  const baseId =
+    monthLabel
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "month";
+  let id = baseId;
+  let suffix = 2;
+
+  while (months.some((month) => month.id === id)) {
+    id = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  return id;
+}
+
+function getMonthStart(monthLabel: string) {
+  const [monthName, yearText] = monthLabel.trim().split(/\s+/);
+  const monthIndex = monthName ? monthNames.findIndex((name) => name.toLowerCase().startsWith(monthName.toLowerCase())) : -1;
+  const parsedYear = Number(yearText);
+
+  if (monthIndex < 0 || !Number.isFinite(parsedYear)) {
+    return "2099-01-01";
+  }
+
+  const fullYear = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
+  return `${fullYear}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+}
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];

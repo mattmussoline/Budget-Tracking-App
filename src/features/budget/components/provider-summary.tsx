@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftSurface } from "@/components/ui/soft-surface";
@@ -27,18 +28,27 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
             const selectedColorKey = providerColorOverrides[provider.provider] ?? color.key;
 
             return (
-              <div key={provider.provider} className={`grid gap-4 rounded-lg p-4 ${color.bg} ${color.text}`}>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
+              <details
+                key={provider.provider}
+                data-testid="provider-color-details"
+                className={`group overflow-hidden rounded-lg ${color.bg} ${color.text}`}
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 marker:hidden">
+                  <span className="flex min-w-0 items-center gap-3">
                     <span className={`h-4 w-4 shrink-0 rounded-full ${color.marker}`} />
-                    <div className="min-w-0">
-                      <p className="truncate font-extrabold">{provider.provider}</p>
-                      <p className="text-xs font-bold opacity-70">{provider.licenseCount} title{provider.licenseCount === 1 ? "" : "s"}</p>
-                    </div>
-                  </div>
-                  <span className="font-display text-lg font-extrabold">{formatCurrency(provider.totalCents)}</span>
-                </div>
-                <form action={updateProviderColor} className="grid gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate font-extrabold">{provider.provider}</span>
+                      <span className="block text-xs font-bold opacity-70">
+                        {provider.licenseCount} title{provider.licenseCount === 1 ? "" : "s"}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <span className="font-display text-lg font-extrabold">{formatCurrency(provider.totalCents)}</span>
+                    <ChevronDown className="h-5 w-5 transition-transform group-open:rotate-180" aria-hidden="true" />
+                  </span>
+                </summary>
+                <form action={updateProviderColor} className="grid gap-3 px-4 pb-4">
                   <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
                   <input type="hidden" name="provider" value={provider.provider} />
                   <fieldset className="grid gap-2">
@@ -66,7 +76,7 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
                     Save
                   </SoftButton>
                 </form>
-              </div>
+              </details>
             );
           })
         )}

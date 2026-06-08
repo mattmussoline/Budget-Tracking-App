@@ -18,6 +18,7 @@ export type RoadmapRelease = {
   releaseDate: string;
   status: string;
   genre: ReleaseGenre;
+  useCase: string;
   notes: string;
   series?: string;
 };

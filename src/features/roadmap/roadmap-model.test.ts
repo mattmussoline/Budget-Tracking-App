@@ -12,11 +12,12 @@ const months: RoadmapMonth[] = [
       {
         id: "kids-may",
         title: "Kids May",
-        audience: "Kids / Family",
-        format: "Show",
+        audience: "Kids",
+        format: "Kids Show",
         releaseDate: "5/3",
-        status: "Scheduled",
-        genre: "kids",
+        status: "Finalized",
+        genre: "Kids' Christian Living",
+        useCase: "Individual",
         notes: "Kids release"
       }
     ]
@@ -30,21 +31,23 @@ const months: RoadmapMonth[] = [
       {
         id: "adult-june",
         title: "Adult June",
-        audience: "Adult",
-        format: "Formation",
+        audience: "Adults",
+        format: "Formation Series",
         releaseDate: "6/3",
-        status: "Needs Date",
-        genre: "adult",
+        status: "Strategic Need",
+        genre: "Everyday Living",
+        useCase: "Individual",
         notes: "Needs launch timing"
       },
       {
         id: "risk-june",
         title: "Risk June",
-        audience: "Parish",
-        format: "Film",
+        audience: "Adults",
+        format: "Movie",
         releaseDate: "Needs date",
         status: "Strategic Need",
-        genre: "risk",
+        genre: "Biography",
+        useCase: "Parish",
         notes: "At risk"
       }
     ]
@@ -58,11 +61,12 @@ const months: RoadmapMonth[] = [
       {
         id: "adult-july",
         title: "Adult July",
-        audience: "Adult",
-        format: "Formation",
+        audience: "Adults",
+        format: "Formation Series",
         releaseDate: "7/3",
-        status: "Scheduled",
-        genre: "adult",
+        status: "Finalized",
+        genre: "Everyday Living",
+        useCase: "Individual",
         notes: "Next fiscal year"
       }
     ]
@@ -90,8 +94,8 @@ describe("roadmap model", () => {
     expect(stats.map((stat) => [stat.label, stat.value])).toEqual([
       ["Planned Releases", "3"],
       ["Kids / Family", "1"],
-      ["Strategic Needs", "1"],
-      ["At Risk / TBD", "2"]
+      ["Strategic Needs", "2"],
+      ["At Risk / TBD", "1"]
     ]);
   });
 
