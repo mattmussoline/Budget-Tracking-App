@@ -10,9 +10,10 @@ type ContentReviewModalProps = {
   item: ContentReviewItem;
   onClose: () => void;
   onSave: (item: ContentReviewItem) => void;
+  onDelete: (itemId: string) => void;
 };
 
-export function ContentReviewModal({ item, onClose, onSave }: ContentReviewModalProps) {
+export function ContentReviewModal({ item, onClose, onSave, onDelete }: ContentReviewModalProps) {
   const [draft, setDraft] = useState(item);
 
   useEffect(() => {
@@ -91,6 +92,13 @@ export function ContentReviewModal({ item, onClose, onSave }: ContentReviewModal
           </label>
         </div>
         <div className="flex flex-wrap justify-end gap-3 px-5 pb-5">
+          <button
+            type="button"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-red-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-red-700 transition hover:scale-[1.03] hover:bg-red-100"
+            onClick={() => onDelete(draft.id)}
+          >
+            Delete Content
+          </button>
           <button
             type="button"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-gray-100 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-gray-950 transition hover:scale-[1.03] hover:bg-gray-200"

@@ -21,6 +21,7 @@ export type RoadmapRelease = {
   useCase: string;
   notes: string;
   series?: string;
+  colorOverride?: string;
 };
 
 export type RoadmapMonth = {

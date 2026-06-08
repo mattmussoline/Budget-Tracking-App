@@ -13,6 +13,7 @@ import { RoadmapEditDialog, type ReleaseFieldOptions } from "./roadmap-edit-dial
 import { filterRoadmapMonths } from "../roadmap-filter";
 import { ongoingSeries as initialOngoingSeries, roadmapFilters, roadmapMonths as initialRoadmapMonths } from "../roadmap-data";
 import { buildFiscalYearStats, getCurrentFiscalYear, getVisibleRoadmapMonths } from "../roadmap-model";
+import { getReleaseColor } from "../release-colors";
 import type { OngoingSeries, RoadmapFilter, RoadmapMonth, RoadmapRelease } from "../roadmap-types";
 
 type EditorState =
@@ -21,21 +22,12 @@ type EditorState =
 
 type ViewMode = "board" | "timeline";
 
-const genreStrip: Record<string, string> = {
-  parish: "bg-blue-500",
-  adult: "bg-amber-500",
-  kids: "bg-emerald-500",
-  progress: "bg-violet-500",
-  risk: "bg-red-500",
-  discussion: "bg-gray-500"
-};
-
 const genreLegendItems = [
-  { label: "Adult", colorClass: "bg-amber-500" },
-  { label: "Parish", colorClass: "bg-blue-500" },
-  { label: "Kids", colorClass: "bg-emerald-500" },
+  { label: "Adults", colorClass: "bg-amber-500" },
+  { label: "Kids / Teens/YA", colorClass: "bg-emerald-500" },
   { label: "In Discussion", colorClass: "bg-violet-500" },
-  { label: "Strategic Need", colorClass: "bg-red-500" }
+  { label: "Strategic Need", colorClass: "bg-red-500" },
+  { label: "Manual", colorClass: "bg-blue-500" }
 ];
 
 const audienceOptions = ["Kids", "Teens/YA", "Adults"];
@@ -142,7 +134,7 @@ export function RoadmapPage() {
     <main className="min-h-screen bg-white px-5 py-5 md:px-8">
       <div className="mx-auto grid max-w-7xl gap-5">
         <RoadmapHero
-          onAddRelease={() => setEditor(createNewReleaseEditor(visibleMonths[0] ?? roadmapMonths[0]))}
+          onAddRelease={() => setEditor(createNewReleaseEditor())}
           viewMode={viewMode}
           onToggleView={() => setViewMode((current) => (current === "board" ? "timeline" : "board"))}
         />
@@ -378,26 +370,33 @@ function RoadmapTimeline({
       </div>
       {releases.length > 0 ? (
         <div className="grid gap-2 rounded-lg bg-gray-100 p-3">
-          {releases.map(({ month, release }, index) => (
-            <button
-              key={`${month.id}-${release.id}`}
-              type="button"
-              className={cn(
-                "group relative grid gap-3 overflow-hidden rounded-md p-3 pl-5 text-left transition-all duration-200 hover:scale-[1.01] hover:bg-cyan-100 focus-visible:bg-cyan-100 md:grid-cols-[120px_1fr_130px_130px]",
-                index % 2 === 0 ? "bg-white" : "bg-sky-100"
-              )}
-              onClick={() => onEditRelease(month.id, release.id)}
-            >
-              <span className={cn("absolute inset-y-0 left-0 w-2", getGenreStripClass(release.genre))} aria-hidden="true" />
-              <span className="text-xs font-extrabold uppercase tracking-wide text-gray-500">{month.label}</span>
-              <span>
-                <span className="block font-display text-sm font-extrabold leading-tight tracking-tight text-gray-950">{release.title}</span>
-                <span className="mt-1 block text-xs font-semibold leading-5 text-gray-600">{release.notes}</span>
-              </span>
-              <span className="text-xs font-extrabold uppercase tracking-wide text-gray-700">{release.releaseDate}</span>
-              <span className="text-xs font-extrabold uppercase tracking-wide text-gray-700">{release.audience} / {release.status}</span>
-            </button>
-          ))}
+          {releases.map(({ month, release }, index) => {
+            const color = getReleaseColor(release);
+
+            return (
+              <button
+                key={`${month.id}-${release.id}`}
+                type="button"
+                className={cn(
+                  "group relative grid gap-3 overflow-hidden rounded-md p-3 pl-5 text-left transition-all duration-200 hover:scale-[1.01] md:grid-cols-[120px_1fr_130px_130px]",
+                  index % 2 === 0 ? "bg-white" : "bg-sky-100",
+                  color.hover
+                )}
+                onClick={() => onEditRelease(month.id, release.id)}
+              >
+                <span className={cn("absolute inset-y-0 left-0 w-2", color.strip)} aria-hidden="true" />
+                <span className="text-xs font-extrabold uppercase tracking-wide text-gray-500">{month.label}</span>
+                <span>
+                  <span className="block font-display text-sm font-extrabold leading-tight tracking-tight text-gray-950">{release.title || "Untitled Release"}</span>
+                  {release.notes ? <span className="mt-1 block text-xs font-semibold leading-5 text-gray-600">{release.notes}</span> : null}
+                </span>
+                <span className="text-xs font-extrabold uppercase tracking-wide text-gray-700">{release.releaseDate}</span>
+                <span className="text-xs font-extrabold uppercase tracking-wide text-gray-700">
+                  {[release.audience, release.status].filter(Boolean).join(" / ")}
+                </span>
+              </button>
+            );
+          })}
         </div>
       ) : (
         <EmptyRoadmapState isFiltered={isFiltered} />
@@ -433,25 +432,25 @@ function EmptyRoadmapState({ isFiltered }: { isFiltered: boolean }) {
   );
 }
 
-function createNewReleaseEditor(month: RoadmapMonth | undefined): EditorState {
-  const monthLabel = month?.label ?? "June 26";
+function createNewReleaseEditor(): EditorState {
   const releaseId = `release-${Date.now()}`;
 
   return {
     mode: "release",
-    monthLabel,
+    monthLabel: "",
     releaseId,
     isNew: true,
     draft: {
       id: releaseId,
-      title: "New Release",
-      audience: "Adults",
-      format: "Formation Series",
-      releaseDate: "TBD",
-      status: "In Discussion",
-      genre: "Scripture Study",
-      useCase: "Individual",
-      notes: "Add planning notes here."
+      title: "",
+      audience: "",
+      format: "",
+      releaseDate: "",
+      status: "",
+      genre: "",
+      useCase: "",
+      series: "",
+      notes: ""
     }
   };
 }
@@ -478,10 +477,6 @@ function mergeReleaseValues(preferredValues: string[], savedValues: Array<string
 
 function uniqueReleaseValues(values: Array<string | undefined>) {
   return Array.from(new Set(values.map((value) => value?.trim() ?? "").filter(Boolean))).sort((a, b) => a.localeCompare(b));
-}
-
-function getGenreStripClass(genre: string) {
-  return genreStrip[genre.toLowerCase()] ?? "bg-slate-500";
 }
 
 function normalizeMonthLabel(monthLabel: string) {

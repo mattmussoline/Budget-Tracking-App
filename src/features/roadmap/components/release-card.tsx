@@ -1,4 +1,5 @@
 import { cn } from "@/components/ui/soft-surface";
+import { getReleaseColor } from "../release-colors";
 import type { RoadmapRelease } from "../roadmap-types";
 
 type ReleaseCardProps = {
@@ -6,47 +7,31 @@ type ReleaseCardProps = {
   onEdit: () => void;
 };
 
-const genreStrip: Record<string, string> = {
-  parish: "bg-blue-500",
-  adult: "bg-amber-500",
-  kids: "bg-emerald-500",
-  progress: "bg-violet-500",
-  risk: "bg-red-400",
-  discussion: "bg-gray-500"
-};
-
-const tagTone: Record<string, string> = {
-  parish: "bg-blue-100 text-blue-800",
-  adult: "bg-amber-100 text-amber-800",
-  kids: "bg-emerald-100 text-emerald-800",
-  progress: "bg-violet-100 text-violet-800",
-  risk: "bg-red-100 text-red-800",
-  discussion: "bg-gray-200 text-gray-800"
-};
-
 export function ReleaseCard({ release, onEdit }: ReleaseCardProps) {
   const dateIsRisk = release.releaseDate.toLowerCase().includes("tbd") || release.releaseDate.toLowerCase().includes("needs");
-  const genreKey = release.genre.toLowerCase();
-  const genreTagTone = tagTone[genreKey] ?? "bg-slate-100 text-slate-800";
+  const color = getReleaseColor(release);
 
   return (
     <button
       type="button"
-      className="group relative w-full overflow-hidden rounded-lg bg-white p-3 pl-4 text-left transition-all duration-200 hover:scale-[1.015] hover:bg-blue-50 focus-visible:bg-blue-50"
+      className={cn(
+        "group relative w-full overflow-hidden rounded-lg bg-white p-3 pl-4 text-left transition-all duration-200 hover:scale-[1.015]",
+        color.hover
+      )}
       onClick={onEdit}
     >
-      <span className={cn("absolute inset-y-0 left-0 w-2", genreStrip[genreKey] ?? "bg-slate-500")} aria-hidden="true" />
-      <h3 className="font-display text-sm font-extrabold leading-tight tracking-tight text-gray-950">{release.title}</h3>
+      <span className={cn("absolute inset-y-0 left-0 w-2", color.strip)} aria-hidden="true" />
+      <h3 className="font-display text-sm font-extrabold leading-tight tracking-tight text-gray-950">{release.title || "Untitled Release"}</h3>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <Tag className={genreTagTone}>{release.audience}</Tag>
-        <Tag className="bg-blue-100 text-blue-800">{release.format}</Tag>
-        <Tag className={dateIsRisk ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}>{release.releaseDate}</Tag>
+        {release.audience ? <Tag className={color.tag}>{release.audience}</Tag> : null}
+        {release.format ? <Tag className="bg-blue-100 text-blue-800">{release.format}</Tag> : null}
+        {release.releaseDate ? <Tag className={dateIsRisk ? "bg-red-100 text-red-800" : "bg-cyan-100 text-cyan-800"}>{release.releaseDate}</Tag> : null}
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <Tag className={genreTagTone}>{release.status}</Tag>
-        {release.series ? <Tag className="bg-gray-100 text-gray-700">{release.series}</Tag> : null}
+        {release.status ? <Tag className={color.tag}>{release.status}</Tag> : null}
+        {release.series ? <Tag className="bg-indigo-100 text-indigo-800">{release.series}</Tag> : null}
       </div>
-      <p className="mt-2 text-xs font-semibold leading-5 text-gray-600">{release.notes}</p>
+      {release.notes ? <p className="mt-2 text-xs font-semibold leading-5 text-gray-600">{release.notes}</p> : null}
     </button>
   );
 }

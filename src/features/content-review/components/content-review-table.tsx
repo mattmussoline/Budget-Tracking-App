@@ -3,49 +3,53 @@
 import type { ContentReviewItem } from "../content-review-types";
 import { contentReviewOptions, type ContentReviewOptionGroup } from "../content-review-options";
 
-type EditableField = "provider" | "genre" | "format" | "reviewStage" | "contractStatus" | "audience";
+type EditableField = "reviewStage" | "contractStatus";
 
 const fieldOptions: Record<EditableField, ContentReviewOptionGroup> = {
-  provider: "providers",
-  genre: "genres",
-  format: "formats",
   reviewStage: "reviewStages",
-  contractStatus: "contractStatuses",
-  audience: "audiences"
+  contractStatus: "contractStatuses"
 };
 
-const fieldClass: Record<EditableField, string> = {
-  provider: "bg-blue-50 text-blue-700",
-  genre: "bg-orange-50 text-orange-800",
-  format: "bg-emerald-50 text-emerald-700",
-  reviewStage: "bg-amber-50 text-amber-800",
-  contractStatus: "bg-gray-100 text-gray-700",
-  audience: "bg-violet-50 text-violet-800"
+const reviewStageClass: Record<string, string> = {
+  "New Request": "bg-blue-50 text-blue-700",
+  "Under Review": "bg-amber-50 text-amber-800",
+  "Needs Decision": "bg-red-50 text-red-700",
+  Approved: "bg-emerald-50 text-emerald-700",
+  Rejected: "bg-gray-200 text-gray-600",
+  Parked: "bg-violet-50 text-violet-700"
 };
 
 type ContentReviewTableProps = {
   items: ContentReviewItem[];
   onItemSelect: (item: ContentReviewItem) => void;
   onFieldChange: (itemId: string, field: EditableField, value: string) => void;
+  onAddContent: () => void;
 };
 
-export function ContentReviewTable({ items, onItemSelect, onFieldChange }: ContentReviewTableProps) {
+export function ContentReviewTable({ items, onItemSelect, onFieldChange, onAddContent }: ContentReviewTableProps) {
   return (
-    <section className="overflow-x-auto rounded-lg bg-gray-100 p-4" aria-labelledby="decision-queue-title">
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <section className="overflow-x-auto rounded-lg bg-gray-100 p-4 md:p-5" aria-labelledby="decision-queue-title">
+      <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 id="decision-queue-title" className="font-display text-2xl font-extrabold tracking-tight text-gray-950">
             Decision Queue
           </h2>
           <p className="mt-1 text-sm font-medium text-gray-500">
-            Click a content title to open the full review modal. Fields can be edited directly from the queue.
+            Click a title for full details. Approved and rejected items leave this queue automatically.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={onAddContent}
+          className="inline-flex min-h-12 items-center justify-center rounded-md bg-blue-500 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition hover:scale-[1.03] hover:bg-blue-600"
+        >
+          Add Content
+        </button>
       </div>
-      <table className="w-full min-w-[1120px] border-separate border-spacing-y-2" aria-label="Content review queue">
+      <table className="w-full min-w-[760px] border-separate border-spacing-y-2" aria-label="Content review queue">
         <thead>
           <tr>
-            {["Title", "Provider", "Genre", "Format", "Review Stage", "Contract Status", "Audience"].map((heading) => (
+            {["Title", "Review Stage", "Contract Status"].map((heading) => (
               <th key={heading} className="px-3 pb-1 text-left text-xs font-extrabold uppercase tracking-wide text-gray-500">
                 {heading}
               </th>
@@ -59,7 +63,7 @@ export function ContentReviewTable({ items, onItemSelect, onFieldChange }: Conte
               className="cursor-pointer transition hover:scale-[1.006]"
               onClick={() => onItemSelect(item)}
             >
-              <td className="rounded-l-lg bg-white px-3 py-4 align-middle transition-colors group-hover:bg-blue-50">
+              <td className="rounded-l-lg bg-white px-4 py-4 align-middle transition-colors">
                 <button
                   type="button"
                   className="text-left transition hover:text-blue-700 focus-visible:rounded-md"
@@ -73,12 +77,8 @@ export function ContentReviewTable({ items, onItemSelect, onFieldChange }: Conte
                   <span className="mt-1 block text-sm font-medium text-gray-500">{item.summary}</span>
                 </button>
               </td>
-              <EditableSelect item={item} field="provider" label="Provider" onFieldChange={onFieldChange} />
-              <EditableSelect item={item} field="genre" label="Genre" onFieldChange={onFieldChange} />
-              <EditableSelect item={item} field="format" label="Format" onFieldChange={onFieldChange} />
               <EditableSelect item={item} field="reviewStage" label="Review Stage" onFieldChange={onFieldChange} />
-              <EditableSelect item={item} field="contractStatus" label="Contract Status" onFieldChange={onFieldChange} />
-              <EditableSelect item={item} field="audience" label="Audience" onFieldChange={onFieldChange} isLast />
+              <EditableSelect item={item} field="contractStatus" label="Contract Status" onFieldChange={onFieldChange} isLast />
             </tr>
           ))}
         </tbody>
@@ -110,7 +110,9 @@ function EditableSelect({
         value={item[field]}
         onClick={(event) => event.stopPropagation()}
         onChange={(event) => onFieldChange(item.id, field, event.target.value)}
-        className={`min-h-11 w-full min-w-36 rounded-md border-0 bg-gray-100 px-3 text-sm font-extrabold transition focus:bg-white ${fieldClass[field]}`}
+        className={`min-h-11 w-full min-w-44 rounded-md border-0 px-3 text-sm font-extrabold transition focus:bg-white ${
+          field === "reviewStage" ? reviewStageClass[item.reviewStage] : "bg-gray-100 text-gray-700"
+        }`}
         aria-label={`${label} for ${item.title}`}
       >
         {contentReviewOptions[fieldOptions[field]].map((option) => (

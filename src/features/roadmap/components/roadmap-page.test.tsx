@@ -9,7 +9,7 @@ describe("RoadmapPage", () => {
 
     const key = screen.getByLabelText("Roadmap color key");
 
-    for (const label of ["Adult", "Parish", "Kids", "In Discussion", "Strategic Need"]) {
+    for (const label of ["Adults", "Kids / Teens/YA", "In Discussion", "Strategic Need", "Manual"]) {
       const labelElement = within(key).getByText(label);
 
       expect(labelElement.className).not.toContain("sr-only");
