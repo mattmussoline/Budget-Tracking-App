@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { LogOut, Map, Plus } from "lucide-react";
 import { CadenceSummary } from "./cadence-summary";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
@@ -30,7 +30,6 @@ type BudgetDashboardProps = {
   licenses: ContentLicense[];
   providerColorOverrides?: ProviderColorOverrides;
   mode: "demo" | "live";
-  currentUserEmail: string;
   canInvite: boolean;
   invitedUsers: Array<{
     email: string;
@@ -46,7 +45,6 @@ export function BudgetDashboard({
   licenses,
   providerColorOverrides = {},
   mode,
-  currentUserEmail,
   canInvite,
   invitedUsers
 }: BudgetDashboardProps) {
@@ -76,7 +74,7 @@ export function BudgetDashboard({
               {fiscalYear?.label ?? "Licensing Budget"}
             </h1>
             {fiscalYears.length > 0 ? (
-              <nav className="mt-5 flex flex-wrap gap-2" aria-label="Fiscal year budgets">
+              <nav className="mt-5 flex flex-wrap gap-3" aria-label="Fiscal year budgets">
                 {fiscalYears.map((year) => {
                   const isActive = year.id === fiscalYear?.id;
 
@@ -85,11 +83,16 @@ export function BudgetDashboard({
                       key={year.id}
                       href={`/dashboard?fy=${year.id}`}
                       aria-current={isActive ? "page" : undefined}
-                      className={`rounded-md px-3 py-2 text-sm font-extrabold transition ${
-                        isActive ? "bg-white text-blue-700" : "bg-blue-400 text-white hover:bg-white/20"
+                      className={`inline-flex min-h-12 items-center gap-2 rounded-md px-4 py-3 text-sm font-extrabold transition ${
+                        isActive
+                          ? "bg-gray-950 text-white ring-2 ring-white ring-offset-2 ring-offset-blue-500"
+                          : "bg-white/15 text-white hover:bg-white/25"
                       }`}
                     >
-                      FY{String(year.fiscal_year).slice(-2)}
+                      <span>FY{String(year.fiscal_year).slice(-2)}</span>
+                      {isActive ? (
+                        <span className="rounded bg-white px-2 py-1 text-[10px] font-extrabold uppercase text-gray-950">Current</span>
+                      ) : null}
                     </Link>
                   );
                 })}
@@ -113,19 +116,17 @@ export function BudgetDashboard({
             ) : null}
             </div>
             <div className="grid max-w-xl gap-3">
-            <p className="text-base font-semibold leading-7 text-blue-50">
-              Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.
-            </p>
-            <div className="flex flex-wrap items-center gap-3 text-sm font-extrabold text-blue-50">
-              <span>{currentUserEmail}</span>
+            <div className="flex flex-wrap items-center gap-3 text-sm font-extrabold text-blue-50 md:justify-end">
               <Link
                 href="/roadmap"
-                className="rounded-md bg-blue-400 px-3 py-2 text-xs font-extrabold uppercase text-white transition hover:scale-[1.03] hover:bg-white/20"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md bg-blue-400 px-5 py-3 text-sm font-extrabold uppercase text-white transition hover:scale-[1.03] hover:bg-white/20"
               >
+                <Map className="h-4 w-4" aria-hidden="true" />
                 Content Roadmap
               </Link>
               <form action={logout}>
-                <button className="rounded-md bg-white px-3 py-2 text-xs font-extrabold uppercase text-blue-700 transition hover:bg-blue-50" type="submit">
+                <button className="inline-flex min-h-12 items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-extrabold uppercase text-blue-700 transition hover:scale-[1.03] hover:bg-blue-50" type="submit">
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
                   Logout
                 </button>
               </form>

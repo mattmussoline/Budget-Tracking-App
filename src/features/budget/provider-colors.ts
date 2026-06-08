@@ -5,7 +5,11 @@ export const providerColorOptions = [
   { key: "rose", label: "Rose", bg: "bg-rose-100", text: "text-rose-900", marker: "bg-rose-500", hex: "#f43f5e" },
   { key: "violet", label: "Violet", bg: "bg-violet-100", text: "text-violet-900", marker: "bg-violet-500", hex: "#8b5cf6" },
   { key: "cyan", label: "Cyan", bg: "bg-cyan-100", text: "text-cyan-900", marker: "bg-cyan-500", hex: "#06b6d4" },
-  { key: "lime", label: "Lime", bg: "bg-lime-100", text: "text-lime-900", marker: "bg-lime-500", hex: "#84cc16" }
+  { key: "lime", label: "Lime", bg: "bg-lime-100", text: "text-lime-900", marker: "bg-lime-500", hex: "#84cc16" },
+  { key: "orange", label: "Orange", bg: "bg-orange-100", text: "text-orange-900", marker: "bg-orange-500", hex: "#f97316" },
+  { key: "teal", label: "Teal", bg: "bg-teal-100", text: "text-teal-900", marker: "bg-teal-500", hex: "#14b8a6" },
+  { key: "fuchsia", label: "Fuchsia", bg: "bg-fuchsia-100", text: "text-fuchsia-900", marker: "bg-fuchsia-500", hex: "#d946ef" },
+  { key: "slate", label: "Slate", bg: "bg-slate-200", text: "text-slate-950", marker: "bg-slate-600", hex: "#475569" }
 ] as const;
 
 export type ProviderColorKey = (typeof providerColorOptions)[number]["key"];

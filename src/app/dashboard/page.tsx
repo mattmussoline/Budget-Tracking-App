@@ -32,7 +32,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         model={model}
         licenses={demoLicenses}
         mode="demo"
-        currentUserEmail={session.email}
         canInvite={session.email === internalAdminEmail}
         invitedUsers={[]}
       />
@@ -59,7 +58,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         model={null}
         licenses={[]}
         mode="live"
-        currentUserEmail={session.email}
         canInvite={session.email === internalAdminEmail}
         invitedUsers={[]}
       />
@@ -119,7 +117,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       licenses={licenses}
       providerColorOverrides={providerColorOverrides}
       mode="live"
-      currentUserEmail={session.email}
       canInvite={session.email === internalAdminEmail}
       invitedUsers={inviteRows ?? []}
     />
