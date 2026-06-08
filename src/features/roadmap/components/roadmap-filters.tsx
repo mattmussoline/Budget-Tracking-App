@@ -48,7 +48,7 @@ export function RoadmapFilters({
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           className="min-h-12 w-full rounded-md border-0 bg-gray-700 py-3 pl-11 pr-4 text-sm font-bold text-white shadow-none placeholder:text-gray-400 focus:bg-gray-600"
-          placeholder="Search title, feast, host, format, or notes..."
+          placeholder="Search title, genre, series, format, or notes..."
         />
       </label>
     </section>

@@ -42,16 +42,16 @@ export function buildFiscalYearStats(months: RoadmapMonth[], date = new Date()):
 
 function isKidsOrFamilyRelease(release: RoadmapRelease) {
   const audience = release.audience.toLowerCase();
-  return release.category === "kids" || audience.includes("kids") || audience.includes("family");
+  return release.genre.toLowerCase() === "kids" || audience.includes("kids") || audience.includes("family");
 }
 
 function isStrategicNeedRelease(release: RoadmapRelease) {
-  return release.category === "risk" || release.status.toLowerCase().includes("strategic");
+  return release.genre.toLowerCase() === "risk" || release.status.toLowerCase().includes("strategic");
 }
 
 function isAtRiskOrTbdRelease(release: RoadmapRelease) {
   const status = release.status.toLowerCase();
   const date = release.releaseDate.toLowerCase();
 
-  return release.category === "risk" || status.includes("risk") || status.includes("needs date") || date.includes("tbd") || date.includes("needs");
+  return release.genre.toLowerCase() === "risk" || status.includes("risk") || status.includes("needs date") || date.includes("tbd") || date.includes("needs");
 }

@@ -25,10 +25,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "3/4",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Lenten formation release for parish and adult audiences.",
-        feast: "Lent",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       },
       {
         id: "almsgiving-wcb",
@@ -37,10 +36,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "3/18",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Companion WCB episode for Lenten content planning.",
-        feast: "Lent",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       },
       {
         id: "ben-cell-episodes",
@@ -49,9 +47,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Series",
         releaseDate: "TBD",
         status: "Scheduled",
-        category: "kids",
+        genre: "kids",
         notes: "Kids and family series launch grouping.",
-        host: "Ben Cell"
+        series: "Ben Cell"
       }
     ]
   },
@@ -68,9 +66,8 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Documentary",
         releaseDate: "4/1",
         status: "Scheduled",
-        category: "adult",
-        notes: "Documentary release with Eucharistic formation value.",
-        feast: "Easter season"
+        genre: "adult",
+        notes: "Documentary release with Eucharistic formation value."
       },
       {
         id: "cooperator-brother",
@@ -79,7 +76,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Dominican",
         releaseDate: "TBD",
         status: "In Discussion",
-        category: "kids",
+        genre: "kids",
         notes: "Kids release opportunity tied to Dominican content."
       },
       {
@@ -89,9 +86,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "TBD",
         status: "In Progress",
-        category: "progress",
+        genre: "progress",
         notes: "Formation episode still moving through production.",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       }
     ]
   },
@@ -108,7 +105,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Documentary",
         releaseDate: "5/1",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Adult documentary release planned for early May."
       },
       {
@@ -118,9 +115,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Episode",
         releaseDate: "TBD",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Episode release for the Into the Breach track.",
-        host: "Into the Breach"
+        series: "Into the Breach"
       },
       {
         id: "dominic-savio",
@@ -129,9 +126,8 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Show",
         releaseDate: "TBD",
         status: "Scheduled",
-        category: "kids",
-        notes: "Kids programming with saint-focused positioning.",
-        feast: "St. Dominic Savio"
+        genre: "kids",
+        notes: "Kids programming with saint-focused positioning."
       },
       {
         id: "little-liturgies-launch",
@@ -140,7 +136,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Ongoing",
         releaseDate: "5/26",
         status: "In Progress",
-        category: "parish",
+        genre: "parish",
         notes: "Recurring family series launch."
       }
     ]
@@ -158,9 +154,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "6/3",
         status: "Scheduled",
-        category: "parish",
+        genre: "parish",
         notes: "Parish formation launch for WCB.",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       },
       {
         id: "forbidden-discussions",
@@ -169,7 +165,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Discussion",
         releaseDate: "TBD",
         status: "Needs Date",
-        category: "adult",
+        genre: "adult",
         notes: "Launch timing is still open and needs date confirmation."
       },
       {
@@ -179,7 +175,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Show",
         releaseDate: "TBD",
         status: "Scheduled",
-        category: "kids",
+        genre: "kids",
         notes: "Two kids episodes grouped for June."
       }
     ]
@@ -197,9 +193,9 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "WCB",
         releaseDate: "TBD",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Adult catechetical release in the WCB track.",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       },
       {
         id: "cabrini",
@@ -208,19 +204,18 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Film",
         releaseDate: "Needs date",
         status: "Strategic Need",
-        category: "risk",
+        genre: "risk",
         notes: "Needs decision before the target launch window."
       },
       {
         id: "into-great-silence",
         title: "Into Great Silence",
         audience: "Parish",
-        format: "Feast Tie-In",
+        format: "Launch Tie-In",
         releaseDate: "7/11",
         status: "Scheduled",
-        category: "parish",
-        notes: "Feast-driven planning item.",
-        feast: "St. Benedict"
+        genre: "parish",
+        notes: "Timing-driven planning item."
       }
     ]
   },
@@ -237,9 +232,8 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "8/28",
         status: "Scheduled",
-        category: "parish",
-        notes: "Parish release connected to St. Augustine.",
-        feast: "St. Augustine"
+        genre: "parish",
+        notes: "Parish release connected to St. Augustine."
       },
       {
         id: "triumph-heart",
@@ -248,7 +242,7 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "SVOD Feature",
         releaseDate: "TBD",
         status: "At Risk",
-        category: "risk",
+        genre: "risk",
         notes: "SVOD release needs decision and timing confirmation."
       },
       {
@@ -258,9 +252,8 @@ export const roadmapMonths: RoadmapMonth[] = [
         format: "Show",
         releaseDate: "8/5",
         status: "Scheduled",
-        category: "kids",
-        notes: "Kids release with saint-focused timing.",
-        feast: "St. Clare"
+        genre: "kids",
+        notes: "Kids release with saint-focused timing."
       }
     ]
   }
@@ -289,7 +282,7 @@ export const ongoingSeries: OngoingSeries[] = [
     startDate: "May 3 tentative",
     endDate: "TBD",
     cadence: "1 per week",
-    notes: "Can pause around feast-driven campaigns"
+    notes: "Can pause around timing-driven campaigns"
   },
   {
     id: "verbum-dei",

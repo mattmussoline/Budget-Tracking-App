@@ -35,14 +35,27 @@ test("roadmap hides past months and supports click-to-edit planning items", asyn
   await expect(page.getByLabel("Format")).toBeVisible();
   await expect(page.getByLabel("Release Date")).toBeVisible();
   await expect(page.getByLabel("Status")).toBeVisible();
-  await expect(page.getByLabel("Category")).toBeVisible();
-  await expect(page.getByLabel("Host")).toBeVisible();
-  await expect(page.getByLabel("Feast")).toBeVisible();
+  await expect(page.getByLabel("Genre")).toBeVisible();
+  await expect(page.getByLabel("Series")).toBeVisible();
+  await expect(page.getByLabel("Feast")).toHaveCount(0);
   await expect(page.getByLabel("Notes")).toBeVisible();
+  await page.getByLabel("Audience").fill("Catechists");
+  await page.getByLabel("Format").fill("Retreat");
+  await page.getByLabel("Status").fill("Ready");
+  await page.getByLabel("Genre").fill("formation");
+  await page.getByLabel("Series").fill("New Series");
   await page.getByLabel("Month").selectOption("july-26");
   await page.getByLabel("Title").fill("New July Roadmap Item");
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: /New July Roadmap Item/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /New July Roadmap Item/ }).click();
+  await expect(page.getByLabel("Audience")).toHaveValue("Catechists");
+  await expect(page.getByLabel("Format")).toHaveValue("Retreat");
+  await expect(page.getByLabel("Status")).toHaveValue("Ready");
+  await expect(page.getByLabel("Genre")).toHaveValue("formation");
+  await expect(page.getByLabel("Series")).toHaveValue("New Series");
+  await page.getByRole("button", { name: "Save Changes" }).click();
 
   await page.getByRole("button", { name: "Timeline View" }).click();
   await expect(page.getByRole("heading", { name: "Timeline View" })).toBeVisible();

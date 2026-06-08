@@ -1,7 +1,16 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { OngoingSeries, ReleaseCategory, RoadmapMonth, RoadmapRelease } from "../roadmap-types";
+import { useId } from "react";
+import type { OngoingSeries, RoadmapMonth, RoadmapRelease } from "../roadmap-types";
+
+export type ReleaseFieldOptions = {
+  audiences: string[];
+  formats: string[];
+  statuses: string[];
+  genres: string[];
+  series: string[];
+};
 
 type RoadmapEditDialogProps =
   | {
@@ -9,6 +18,7 @@ type RoadmapEditDialogProps =
       title: string;
       value: RoadmapRelease;
       months: RoadmapMonth[];
+      options: ReleaseFieldOptions;
       selectedMonthId: string;
       onMonthChange: (monthId: string) => void;
       onChange: (value: RoadmapRelease) => void;
@@ -23,8 +33,6 @@ type RoadmapEditDialogProps =
       onSave: () => void;
       onClose: () => void;
     };
-
-const categoryOptions: ReleaseCategory[] = ["parish", "adult", "kids", "progress", "risk", "discussion"];
 
 export function RoadmapEditDialog(props: RoadmapEditDialogProps) {
   return (
@@ -58,6 +66,7 @@ function ReleaseEditor({
   months,
   selectedMonthId,
   onMonthChange,
+  options,
   onChange,
   onSave,
   onClose
@@ -86,30 +95,50 @@ function ReleaseEditor({
           </select>
         </label>
         <Field label="Title" value={value.title} onChange={(title) => onChange({ ...value, title })} />
-        <Field label="Audience" value={value.audience} onChange={(audience) => onChange({ ...value, audience })} />
-        <Field label="Format" value={value.format} onChange={(format) => onChange({ ...value, format })} />
+        <ComboField label="Audience" value={value.audience} options={options.audiences} onChange={(audience) => onChange({ ...value, audience })} />
+        <ComboField label="Format" value={value.format} options={options.formats} onChange={(format) => onChange({ ...value, format })} />
         <Field label="Release Date" value={value.releaseDate} onChange={(releaseDate) => onChange({ ...value, releaseDate })} />
-        <Field label="Status" value={value.status} onChange={(status) => onChange({ ...value, status })} />
-        <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-gray-900">
-          Category
-          <select
-            className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-bold normal-case tracking-normal text-gray-950"
-            value={value.category}
-            onChange={(event) => onChange({ ...value, category: event.target.value as ReleaseCategory })}
-          >
-            {categoryOptions.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Field label="Host" value={value.host ?? ""} onChange={(host) => onChange({ ...value, host })} />
-        <Field label="Feast" value={value.feast ?? ""} onChange={(feast) => onChange({ ...value, feast })} />
+        <ComboField label="Status" value={value.status} options={options.statuses} onChange={(status) => onChange({ ...value, status })} />
+        <ComboField label="Genre" value={value.genre} options={options.genres} onChange={(genre) => onChange({ ...value, genre })} />
+        <ComboField label="Series" value={value.series ?? ""} options={options.series} onChange={(series) => onChange({ ...value, series })} />
       </div>
       <TextArea label="Notes" value={value.notes} onChange={(notes) => onChange({ ...value, notes })} />
       <DialogActions onClose={onClose} />
     </form>
+  );
+}
+
+function ComboField({
+  label,
+  value,
+  options,
+  onChange
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  const inputId = useId();
+  const optionValues = Array.from(new Set([value, ...options].map((option) => option.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  return (
+    <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-gray-900">
+      {label}
+      <input
+        className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-bold normal-case tracking-normal text-gray-950 placeholder:text-gray-400 focus:bg-white focus:outline focus:outline-2 focus:outline-blue-500"
+        value={value}
+        list={inputId}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <datalist id={inputId}>
+        {optionValues.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+    </label>
   );
 }
 

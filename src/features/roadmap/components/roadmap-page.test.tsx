@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { RoadmapPage } from "./roadmap-page";
 
 describe("RoadmapPage", () => {
-  it("shows category key labels inside the colored items", () => {
+  it("shows genre key labels inside the colored items", () => {
     render(<RoadmapPage />);
 
-    const key = screen.getByLabelText("Roadmap category color key");
+    const key = screen.getByLabelText("Roadmap color key");
 
     for (const label of ["Adult", "Parish", "Kids", "In Discussion", "Strategic Need"]) {
       const labelElement = within(key).getByText(label);

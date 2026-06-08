@@ -1,4 +1,4 @@
-export type ReleaseCategory = "parish" | "adult" | "kids" | "progress" | "risk" | "discussion";
+export type ReleaseGenre = string;
 
 export type RoadmapFilter =
   | "All"
@@ -17,10 +17,9 @@ export type RoadmapRelease = {
   format: string;
   releaseDate: string;
   status: string;
-  category: ReleaseCategory;
+  genre: ReleaseGenre;
   notes: string;
-  feast?: string;
-  host?: string;
+  series?: string;
 };
 
 export type RoadmapMonth = {

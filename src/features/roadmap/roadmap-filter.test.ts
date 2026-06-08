@@ -16,10 +16,9 @@ const months: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "March 4",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Lenten formation",
-        feast: "Lent",
-        host: "What Catholics Believe"
+        series: "What Catholics Believe"
       },
       {
         id: "ben-cell",
@@ -28,9 +27,9 @@ const months: RoadmapMonth[] = [
         format: "Series",
         releaseDate: "March 18",
         status: "Scheduled",
-        category: "kids",
+        genre: "kids",
         notes: "Family release",
-        host: "Ben Cell"
+        series: "Ben Cell"
       }
     ]
   },
@@ -47,7 +46,7 @@ const months: RoadmapMonth[] = [
         format: "Film",
         releaseDate: "Needs date",
         status: "Strategic Need",
-        category: "risk",
+        genre: "risk",
         notes: "Needs decision before launch window"
       }
     ]
@@ -64,8 +63,8 @@ describe("filterRoadmapMonths", () => {
     expect(result[0]?.releases[0]?.title).toBe("Ben Cell Ep. 5 & 6");
   });
 
-  it("searches title, feast, host, format, and notes", () => {
-    expect(filterRoadmapMonths(months, "All", "lent")[0]?.releases[0]?.title).toContain("Fasting");
+  it("searches title, series, genre, format, and notes", () => {
+    expect(filterRoadmapMonths(months, "All", "adult")[0]?.releases[0]?.title).toContain("Fasting");
     expect(filterRoadmapMonths(months, "All", "ben cell")[0]?.releases[0]?.title).toContain("Ben Cell");
     expect(filterRoadmapMonths(months, "All", "film")[0]?.releases[0]?.title).toBe("Cabrini");
     expect(filterRoadmapMonths(months, "All", "decision")[0]?.releases[0]?.title).toBe("Cabrini");

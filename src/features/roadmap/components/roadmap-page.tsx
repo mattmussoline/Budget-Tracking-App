@@ -9,7 +9,7 @@ import { RoadmapHero } from "./roadmap-hero";
 import { RoadmapStats } from "./roadmap-stats";
 import { MonthColumn } from "./month-column";
 import { OngoingSeriesTable } from "./ongoing-series-table";
-import { RoadmapEditDialog } from "./roadmap-edit-dialog";
+import { RoadmapEditDialog, type ReleaseFieldOptions } from "./roadmap-edit-dialog";
 import { filterRoadmapMonths } from "../roadmap-filter";
 import { ongoingSeries as initialOngoingSeries, roadmapFilters, roadmapMonths as initialRoadmapMonths } from "../roadmap-data";
 import { buildFiscalYearStats, getCurrentFiscalYear, getVisibleRoadmapMonths } from "../roadmap-model";
@@ -21,7 +21,7 @@ type EditorState =
 
 type ViewMode = "board" | "timeline";
 
-const categoryStrip: Record<RoadmapRelease["category"], string> = {
+const genreStrip: Record<string, string> = {
   parish: "bg-blue-500",
   adult: "bg-amber-500",
   kids: "bg-emerald-500",
@@ -30,7 +30,7 @@ const categoryStrip: Record<RoadmapRelease["category"], string> = {
   discussion: "bg-gray-500"
 };
 
-const categoryLegendItems = [
+const genreLegendItems = [
   { label: "Adult", colorClass: "bg-amber-500" },
   { label: "Parish", colorClass: "bg-blue-500" },
   { label: "Kids", colorClass: "bg-emerald-500" },
@@ -52,6 +52,7 @@ export function RoadmapPage() {
   const visibleMonths = useMemo(() => getVisibleRoadmapMonths(roadmapMonths, currentDate, showPastMonths), [roadmapMonths, currentDate, showPastMonths]);
   const hiddenPastMonthCount = roadmapMonths.length - getVisibleRoadmapMonths(roadmapMonths, currentDate, false).length;
   const filteredMonths = useMemo(() => filterRoadmapMonths(visibleMonths, activeFilter, searchTerm), [visibleMonths, activeFilter, searchTerm]);
+  const releaseFieldOptions = useMemo(() => getReleaseFieldOptions(roadmapMonths), [roadmapMonths]);
   const isFiltered = activeFilter !== "All" || searchTerm.trim().length > 0;
   const boardTitle = showPastMonths ? "Roadmap Months" : "Upcoming Months";
 
@@ -104,6 +105,7 @@ export function RoadmapPage() {
           title={editor.isNew ? "Add Release" : editor.draft.title}
           value={editor.draft}
           months={roadmapMonths}
+          options={releaseFieldOptions}
           selectedMonthId={editor.monthId}
           onMonthChange={(monthId) => setEditor({ ...editor, monthId })}
           onChange={(draft) => setEditor({ ...editor, draft })}
@@ -222,7 +224,7 @@ function RoadmapBoard({
             </button>
           ) : null}
         </div>
-        <CategoryLegend />
+        <GenreLegend />
       </div>
       {filteredMonths.length > 0 ? (
         <div className="-mx-5 overflow-x-auto px-5 pb-2 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10">
@@ -265,7 +267,7 @@ function RoadmapTimeline({
           </p>
           <h2 className="font-display text-2xl font-extrabold tracking-tight text-gray-950">Timeline View</h2>
         </div>
-        <CategoryLegend />
+        <GenreLegend />
       </div>
       {releases.length > 0 ? (
         <div className="grid gap-2 rounded-lg bg-gray-100 p-3">
@@ -279,7 +281,7 @@ function RoadmapTimeline({
               )}
               onClick={() => onEditRelease(month.id, release.id)}
             >
-              <span className={cn("absolute inset-y-0 left-0 w-2", categoryStrip[release.category])} aria-hidden="true" />
+              <span className={cn("absolute inset-y-0 left-0 w-2", getGenreStripClass(release.genre))} aria-hidden="true" />
               <span className="text-xs font-extrabold uppercase tracking-wide text-gray-500">{month.label}</span>
               <span>
                 <span className="block font-display text-sm font-extrabold leading-tight tracking-tight text-gray-950">{release.title}</span>
@@ -297,10 +299,10 @@ function RoadmapTimeline({
   );
 }
 
-function CategoryLegend() {
+function GenreLegend() {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2" aria-label="Roadmap category color key">
-      {categoryLegendItems.map((item) => (
+    <div className="flex flex-wrap items-center justify-end gap-2" aria-label="Roadmap color key">
+      {genreLegendItems.map((item) => (
         <span
           key={item.label}
           className={cn(
@@ -340,8 +342,28 @@ function createNewReleaseEditor(month: RoadmapMonth | undefined): EditorState {
       format: "Formation",
       releaseDate: "TBD",
       status: "Needs Date",
-      category: "parish",
+      genre: "parish",
       notes: "Add planning notes here."
     }
   };
+}
+
+function getReleaseFieldOptions(months: RoadmapMonth[]): ReleaseFieldOptions {
+  const releases = months.flatMap((month) => month.releases);
+
+  return {
+    audiences: uniqueReleaseValues(releases.map((release) => release.audience)),
+    formats: uniqueReleaseValues(releases.map((release) => release.format)),
+    statuses: uniqueReleaseValues(releases.map((release) => release.status)),
+    genres: uniqueReleaseValues(releases.map((release) => release.genre)),
+    series: uniqueReleaseValues(releases.map((release) => release.series ?? ""))
+  };
+}
+
+function uniqueReleaseValues(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+function getGenreStripClass(genre: string) {
+  return genreStrip[genre.toLowerCase()] ?? "bg-slate-500";
 }

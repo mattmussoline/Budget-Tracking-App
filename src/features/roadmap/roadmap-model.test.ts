@@ -16,7 +16,7 @@ const months: RoadmapMonth[] = [
         format: "Show",
         releaseDate: "5/3",
         status: "Scheduled",
-        category: "kids",
+        genre: "kids",
         notes: "Kids release"
       }
     ]
@@ -34,7 +34,7 @@ const months: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "6/3",
         status: "Needs Date",
-        category: "adult",
+        genre: "adult",
         notes: "Needs launch timing"
       },
       {
@@ -44,7 +44,7 @@ const months: RoadmapMonth[] = [
         format: "Film",
         releaseDate: "Needs date",
         status: "Strategic Need",
-        category: "risk",
+        genre: "risk",
         notes: "At risk"
       }
     ]
@@ -62,7 +62,7 @@ const months: RoadmapMonth[] = [
         format: "Formation",
         releaseDate: "7/3",
         status: "Scheduled",
-        category: "adult",
+        genre: "adult",
         notes: "Next fiscal year"
       }
     ]

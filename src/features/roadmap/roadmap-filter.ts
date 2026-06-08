@@ -12,23 +12,25 @@ export function filterRoadmapMonths(months: RoadmapMonth[], activeFilter: Roadma
 }
 
 function matchesFilter(release: RoadmapRelease, activeFilter: RoadmapFilter) {
+  const genre = release.genre.toLowerCase();
+
   switch (activeFilter) {
     case "All":
       return true;
     case "Parish":
-      return release.category === "parish" || includesAny(release.audience, ["parish"]);
+      return genre === "parish" || includesAny(release.audience, ["parish"]);
     case "Adult":
-      return release.category === "adult" || includesAny(release.audience, ["adult", "teens"]);
+      return genre === "adult" || includesAny(release.audience, ["adult", "teens"]);
     case "Kids":
-      return release.category === "kids" || includesAny(release.audience, ["kids", "family"]);
+      return genre === "kids" || includesAny(release.audience, ["kids", "family"]);
     case "In Progress":
-      return release.category === "progress" || includesAny(release.status, ["progress"]);
+      return genre === "progress" || includesAny(release.status, ["progress"]);
     case "Strategic Need":
-      return release.category === "risk" || includesAny(release.status, ["strategic", "risk", "at risk"]);
+      return genre === "risk" || includesAny(release.status, ["strategic", "risk", "at risk"]);
     case "Needs Date":
       return includesAny(release.releaseDate, ["tbd", "needs"]) || includesAny(release.status, ["needs date"]);
     case "In Discussion":
-      return release.category === "discussion" || includesAny(release.status, ["discussion"]);
+      return genre === "discussion" || includesAny(release.status, ["discussion"]);
   }
 }
 
@@ -37,7 +39,7 @@ function matchesSearch(release: RoadmapRelease, normalizedSearch: string) {
     return true;
   }
 
-  const searchableText = [release.title, release.feast, release.host, release.format, release.notes]
+  const searchableText = [release.title, release.series, release.genre, release.format, release.notes]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
