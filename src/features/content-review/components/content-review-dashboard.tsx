@@ -6,7 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import type { ContentReviewItem } from "../content-review-types";
 import { ContentReviewModal } from "./content-review-modal";
 import { ContentReviewTable } from "./content-review-table";
-import { createSupabaseBrowserClient } from "../../../lib/supabase/browser";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type EditableField = "reviewStage" | "contractStatus";
 
