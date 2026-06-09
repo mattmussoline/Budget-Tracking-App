@@ -11,8 +11,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 type EditableField = "reviewStage" | "contractStatus";
 
 export function ContentReviewDashboard() {
-  const [items, setItems] = useState<ContentReviewItem[]>(initialContentReviewItems);
-  const supabase = createSupabaseBrowserClient();
+  const [items, setItems] = useState<ContentReviewItem[]>([]);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   useEffect(() => {
   async function loadItems() {
     const { data, error } = await supabase
@@ -24,11 +24,25 @@ export function ContentReviewDashboard() {
       return;
     }
 
-    setItems(data ?? []);
+    const formatted = (data ?? []).map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      provider: item.provider,
+      genre: item.genre,
+      format: item.format,
+      reviewStage: item.review_stage,
+      contractStatus: item.contract_status,
+      audience: item.audience,
+      releaseDate: item.release_date,
+      summary: item.summary,
+      notes: item.notes,
+    }));
+
+    setItems(formatted);
   }
 
   loadItems();
-}, []);
+}, [supabase]); // 👈 ADD THIS
   const [selectedItem, setSelectedItem] = useState<ContentReviewItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -102,22 +116,83 @@ export function ContentReviewDashboard() {
     </main>
   );
 
-  function updateItemField(itemId: string, field: EditableField, value: string) {
-    setItems((currentItems) => currentItems.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)));
-  }
+  async function updateItemField(
+  itemId: string,
+  field: EditableField,
+  value: string
+) {
+  // 1. Update UI immediately (optimistic update)
+  setItems((currentItems) =>
+    currentItems.map((item) =>
+      item.id === itemId ? { ...item, [field]: value } : item
+    )
+  );
 
-  function saveItem(updatedItem: ContentReviewItem) {
-    setItems((currentItems) => {
-      const itemExists = currentItems.some((item) => item.id === updatedItem.id);
-      return itemExists ? currentItems.map((item) => (item.id === updatedItem.id ? updatedItem : item)) : [...currentItems, updatedItem];
+  // 2. Convert field names for database
+  const dbField =
+    field === "reviewStage" ? "review_stage" : "contract_status";
+
+  // 3. Push update to Supabase
+  const { error } = await supabase
+    .from("content_review_items")
+    .update({ [dbField]: value })
+    .eq("id", itemId);
+
+  if (error) {
+    console.error("Update failed:", error);
+  }
+}
+
+  async function saveItem(updatedItem: ContentReviewItem) {
+  const { error } = await supabase
+    .from("content_review_items")
+    .upsert({
+      id: updatedItem.id,
+      title: updatedItem.title,
+      provider: updatedItem.provider,
+      genre: updatedItem.genre,
+      format: updatedItem.format,
+      review_stage: updatedItem.reviewStage,
+      contract_status: updatedItem.contractStatus,
+      audience: updatedItem.audience,
+      release_date: updatedItem.releaseDate,
+      summary: updatedItem.summary,
+      notes: updatedItem.notes,
     });
-    setSelectedItem(null);
+
+  if (error) {
+    console.error("Save failed:", error);
+    return;
   }
 
-  function deleteItem(itemId: string) {
-    setItems((currentItems) => currentItems.filter((item) => item.id !== itemId));
-    setSelectedItem(null);
+  // refresh UI state
+  setItems((current) => {
+    const exists = current.some((i) => i.id === updatedItem.id);
+    return exists
+      ? current.map((i) => (i.id === updatedItem.id ? updatedItem : i))
+      : [...current, updatedItem];
+  });
+
+  setSelectedItem(null);
+}
+
+  async function deleteItem(itemId: string) {
+  const { error } = await supabase
+    .from("content_review_items")
+    .delete()
+    .eq("id", itemId);
+
+  if (error) {
+    console.error("Delete failed:", error);
+    return;
   }
+
+  setItems((currentItems) =>
+    currentItems.filter((item) => item.id !== itemId)
+  );
+
+  setSelectedItem(null);
+}
 
   function openNewContentModal() {
     setSelectedItem({
