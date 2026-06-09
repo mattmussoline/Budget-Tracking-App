@@ -2,16 +2,33 @@
 
 import Link from "next/link";
 import { LayoutDashboard, Map, Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import { initialContentReviewItems } from "../content-review-data";
+import { useMemo, useState, useEffect } from "react";
 import type { ContentReviewItem } from "../content-review-types";
 import { ContentReviewModal } from "./content-review-modal";
 import { ContentReviewTable } from "./content-review-table";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type EditableField = "reviewStage" | "contractStatus";
 
 export function ContentReviewDashboard() {
   const [items, setItems] = useState<ContentReviewItem[]>(initialContentReviewItems);
+  const supabase = createSupabaseBrowserClient();
+  useEffect(() => {
+  async function loadItems() {
+    const { data, error } = await supabase
+      .from("content_review_items")
+      .select("*");
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return;
+    }
+
+    setItems(data ?? []);
+  }
+
+  loadItems();
+}, []);
   const [selectedItem, setSelectedItem] = useState<ContentReviewItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
