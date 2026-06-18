@@ -13,8 +13,8 @@ const config: Config = {
         success: "#38B2AC"
       },
       fontFamily: {
-        body: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-plus-jakarta)", "system-ui", "sans-serif"]
+        body: ["var(--font-outfit)", "system-ui", "sans-serif"],
+        display: ["var(--font-outfit)", "system-ui", "sans-serif"]
       },
       borderRadius: {
         soft: "32px"

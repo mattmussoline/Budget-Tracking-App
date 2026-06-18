@@ -1,16 +1,22 @@
 import { Users } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
-import { SoftSelect } from "@/components/ui/soft-select";
 import { SoftSurface } from "@/components/ui/soft-surface";
-import { addCollaborator } from "../budget-actions";
+import { inviteInternalUser } from "../auth-actions";
 
 type SharePanelProps = {
-  fiscalYearId: string;
+  canInvite: boolean;
   isDemo?: boolean;
+  invitedUsers: Array<{
+    email: string;
+    invited_by_email: string;
+    created_at: string;
+  }>;
 };
 
-export function SharePanel({ fiscalYearId, isDemo }: SharePanelProps) {
+export function SharePanel({ canInvite, invitedUsers, isDemo }: SharePanelProps) {
+  const isDisabled = isDemo || !canInvite;
+
   return (
     <SoftSurface className="bg-gray-100 p-6 md:p-8">
       <div className="mb-6 flex items-center gap-4">
@@ -18,38 +24,37 @@ export function SharePanel({ fiscalYearId, isDemo }: SharePanelProps) {
           <Users className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Collaborators</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight">Access</h2>
           <p className="text-sm font-medium text-muted">
-            {isDemo
-              ? "Connect Supabase to invite your boss as an editor."
-              : "Share the app link. They sign in with an Augustine email once, then you add that email here."}
+            {canInvite ? "Invite approved internal emails." : "Matt manages invited users for now."}
           </p>
         </div>
       </div>
-      <form action={addCollaborator} className="grid gap-4">
-        <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
+      <form action={inviteInternalUser} className="grid gap-4">
         <SoftInput
-          label="Collaborator email"
+          label="Invite email"
           name="email"
           type="email"
           placeholder="name@augustineinstitute.org"
           required
-          disabled={isDemo}
+          disabled={isDisabled}
         />
-        <SoftSelect
-          label="Role"
-          name="role"
-          defaultValue="editor"
-          disabled={isDemo}
-          options={[
-            { label: "Editor", value: "editor" },
-            { label: "Viewer", value: "viewer" }
-          ]}
-        />
-        <SoftButton type="submit" disabled={isDemo}>
-          Add collaborator
+        <SoftButton type="submit" disabled={isDisabled}>
+          Invite user
         </SoftButton>
       </form>
+      {invitedUsers.length > 0 ? (
+        <div className="mt-6 grid gap-2">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Invited users</p>
+          <ul className="grid gap-2">
+            {invitedUsers.map((user) => (
+              <li className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-foreground" key={user.email}>
+                {user.email}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </SoftSurface>
   );
 }

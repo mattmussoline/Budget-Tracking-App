@@ -48,6 +48,8 @@ describe("calculateLicenseSchedule", () => {
       id: "frassati",
       title: "Frassati",
       provider: "Example Provider",
+      contentType: "standalone",
+      episodeCount: null,
       installmentCents: 170000,
       cadence: "quarterly",
       addedFiscalMonth: 3
@@ -66,6 +68,8 @@ describe("calculateLicenseSchedule", () => {
       id: "glorious",
       title: "Glorious Mysteries",
       provider: "Example Provider",
+      contentType: "standalone",
+      episodeCount: null,
       installmentCents: 12500,
       cadence: "quarterly",
       addedFiscalMonth: 5
@@ -79,6 +83,8 @@ describe("calculateLicenseSchedule", () => {
       id: "december",
       title: "December License",
       provider: "Example Provider",
+      contentType: "standalone",
+      episodeCount: null,
       installmentCents: 12500,
       cadence: "quarterly",
       addedFiscalMonth: 6
@@ -92,6 +98,8 @@ describe("calculateLicenseSchedule", () => {
       id: "yearly",
       title: "Annual License",
       provider: "Example Provider",
+      contentType: "standalone",
+      episodeCount: null,
       installmentCents: 240000,
       cadence: "yearly",
       addedFiscalMonth: 10

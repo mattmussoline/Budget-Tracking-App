@@ -1,0 +1,102 @@
+export const contentReviewOptions = {
+  providers: [
+    "Thomistic Institute",
+    "Minno",
+    "Kin",
+    "10th Hour Productions",
+    "Lumine",
+    "Brentwood Studios",
+    "Ahava Productions",
+    "Friends and Heroes",
+    "Other"
+  ],
+  genres: [
+    "Scripture Reflection",
+    "Spanish",
+    "Scripture Reading",
+    "Scripture Study",
+    "Everyday Living",
+    "Interview Show",
+    "Kids' Christian Living",
+    "Catechism of the Catholic Church",
+    "Apologetics",
+    "Women's Conference",
+    "Spanish Kids",
+    "Second Millennium Saints",
+    "Lent and Easter",
+    "Leader Formation",
+    "Kids' Scripture",
+    "Advent and Christmas",
+    "Prayer Recordings",
+    "First Millennium Saints",
+    "Church History",
+    "Evangelization",
+    "Portuguese",
+    "Kids' Saints",
+    "Pro-Life",
+    "How to Pray",
+    "Scripture Conference",
+    "Sacraments of Healing",
+    "Kids' Education",
+    "Testimony",
+    "Kids' Music",
+    "Morality and Virtue",
+    "Mental Health",
+    "Parenting and Family Life",
+    "Vocational Discernment",
+    "Faith and Science",
+    "Human Sexuality",
+    "Narrative Fiction",
+    "Liturgy",
+    "Sacraments of Initiation",
+    "Path to Sainthood",
+    "Third Millennium Saints",
+    "Sacraments of Service",
+    "Liturgical Living",
+    "Sacred Art",
+    "Biography",
+    "Young Adult Conference",
+    "Scripture Drama",
+    "Christian Music",
+    "Hymns",
+    "French",
+    "Historical Fiction",
+    "Men's Conference",
+    "Polish",
+    "Italian",
+    "Ordinary Time",
+    "Kids' Prayer"
+  ],
+  formats: [
+    "Movie",
+    "Documentary",
+    "Prayer",
+    "Kids Movie",
+    "Music Video",
+    "Presentation",
+    "TV Show",
+    "Docu-Series",
+    "Conversations",
+    "Kids Show",
+    "Reflection",
+    "Formation Series"
+  ],
+  reviewStages: ["New Request", "Under Review", "Needs Decision", "Approved", "Rejected", "Parked"],
+  contractStatuses: [
+    "Not Started",
+    "Outreach Needed",
+    "In Discussion",
+    "Contract Negotiation",
+    "Contract Executed",
+    "Rights Declined"
+  ],
+  audiences: ["Kids", "Teens/YA", "Adults"]
+} as const;
+
+export type ContentReviewOptionGroup = keyof typeof contentReviewOptions;
+export type ProviderOption = (typeof contentReviewOptions.providers)[number];
+export type GenreOption = (typeof contentReviewOptions.genres)[number];
+export type FormatOption = (typeof contentReviewOptions.formats)[number];
+export type ReviewStageOption = (typeof contentReviewOptions.reviewStages)[number];
+export type ContractStatusOption = (typeof contentReviewOptions.contractStatuses)[number];
+export type AudienceOption = (typeof contentReviewOptions.audiences)[number];

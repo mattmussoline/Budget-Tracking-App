@@ -48,15 +48,14 @@ Without Supabase environment variables, the app runs in local demo mode with see
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
+APP_PASSWORD=choose-a-strong-shared-internal-password
 ```
 
-4. Enable Microsoft Azure/Outlook OAuth in Supabase Auth.
-5. Sign in once as Matt.
-6. Create the fiscal year.
-7. Ask the boss to sign in once.
-8. Add the boss's Supabase user id as an editor from the Share panel.
+4. Sign in as `matt.mussoline@augustineinstitute.org` with the shared app password.
+5. Create the fiscal year.
+6. Invite additional internal users from the Access panel.
 
-The app only accepts signed-in users whose email ends in `@augustineinstitute.org` or `@augustine.edu`.
+The app only accepts invited users whose normalized email ends in `@augustineinstitute.org` or `@augustine.edu`. Matt is the initial admin and can invite users.
 
 ## Vercel Deployment
 
@@ -67,10 +66,10 @@ The app only accepts signed-in users whose email ends in `@augustineinstitute.or
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
+APP_PASSWORD
 ```
 
-3. In Supabase Auth URL configuration, add the Vercel production URL and preview URL pattern as allowed redirect URLs.
-4. Deploy with Vercel after tests and local browser verification pass.
+3. Deploy with Vercel after tests and local browser verification pass.
 
 ## Verification
 

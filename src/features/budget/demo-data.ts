@@ -13,6 +13,8 @@ export const demoLicenses: ContentLicense[] = [
     id: "frassati",
     title: "Frassati",
     provider: "Saint Films",
+    contentType: "standalone",
+    episodeCount: null,
     installmentCents: 170000,
     cadence: "quarterly",
     addedFiscalMonth: 3
@@ -21,6 +23,8 @@ export const demoLicenses: ContentLicense[] = [
     id: "ben-cello",
     title: "Ben Cello",
     provider: "Catholic Kids Media",
+    contentType: "series",
+    episodeCount: 10,
     installmentCents: 600000,
     cadence: "quarterly",
     addedFiscalMonth: 4
@@ -29,6 +33,8 @@ export const demoLicenses: ContentLicense[] = [
     id: "glorious",
     title: "Glorious Mysteries",
     provider: "Rosary Studios",
+    contentType: "standalone",
+    episodeCount: null,
     installmentCents: 12500,
     cadence: "quarterly",
     addedFiscalMonth: 6
@@ -37,6 +43,8 @@ export const demoLicenses: ContentLicense[] = [
     id: "ardent-heart",
     title: "An Ardent Heart",
     provider: "Apostolate Films",
+    contentType: "standalone",
+    episodeCount: null,
     installmentCents: 16667,
     cadence: "yearly",
     addedFiscalMonth: 12

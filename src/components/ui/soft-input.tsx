@@ -14,7 +14,7 @@ export function SoftInput({ label, error, className, id, ...props }: SoftInputPr
       <input
         id={fieldId}
         className={cn(
-          "min-h-12 w-full rounded-md border-0 bg-gray-100 px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-gray-500 focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70",
+          "min-h-12 w-full rounded-md border-0 bg-white px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-gray-400 focus:border-2 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-70",
           className
         )}
         {...props}
