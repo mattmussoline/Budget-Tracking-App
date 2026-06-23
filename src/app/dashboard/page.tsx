@@ -1,11 +1,10 @@
-import { redirect } from "next/navigation";
 import { BudgetDashboard } from "@/features/budget/components/budget-dashboard";
 import { demoFiscalYear, demoLicenses } from "@/features/budget/demo-data";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
-import { isAllowedWorkEmail } from "@/lib/auth/domain-access";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireInternalSession } from "@/lib/auth/internal-auth-server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type DashboardPageProps = {
   searchParams?: Promise<{
@@ -15,9 +14,9 @@ type DashboardPageProps = {
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const selectedFiscalYearId = (await searchParams)?.fy;
-  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
 
-  if (!supabase) {
+  if (!admin) {
     const model = buildDashboardModel({
       fiscalYear: demoFiscalYear.fiscal_year,
       fiscalYearStartMonth: demoFiscalYear.fiscal_year_start_month,
@@ -36,18 +35,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     );
   }
 
-  const { data: userData } = await supabase.auth.getUser();
+  const session = await requireInternalSession();
 
-  if (!userData.user) {
-    redirect("/login");
-  }
-
-  if (!isAllowedWorkEmail(userData.user.email)) {
-    await supabase.auth.signOut();
-    redirect("/login?error=domain");
-  }
-
-  const { data: fiscalYears, error: fiscalYearsError } = await supabase
+  const { data: fiscalYears, error: fiscalYearsError } = await admin
     .from("fiscal_years")
     .select("id,label,fiscal_year,fiscal_year_start_month,budget_cents")
     .order("fiscal_year", { ascending: false });
@@ -63,7 +53,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     return <BudgetDashboard fiscalYear={null} fiscalYears={[]} model={null} licenses={[]} mode="live" />;
   }
 
-  const { data: licenseRows, error: licensesError } = await supabase
+  const { data: licenseRows, error: licensesError } = await admin
     .from("content_licenses")
     .select("id,title,provider,installment_cents,cadence,added_fiscal_month,notes")
     .eq("fiscal_year_id", activeFiscalYear.id)
@@ -73,7 +63,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     throw new Error(licensesError.message);
   }
 
-  const { data: providerColorRows, error: providerColorError } = await supabase
+  const { data: providerColorRows, error: providerColorError } = await admin
     .from("provider_color_overrides")
     .select("provider,color_key")
     .eq("fiscal_year_id", activeFiscalYear.id);
@@ -110,6 +100,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       licenses={licenses}
       providerColorOverrides={providerColorOverrides}
       mode="live"
+      userEmail={session.email}
     />
   );
 }

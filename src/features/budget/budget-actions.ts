@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { allowedEmailDomainText, isAllowedWorkEmail } from "@/lib/auth/domain-access";
+import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { dollarsToCents } from "@/lib/currency";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { providerColorOptions } from "./provider-colors";
 
 const fiscalYearSchema = z.object({
@@ -51,9 +51,8 @@ const providerColorSchema = z.object({
 });
 
 export async function createFiscalYear(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -67,15 +66,13 @@ export async function createFiscalYear(formData: FormData) {
     throw new Error("Budget must be a positive dollar amount.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
+  const session = await requireInternalSession();
+  const userId = await ensureSupabaseUserId(admin, session.email);
 
   const { data: fiscalYear, error } = await admin
     .from("fiscal_years")
     .insert({
-      owner_id: userData.user.id,
+      owner_id: userId,
       label: parsed.data.label,
       fiscal_year: parsed.data.fiscalYear,
       fiscal_year_start_month: parsed.data.fiscalYearStartMonth,
@@ -93,9 +90,8 @@ export async function createFiscalYear(formData: FormData) {
 }
 
 export async function addContentLicense(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -109,15 +105,7 @@ export async function addContentLicense(formData: FormData) {
     throw new Error("Payment amount must be a positive dollar amount.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
-
-  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
-  if (!canEdit) {
-    throw new Error("You do not have permission to add content to this fiscal year.");
-  }
+  await requireInternalSession();
 
   const { error } = await admin.from("content_licenses").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
@@ -137,9 +125,8 @@ export async function addContentLicense(formData: FormData) {
 }
 
 export async function updateFiscalYear(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -153,15 +140,7 @@ export async function updateFiscalYear(formData: FormData) {
     throw new Error("Budget must be a positive dollar amount.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
-
-  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
-  if (!canEdit) {
-    throw new Error("You do not have permission to edit this fiscal year.");
-  }
+  await requireInternalSession();
 
   const { error } = await admin
     .from("fiscal_years")
@@ -181,9 +160,8 @@ export async function updateFiscalYear(formData: FormData) {
 }
 
 export async function updateContentLicense(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -197,15 +175,7 @@ export async function updateContentLicense(formData: FormData) {
     throw new Error("Payment amount must be a positive dollar amount.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
-
-  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
-  if (!canEdit) {
-    throw new Error("You do not have permission to edit this content.");
-  }
+  await requireInternalSession();
 
   const { error } = await admin
     .from("content_licenses")
@@ -228,9 +198,8 @@ export async function updateContentLicense(formData: FormData) {
 }
 
 export async function deleteContentLicense(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -239,10 +208,7 @@ export async function deleteContentLicense(formData: FormData) {
     throw new Error("Choose a valid content title to delete.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
+  await requireInternalSession();
 
   const { data: license, error: licenseError } = await admin
     .from("content_licenses")
@@ -252,11 +218,6 @@ export async function deleteContentLicense(formData: FormData) {
 
   if (licenseError || !license) {
     throw new Error("Could not find that content title.");
-  }
-
-  const canEdit = await hasFiscalYearRole(admin, license.fiscal_year_id, userData.user.id, ["owner", "editor"]);
-  if (!canEdit) {
-    throw new Error("You do not have permission to delete this content.");
   }
 
   const { error } = await admin.from("content_licenses").delete().eq("id", parsed.data.licenseId);
@@ -269,9 +230,8 @@ export async function deleteContentLicense(formData: FormData) {
 }
 
 export async function addCollaborator(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -284,15 +244,7 @@ export async function addCollaborator(formData: FormData) {
     throw new Error(`Collaborators must use ${allowedEmailDomainText()} email addresses.`);
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
-
-  const isOwner = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner"]);
-  if (!isOwner) {
-    throw new Error("Only the fiscal year owner can add collaborators.");
-  }
+  await requireInternalSession();
 
   const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (usersError) {
@@ -300,13 +252,11 @@ export async function addCollaborator(formData: FormData) {
   }
 
   const collaborator = usersData.users.find((user) => user.email?.toLowerCase() === parsed.data.email.toLowerCase());
-  if (!collaborator) {
-    throw new Error("That person needs to sign in with Outlook once before you can add them.");
-  }
+  const collaboratorId = collaborator?.id ?? (await ensureSupabaseUserId(admin, parsed.data.email));
 
   const { error } = await admin.from("fiscal_year_members").upsert({
     fiscal_year_id: parsed.data.fiscalYearId,
-    user_id: collaborator.id,
+    user_id: collaboratorId,
     role: parsed.data.role
   });
 
@@ -318,9 +268,8 @@ export async function addCollaborator(formData: FormData) {
 }
 
 export async function updateProviderColor(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
-  if (!supabase || !admin) {
+  if (!admin) {
     return;
   }
 
@@ -329,15 +278,7 @@ export async function updateProviderColor(formData: FormData) {
     throw new Error("Choose a valid provider color.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    redirect("/login");
-  }
-
-  const canEdit = await hasFiscalYearRole(admin, parsed.data.fiscalYearId, userData.user.id, ["owner", "editor"]);
-  if (!canEdit) {
-    throw new Error("You do not have permission to change provider colors.");
-  }
+  await requireInternalSession();
 
   const { error } = await admin.from("provider_color_overrides").upsert({
     fiscal_year_id: parsed.data.fiscalYearId,
@@ -352,18 +293,25 @@ export async function updateProviderColor(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-async function hasFiscalYearRole(
-  admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
-  fiscalYearId: string,
-  userId: string,
-  roles: string[]
-) {
-  const { data: membership, error } = await admin
-    .from("fiscal_year_members")
-    .select("role")
-    .eq("fiscal_year_id", fiscalYearId)
-    .eq("user_id", userId)
-    .single();
+async function ensureSupabaseUserId(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, email: string) {
+  const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (usersError) {
+    throw new Error(usersError.message);
+  }
 
-  return !error && membership ? roles.includes(membership.role) : false;
+  const existingUser = usersData.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
+  if (existingUser) {
+    return existingUser.id;
+  }
+
+  const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true
+  });
+
+  if (createError || !createdUser.user) {
+    throw new Error(createError?.message ?? "Could not prepare that internal user.");
+  }
+
+  return createdUser.user.id;
 }

@@ -1,69 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Mail } from "lucide-react";
+import { useActionState } from "react";
+import { KeyRound, Mail } from "lucide-react";
 import { allowedEmailDomainText } from "@/lib/auth/domain-access";
 import { SoftButton } from "@/components/ui/soft-button";
+import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSurface } from "@/components/ui/soft-surface";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { login } from "@/features/budget/auth-actions";
 
 export default function LoginPage() {
-  const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const hasSupabaseEnv = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "domain") {
-      setMessage(`Please sign in with ${allowedEmailDomainText()}.`);
-    }
-  }, []);
-
-  async function signInWithOutlook() {
-    if (!hasSupabaseEnv) {
-      setMessage("Supabase env vars are not configured yet. The dashboard is running in local demo mode.");
-      return;
-    }
-
-    setIsSending(true);
-    setMessage("");
-
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "azure",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-        queryParams: {
-          prompt: "select_account"
-        }
-      }
-    });
-
-    setIsSending(false);
-    if (error) {
-      setMessage(error.message);
-    }
-  }
+  const [message, formAction, isPending] = useActionState(login, null);
 
   return (
     <main className="grid min-h-screen place-items-center px-6 py-12">
       <SoftSurface className="w-full max-w-md p-8">
         <div className="mb-8 grid gap-3 text-center">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl soft-inset-deep">
-            <Mail className="h-6 w-6 text-accent" aria-hidden="true" />
+            <KeyRound className="h-6 w-6 text-accent" aria-hidden="true" />
           </div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">Licensing Budget</h1>
-          <p className="text-muted">Use an Augustine Outlook account from {allowedEmailDomainText()} to manage fiscal-year content licensing spend.</p>
+          <p className="text-muted">Use your Augustine email and the shared internal password.</p>
         </div>
-        <div className="grid gap-5">
-          <SoftButton type="button" variant="primary" disabled={isSending} onClick={signInWithOutlook}>
+        <form action={formAction} className="grid gap-5">
+          <SoftInput
+            label="Work email"
+            name="email"
+            type="email"
+            placeholder={`name${allowedEmailDomainText().split(" or ")[0]}`}
+            autoComplete="email"
+            required
+          />
+          <SoftInput label="Shared password" name="password" type="password" autoComplete="current-password" required />
+          <SoftButton type="submit" variant="primary" disabled={isPending}>
             <Mail className="h-5 w-5" aria-hidden="true" />
-            {isSending ? "Opening Outlook..." : "Continue with Outlook"}
+            {isPending ? "Signing in..." : "Sign in"}
           </SoftButton>
           {message ? <p className="text-center text-sm font-medium text-muted">{message}</p> : null}
-        </div>
+        </form>
       </SoftSurface>
     </main>
   );

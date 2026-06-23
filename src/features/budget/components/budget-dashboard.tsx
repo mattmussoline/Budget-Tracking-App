@@ -8,6 +8,7 @@ import { MonthBoard } from "./month-board";
 import { ProviderSummary } from "./provider-summary";
 import { SharePanel } from "./share-panel";
 import { SummaryMetrics } from "./summary-metrics";
+import { logout } from "../auth-actions";
 import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
 import type { ProviderColorOverrides } from "../provider-colors";
@@ -27,9 +28,10 @@ type BudgetDashboardProps = {
   licenses: ContentLicense[];
   providerColorOverrides?: ProviderColorOverrides;
   mode: "demo" | "live";
+  userEmail?: string;
 };
 
-export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, providerColorOverrides = {}, mode }: BudgetDashboardProps) {
+export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, providerColorOverrides = {}, mode, userEmail }: BudgetDashboardProps) {
   const isDemo = mode === "demo";
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
@@ -72,6 +74,22 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
             <p className="text-base font-semibold leading-7 text-blue-50">
               Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.
             </p>
+            <nav className="flex flex-wrap gap-2" aria-label="Planning sections">
+              <Link className="rounded-md bg-white px-3 py-2 text-sm font-extrabold text-blue-700" href="/roadmap">
+                Roadmap
+              </Link>
+              <Link className="rounded-md bg-blue-400 px-3 py-2 text-sm font-extrabold text-white hover:bg-white/20" href="/content-review">
+                Content Review
+              </Link>
+            </nav>
+            {userEmail ? (
+              <form action={logout} className="flex flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
+                <span>{userEmail}</span>
+                <button type="submit" className="rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
+                  Logout
+                </button>
+              </form>
+            ) : null}
             {isDemo ? (
               <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700">
                 Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
