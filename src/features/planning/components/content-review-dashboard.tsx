@@ -6,7 +6,7 @@ import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
 import { addContentReviewItem, deleteContentReviewItem, updateContentReviewItem } from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
-import { formatOptionalCurrency } from "../planning-model";
+import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ReviewStatus } from "../planning-types";
 import { ColoredSelect } from "./colored-select";
 
@@ -106,7 +106,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
               <div key={item.id} role="button" tabIndex={0} aria-current={active ? "true" : undefined} onClick={() => setSelectedId(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.id); }} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
                 <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
                 <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                <input aria-label="Summary Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "proposedRateCents", Math.round(Number(event.target.value.replace(/[$,]/g, "")) * 100) || null)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
+                <CurrencyInput ariaLabel="Summary Proposed Rate" value={item.proposedRateCents} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(value) => changeItem(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
                 <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
               </div>
             );
@@ -126,7 +126,7 @@ function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fi
     <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
     <div className="grid gap-4 md:grid-cols-2">
       <Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} />
-      <Field label="Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} onChange={(value) => onChange("proposedRateCents", Math.round(Number(value.replace(/[$,]/g, "")) * 100) || null)} disabled={isDemo} />
+      <CurrencyField label="Proposed Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} />
       <Field label="Provider" value={item.provider ?? ""} onChange={(value) => onChange("provider", value)} disabled={isDemo} />
       <ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} />
       <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} />
@@ -144,6 +144,33 @@ function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fi
 
 function Field({ label, value, onChange, disabled, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; type?: string }) {
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+}
+
+function CurrencyField({ label, value, onChange, disabled }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean }) {
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+}
+
+function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, className }: { ariaLabel: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLInputElement>; className: string }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftValue, setDraftValue] = useState("");
+
+  return <input
+    aria-label={ariaLabel}
+    inputMode="decimal"
+    value={isEditing ? draftValue : formatOptionalCurrency(value)}
+    disabled={disabled}
+    onClick={onClick}
+    onFocus={() => {
+      setDraftValue(value === null ? "" : String(value / 100));
+      setIsEditing(true);
+    }}
+    onBlur={() => setIsEditing(false)}
+    onChange={(event) => {
+      setDraftValue(event.target.value);
+      onChange(dollarsToOptionalCents(event.target.value));
+    }}
+    className={className}
+  />;
 }
 
 function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {

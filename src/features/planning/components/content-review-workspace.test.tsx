@@ -61,6 +61,21 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Format")).toContainHTML("Ministry Resource");
   });
 
+  it("lets users type a multi-digit proposed rate before formatting it", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const proposedRate = screen.getByLabelText("Summary Proposed Rate");
+    fireEvent.focus(proposedRate);
+    fireEvent.change(proposedRate, { target: { value: "1" } });
+    fireEvent.change(proposedRate, { target: { value: "12" } });
+    fireEvent.change(proposedRate, { target: { value: "123" } });
+
+    expect(proposedRate).toHaveValue("123");
+
+    fireEvent.blur(proposedRate);
+    expect(proposedRate).toHaveValue("$123.00");
+  });
+
   it("creates a draft only once from the explicit save button", async () => {
     let resolveSave: ((saved: ContentReviewItem) => void) | undefined;
     actionMocks.addContentReviewItem.mockReturnValue(new Promise<ContentReviewItem>((resolve) => {
