@@ -5,7 +5,8 @@ export const demoFiscalYear = {
   label: "FY26 Licensing Budget",
   fiscal_year: 2026,
   fiscal_year_start_month: 7,
-  budget_cents: 3000000
+  budget_cents: 3000000,
+  is_pinned: true
 };
 
 export const demoLicenses: ContentLicense[] = [

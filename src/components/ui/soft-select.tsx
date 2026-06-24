@@ -5,9 +5,10 @@ type SoftSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   options: Array<{ label: string; value: string }>;
   placeholder?: string;
   error?: string;
+  surface?: "muted" | "white";
 };
 
-export function SoftSelect({ label, options, placeholder, error, className, id, ...props }: SoftSelectProps) {
+export function SoftSelect({ label, options, placeholder, error, surface = "muted", className, id, ...props }: SoftSelectProps) {
   const fieldId = id ?? props.name;
 
   return (
@@ -16,7 +17,8 @@ export function SoftSelect({ label, options, placeholder, error, className, id, 
       <select
         id={fieldId}
         className={cn(
-          "min-h-12 w-full rounded-md border-0 bg-gray-100 px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70",
+          "min-h-12 w-full rounded-md border-0 px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70",
+          surface === "white" ? "bg-white" : "bg-gray-100",
           className
         )}
         {...props}

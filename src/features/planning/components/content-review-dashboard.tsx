@@ -1,91 +1,145 @@
-import { ListPlus, Trash2 } from "lucide-react";
+"use client";
+
+import { Plus, Save, Trash2 } from "lucide-react";
+import { useState, useTransition } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
-import { SoftInput } from "@/components/ui/soft-input";
-import { SoftSelect } from "@/components/ui/soft-select";
-import { SoftSurface } from "@/components/ui/soft-surface";
+import { cn } from "@/components/ui/soft-surface";
 import { addContentReviewItem, deleteContentReviewItem, updateContentReviewItem } from "../planning-actions";
-import type { ContentReviewItem } from "../planning-types";
+import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
+import { formatOptionalCurrency } from "../planning-model";
+import type { ContentReviewItem, ReviewStatus } from "../planning-types";
+import { ColoredSelect } from "./colored-select";
 
-type ContentReviewDashboardProps = {
-  fiscalYearId: string;
-  items: ContentReviewItem[];
-  isDemo?: boolean;
-};
+type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; isDemo?: boolean };
+type SaveState = "idle" | "saving" | "saved" | "error";
 
-const reviewStages = [
-  { label: "New", value: "new" },
-  { label: "Reviewing", value: "reviewing" },
-  { label: "Approved", value: "approved" },
-  { label: "Parked", value: "parked" },
-  { label: "Rejected", value: "rejected" }
-];
+const blankDraft = (): ContentReviewItem => ({
+  id: "draft",
+  title: "",
+  provider: "",
+  genre: "",
+  format: "",
+  reviewStatus: "not_started",
+  notes: "",
+  proposedRateCents: null,
+  reviewLink: "",
+  comparableContent: ""
+});
 
 export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentReviewDashboardProps) {
-  return (
-    <div className="grid gap-8 xl:grid-cols-[420px_1fr]">
-      <SoftSurface className="h-fit bg-blue-50 p-6 md:p-8">
-        <div className="mb-6 flex items-center gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-500">
-            <ListPlus className="h-5 w-5 text-white" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 className="font-display text-2xl font-extrabold tracking-tight">Add Review Content</h2>
-            <p className="text-sm font-medium text-muted">This queue saves to Supabase.</p>
-          </div>
-        </div>
-        <form action={addContentReviewItem} className="grid gap-4">
-          <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-          <SoftInput label="Title" name="title" placeholder="Content title" required disabled={isDemo} />
-          <SoftInput label="Provider" name="provider" placeholder="Provider name" disabled={isDemo} />
-          <SoftInput label="Genre" name="genre" placeholder="Formation" disabled={isDemo} />
-          <SoftInput label="Format" name="format" placeholder="Series, film, course..." disabled={isDemo} />
-          <SoftSelect label="Stage" name="stage" defaultValue="new" options={reviewStages} disabled={isDemo} />
-          <SoftInput label="Notes" name="notes" placeholder="Review notes" disabled={isDemo} />
-          <SoftButton type="submit" variant="primary" disabled={isDemo}>
-            Add to review
-          </SoftButton>
-        </form>
-      </SoftSurface>
+  const [records, setRecords] = useState(items);
+  const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
+  const [draft, setDraft] = useState<ContentReviewItem | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [isPending, startTransition] = useTransition();
+  const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
 
-      <SoftSurface className="overflow-hidden bg-gray-900">
-        <div className="p-6 text-white md:p-8">
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Saved Content Review</h2>
-          <p className="mt-1 text-sm font-medium text-gray-300">{items.length} review items saved.</p>
+  function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | null) {
+    if (id === "draft") {
+      setDraft((current) => current ? { ...current, [field]: value } : current);
+      return;
+    }
+    setRecords((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+  }
+
+  function itemFormData(item: ContentReviewItem) {
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    if (item.id !== "draft") formData.set("itemId", item.id);
+    formData.set("title", item.title);
+    formData.set("provider", item.provider ?? "");
+    formData.set("genre", item.genre ?? "");
+    formData.set("format", item.format ?? "");
+    formData.set("reviewStatus", item.reviewStatus);
+    formData.set("notes", item.notes ?? "");
+    formData.set("proposedRate", formatOptionalCurrency(item.proposedRateCents));
+    formData.set("reviewLink", item.reviewLink ?? "");
+    formData.set("comparableContent", item.comparableContent ?? "");
+    return formData;
+  }
+
+  function save(item: ContentReviewItem) {
+    if (isDemo || !item.title.trim()) return;
+    setSaveState("saving");
+    startTransition(async () => {
+      try {
+        const formData = itemFormData(item);
+        if (item.id === "draft") await addContentReviewItem(formData);
+        else await updateContentReviewItem(formData);
+        setSaveState("saved");
+      } catch {
+        setSaveState("error");
+      }
+    });
+  }
+
+  function addDraft() {
+    const next = blankDraft();
+    setDraft(next);
+    setSelectedId("draft");
+    setSaveState("idle");
+  }
+
+  const queue = draft ? [draft, ...records] : records;
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
+      <section className="rounded-lg bg-gray-100 p-4 md:p-6">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
+          <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
         </div>
-        <div className="grid gap-4 bg-gray-100 p-4 md:p-6">
-          {items.length === 0 ? (
-            <p className="rounded-lg bg-white p-4 text-sm font-bold text-muted">Add content to start the review queue.</p>
-          ) : (
-            items.map((item) => (
-              <div key={item.id} className="rounded-lg bg-white p-4">
-                <form action={updateContentReviewItem} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-                  <input type="hidden" name="itemId" value={item.id} />
-                  <SoftInput label="Title" name="title" defaultValue={item.title} required disabled={isDemo} />
-                  <SoftInput label="Provider" name="provider" defaultValue={item.provider ?? ""} disabled={isDemo} />
-                  <SoftInput label="Genre" name="genre" defaultValue={item.genre ?? ""} disabled={isDemo} />
-                  <SoftInput label="Format" name="format" defaultValue={item.format ?? ""} disabled={isDemo} />
-                  <SoftSelect label="Stage" name="stage" defaultValue={item.stage} options={reviewStages} disabled={isDemo} />
-                  <SoftInput label="Notes" name="notes" defaultValue={item.notes ?? ""} disabled={isDemo} />
-                  <div className="grid gap-2 sm:grid-cols-2 xl:col-span-3">
-                    <SoftButton type="submit" variant="primary" disabled={isDemo}>
-                      Save
-                    </SoftButton>
-                    <SoftButton form={`delete-review-${item.id}`} type="submit" variant="ghost" className="text-red-700 hover:bg-red-100" disabled={isDemo}>
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      Delete
-                    </SoftButton>
-                  </div>
-                </form>
-                <form id={`delete-review-${item.id}`} action={deleteContentReviewItem}>
-                  <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-                  <input type="hidden" name="itemId" value={item.id} />
-                </form>
+        <div className="mb-2 hidden grid-cols-[1.3fr_1fr_0.9fr_1fr] gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid">
+          <span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+        </div>
+        <div className="grid gap-2">
+          {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : queue.map((item) => {
+            const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
+            const active = selectedId === item.id;
+            return (
+              <div key={item.id} role="button" tabIndex={0} aria-current={active ? "true" : undefined} onClick={() => setSelectedId(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.id); }} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
+                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                <input aria-label="Summary Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "proposedRateCents", Math.round(Number(event.target.value.replace(/[$,]/g, "")) * 100) || null)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
+                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
-      </SoftSurface>
+      </section>
+
+      <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
+        {selected ? <ReviewEditor item={selected} isDemo={isDemo} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
+      </section>
     </div>
   );
+}
+
+function ReviewEditor({ item, isDemo, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; isDemo?: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
+  return <div className="grid gap-5">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} />
+      <Field label="Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} onChange={(value) => onChange("proposedRateCents", Math.round(Number(value.replace(/[$,]/g, "")) * 100) || null)} disabled={isDemo} />
+      <Field label="Provider" value={item.provider ?? ""} onChange={(value) => onChange("provider", value)} disabled={isDemo} />
+      <ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} />
+      <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} />
+      <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} />
+      <div className="md:col-span-2"><Field label="Review Link" type="url" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} /></div>
+      <TextArea label="Review Notes" value={item.notes ?? ""} onChange={(value) => onChange("notes", value)} disabled={isDemo} />
+      <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
+    </div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}?`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : <span />}
+      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
+    </div>
+  </div>;
+}
+
+function Field({ label, value, onChange, disabled, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; type?: string }) {
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+}
+
+function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={5} className="rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal" /></label>;
 }

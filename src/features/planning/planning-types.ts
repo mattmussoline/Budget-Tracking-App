@@ -4,9 +4,18 @@ export type RoadmapItem = {
   id: string;
   title: string;
   provider: string | null;
-  releaseMonth: string;
+  releaseDate: string | null;
   status: RoadmapStatus;
   notes: string | null;
+  categoryId: string | null;
+};
+
+export type RoadmapCategory = {
+  id: string;
+  name: string;
+  colorKey: string;
+  sortOrder: number;
+  isActive: boolean;
 };
 
 export type OngoingSeries = {
@@ -16,7 +25,7 @@ export type OngoingSeries = {
   notes: string | null;
 };
 
-export type ReviewStage = "new" | "reviewing" | "approved" | "parked" | "rejected";
+export type ReviewStatus = "not_started" | "in_progress" | "blocked" | "rejected" | "approved";
 
 export type ContentReviewItem = {
   id: string;
@@ -24,6 +33,9 @@ export type ContentReviewItem = {
   provider: string | null;
   genre: string | null;
   format: string | null;
-  stage: ReviewStage;
+  reviewStatus: ReviewStatus;
   notes: string | null;
+  proposedRateCents: number | null;
+  reviewLink: string | null;
+  comparableContent: string | null;
 };

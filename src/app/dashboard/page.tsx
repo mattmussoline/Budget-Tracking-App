@@ -1,6 +1,7 @@
 import { BudgetDashboard } from "@/features/budget/components/budget-dashboard";
 import { demoFiscalYear, demoLicenses } from "@/features/budget/demo-data";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
+import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
@@ -39,15 +40,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const { data: fiscalYears, error: fiscalYearsError } = await admin
     .from("fiscal_years")
-    .select("id,label,fiscal_year,fiscal_year_start_month,budget_cents")
+    .select("id,label,fiscal_year,fiscal_year_start_month,budget_cents,is_pinned")
     .order("fiscal_year", { ascending: false });
 
   if (fiscalYearsError) {
     throw new Error(fiscalYearsError.message);
   }
 
-  const activeFiscalYear =
-    fiscalYears?.find((fiscalYear) => fiscalYear.id === selectedFiscalYearId) ?? fiscalYears?.[0] ?? null;
+  const activeFiscalYear = selectFiscalYear(fiscalYears ?? [], selectedFiscalYearId);
 
   if (!activeFiscalYear) {
     return <BudgetDashboard fiscalYear={null} fiscalYears={[]} model={null} licenses={[]} mode="live" />;

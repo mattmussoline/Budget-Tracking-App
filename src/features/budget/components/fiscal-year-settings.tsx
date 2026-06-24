@@ -23,6 +23,7 @@ const monthOptions = [
 
 type FiscalYearSettingsProps = {
   isDemo?: boolean;
+  defaultFiscalYear?: number;
   fiscalYear?: {
     id: string;
     label: string;
@@ -32,7 +33,7 @@ type FiscalYearSettingsProps = {
   };
 };
 
-export function FiscalYearSettings({ isDemo, fiscalYear }: FiscalYearSettingsProps) {
+export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYear }: FiscalYearSettingsProps) {
   const isEditing = Boolean(fiscalYear);
 
   return (
@@ -52,8 +53,21 @@ export function FiscalYearSettings({ isDemo, fiscalYear }: FiscalYearSettingsPro
       </div>
       <form action={isEditing ? updateFiscalYear : createFiscalYear} className="grid gap-4 md:grid-cols-2">
         {fiscalYear ? <input type="hidden" name="fiscalYearId" value={fiscalYear.id} /> : null}
-        <SoftInput label="Label" name="label" defaultValue={fiscalYear?.label ?? "FY26 Licensing Budget"} required disabled={isDemo} />
-        <SoftInput label="Fiscal year" name="fiscalYear" type="number" defaultValue={fiscalYear?.fiscal_year ?? 2026} required disabled={isDemo} />
+        <SoftInput
+          label="Label"
+          name="label"
+          defaultValue={fiscalYear?.label ?? `FY${String(defaultFiscalYear).slice(-2)} Licensing Budget`}
+          required
+          disabled={isDemo}
+        />
+        <SoftInput
+          label="Fiscal year"
+          name="fiscalYear"
+          type="number"
+          defaultValue={fiscalYear?.fiscal_year ?? defaultFiscalYear}
+          required
+          disabled={isDemo}
+        />
         <SoftSelect
           label="FY starts in"
           name="fiscalYearStartMonth"

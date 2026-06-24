@@ -5,6 +5,7 @@ create table if not exists public.fiscal_years (
   fiscal_year integer not null,
   fiscal_year_start_month integer not null default 7 check (fiscal_year_start_month between 1 and 12),
   budget_cents integer not null check (budget_cents >= 0),
+  is_pinned boolean not null default false,
   currency text not null default 'USD',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -40,14 +41,27 @@ create table if not exists public.provider_color_overrides (
   primary key (fiscal_year_id, provider)
 );
 
+create table if not exists public.roadmap_categories (
+  id uuid primary key default gen_random_uuid(),
+  fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
+  name text not null,
+  color_key text not null default 'blue' check (color_key in ('blue', 'amber', 'green', 'purple', 'red', 'cyan', 'orange', 'slate')),
+  sort_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (fiscal_year_id, name)
+);
+
 create table if not exists public.roadmap_items (
   id uuid primary key default gen_random_uuid(),
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   title text not null,
   provider text,
-  release_month text not null,
+  release_month date,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'ready', 'released')),
   notes text,
+  category_id uuid references public.roadmap_categories(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -69,16 +83,24 @@ create table if not exists public.content_review_items (
   provider text,
   genre text,
   format text,
-  stage text not null default 'new' check (stage in ('new', 'reviewing', 'approved', 'parked', 'rejected')),
+  review_status text not null default 'not_started' check (review_status in ('not_started', 'in_progress', 'blocked', 'rejected', 'approved')),
   notes text,
+  proposed_rate_cents bigint check (proposed_rate_cents >= 0),
+  review_link text,
+  comparable_content text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists content_licenses_fiscal_year_id_idx on public.content_licenses(fiscal_year_id);
 create index if not exists fiscal_year_members_user_id_idx on public.fiscal_year_members(user_id);
+create unique index if not exists fiscal_years_one_pinned_idx
+on public.fiscal_years (is_pinned)
+where is_pinned;
 create index if not exists provider_color_overrides_fiscal_year_id_idx on public.provider_color_overrides(fiscal_year_id);
 create index if not exists roadmap_items_fiscal_year_id_idx on public.roadmap_items(fiscal_year_id);
+create index if not exists roadmap_categories_fiscal_year_id_idx on public.roadmap_categories(fiscal_year_id);
+create index if not exists roadmap_items_category_id_idx on public.roadmap_items(category_id);
 create index if not exists ongoing_series_fiscal_year_id_idx on public.ongoing_series(fiscal_year_id);
 create index if not exists content_review_items_fiscal_year_id_idx on public.content_review_items(fiscal_year_id);
 
@@ -91,6 +113,36 @@ begin
   return new;
 end;
 $$;
+
+create or replace function public.pin_fiscal_year(target_fiscal_year_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtext('fiscal_years_global_pin'));
+
+  if not exists (
+    select 1
+    from public.fiscal_years
+    where id = target_fiscal_year_id
+  ) then
+    raise exception 'Fiscal year not found.';
+  end if;
+
+  update public.fiscal_years
+  set is_pinned = false
+  where is_pinned;
+
+  update public.fiscal_years
+  set is_pinned = true
+  where id = target_fiscal_year_id;
+end;
+$$;
+
+revoke all on function public.pin_fiscal_year(uuid) from public;
+grant execute on function public.pin_fiscal_year(uuid) to service_role;
 
 create or replace function public.create_owner_membership_for_fiscal_year()
 returns trigger
@@ -162,6 +214,11 @@ create trigger roadmap_items_set_updated_at
 before update on public.roadmap_items
 for each row execute function public.set_updated_at();
 
+drop trigger if exists roadmap_categories_set_updated_at on public.roadmap_categories;
+create trigger roadmap_categories_set_updated_at
+before update on public.roadmap_categories
+for each row execute function public.set_updated_at();
+
 drop trigger if exists ongoing_series_set_updated_at on public.ongoing_series;
 create trigger ongoing_series_set_updated_at
 before update on public.ongoing_series
@@ -182,6 +239,7 @@ alter table public.fiscal_year_members enable row level security;
 alter table public.content_licenses enable row level security;
 alter table public.provider_color_overrides enable row level security;
 alter table public.roadmap_items enable row level security;
+alter table public.roadmap_categories enable row level security;
 alter table public.ongoing_series enable row level security;
 alter table public.content_review_items enable row level security;
 
@@ -232,6 +290,15 @@ create policy "owners and editors can manage roadmap items"
 on public.roadmap_items for all
 using (public.has_fiscal_year_role(roadmap_items.fiscal_year_id, auth.uid(), array['owner', 'editor']))
 with check (public.has_fiscal_year_role(roadmap_items.fiscal_year_id, auth.uid(), array['owner', 'editor']));
+
+create policy "members can read roadmap categories"
+on public.roadmap_categories for select
+using (public.is_fiscal_year_member(roadmap_categories.fiscal_year_id, auth.uid()));
+
+create policy "owners and editors can manage roadmap categories"
+on public.roadmap_categories for all
+using (public.has_fiscal_year_role(roadmap_categories.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(roadmap_categories.fiscal_year_id, auth.uid(), array['owner', 'editor']));
 
 create policy "members can read ongoing series"
 on public.ongoing_series for select

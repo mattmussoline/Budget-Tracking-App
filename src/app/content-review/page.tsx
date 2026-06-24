@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import { ContentReviewDashboard } from "@/features/planning/components/content-review-dashboard";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
-import type { ContentReviewItem, ReviewStage } from "@/features/planning/planning-types";
+import type { ContentReviewItem, ReviewStatus } from "@/features/planning/planning-types";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -25,6 +26,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
         title="Content Review"
         eyebrow="Internal Licensing"
         description="Add Supabase env vars to save content review changes."
+        activeSection="content-review"
       >
         <ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000000" items={[]} isDemo />
       </PlanningShell>
@@ -36,15 +38,14 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
   const selectedFiscalYearId = (await searchParams)?.fy;
   const { data: fiscalYears, error: fiscalYearsError } = await admin
     .from("fiscal_years")
-    .select("id,label,fiscal_year")
+    .select("id,label,fiscal_year,is_pinned")
     .order("fiscal_year", { ascending: false });
 
   if (fiscalYearsError) {
     throw new Error(fiscalYearsError.message);
   }
 
-  const activeFiscalYear =
-    fiscalYears?.find((fiscalYear) => fiscalYear.id === selectedFiscalYearId) ?? fiscalYears?.[0] ?? null;
+  const activeFiscalYear = selectFiscalYear(fiscalYears ?? [], selectedFiscalYearId);
 
   if (!activeFiscalYear) {
     redirect("/dashboard");
@@ -52,7 +53,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
 
   const { data: reviewRows, error: reviewError } = await admin
     .from("content_review_items")
-    .select("id,title,provider,genre,format,stage,notes")
+    .select("id,title,provider,genre,format,review_status,notes,proposed_rate_cents,review_link,comparable_content")
     .eq("fiscal_year_id", activeFiscalYear.id)
     .order("created_at", { ascending: false });
 
@@ -66,8 +67,11 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     provider: item.provider,
     genre: item.genre,
     format: item.format,
-    stage: item.stage as ReviewStage,
-    notes: item.notes
+    reviewStatus: item.review_status as ReviewStatus,
+    notes: item.notes,
+    proposedRateCents: item.proposed_rate_cents,
+    reviewLink: item.review_link,
+    comparableContent: item.comparable_content
   }));
 
   return (
@@ -75,7 +79,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
       title="Content Review"
       eyebrow="Internal Licensing"
       description="Track possible titles before they move to the roadmap or budget."
-      fiscalYearLabel={activeFiscalYear.label}
+      activeSection="content-review"
     >
       <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} />
     </PlanningShell>

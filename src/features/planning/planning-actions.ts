@@ -4,17 +4,21 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { dollarsToOptionalCents } from "./planning-model";
 
 const roadmapStatusSchema = z.enum(["planned", "in_progress", "ready", "released"]);
-const reviewStageSchema = z.enum(["new", "reviewing", "approved", "parked", "rejected"]);
+const reviewStatusSchema = z.enum(["not_started", "in_progress", "blocked", "rejected", "approved"]);
+const nullableDateSchema = z.union([z.literal(""), z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/)]).optional();
+const nullableUuidSchema = z.union([z.literal(""), z.string().uuid()]).optional();
 
 const roadmapItemSchema = z.object({
   fiscalYearId: z.string().uuid(),
   title: z.string().trim().min(1),
   provider: z.string().trim().optional(),
-  releaseMonth: z.string().trim().min(1),
+  releaseDate: nullableDateSchema,
   status: roadmapStatusSchema,
-  notes: z.string().trim().optional()
+  notes: z.string().trim().optional(),
+  categoryId: nullableUuidSchema
 });
 
 const updateRoadmapItemSchema = roadmapItemSchema.extend({
@@ -27,8 +31,11 @@ const reviewItemSchema = z.object({
   provider: z.string().trim().optional(),
   genre: z.string().trim().optional(),
   format: z.string().trim().optional(),
-  stage: reviewStageSchema,
-  notes: z.string().trim().optional()
+  reviewStatus: reviewStatusSchema,
+  notes: z.string().trim().optional(),
+  proposedRate: z.string().trim().optional(),
+  reviewLink: z.union([z.literal(""), z.string().url()]).optional(),
+  comparableContent: z.string().trim().optional()
 });
 
 const updateReviewItemSchema = reviewItemSchema.extend({
@@ -61,16 +68,17 @@ export async function addRoadmapItem(formData: FormData) {
   const parsed = roadmapItemSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
-    throw new Error("Check the roadmap title, month, and status.");
+    throw new Error("Check the roadmap title, release date, and status.");
   }
 
   const { error } = await admin.from("roadmap_items").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
     title: parsed.data.title,
     provider: optionalText(parsed.data.provider),
-    release_month: parsed.data.releaseMonth,
+    release_month: optionalText(parsed.data.releaseDate),
     status: parsed.data.status,
-    notes: optionalText(parsed.data.notes)
+    notes: optionalText(parsed.data.notes),
+    category_id: optionalText(parsed.data.categoryId)
   });
 
   if (error) {
@@ -83,7 +91,7 @@ export async function addRoadmapItem(formData: FormData) {
 export async function updateRoadmapItem(formData: FormData) {
   const parsed = updateRoadmapItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error("Check the roadmap title, month, and status.");
+    throw new Error("Check the roadmap title, release date, and status.");
   }
 
   const admin = await requirePlanningAdmin();
@@ -93,9 +101,10 @@ export async function updateRoadmapItem(formData: FormData) {
     .update({
       title: parsed.data.title,
       provider: optionalText(parsed.data.provider),
-      release_month: parsed.data.releaseMonth,
+      release_month: optionalText(parsed.data.releaseDate),
       status: parsed.data.status,
-      notes: optionalText(parsed.data.notes)
+      notes: optionalText(parsed.data.notes),
+      category_id: optionalText(parsed.data.categoryId)
     })
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
@@ -138,8 +147,11 @@ export async function addContentReviewItem(formData: FormData) {
     provider: optionalText(parsed.data.provider),
     genre: optionalText(parsed.data.genre),
     format: optionalText(parsed.data.format),
-    stage: parsed.data.stage,
-    notes: optionalText(parsed.data.notes)
+    review_status: parsed.data.reviewStatus,
+    notes: optionalText(parsed.data.notes),
+    proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
+    review_link: optionalText(parsed.data.reviewLink),
+    comparable_content: optionalText(parsed.data.comparableContent)
   });
 
   if (error) {
@@ -164,8 +176,11 @@ export async function updateContentReviewItem(formData: FormData) {
       provider: optionalText(parsed.data.provider),
       genre: optionalText(parsed.data.genre),
       format: optionalText(parsed.data.format),
-      stage: parsed.data.stage,
-      notes: optionalText(parsed.data.notes)
+      review_status: parsed.data.reviewStatus,
+      notes: optionalText(parsed.data.notes),
+      proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
+      review_link: optionalText(parsed.data.reviewLink),
+      comparable_content: optionalText(parsed.data.comparableContent)
     })
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
@@ -265,6 +280,41 @@ export async function deleteOngoingSeries(formData: FormData) {
     throw new Error(error.message);
   }
 
+  revalidatePlanning();
+}
+
+const categorySchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  name: z.string().trim().min(1),
+  colorKey: z.enum(["blue", "amber", "green", "purple", "red", "cyan", "orange", "slate"]),
+  sortOrder: z.coerce.number().int().min(0).default(0)
+});
+
+export async function addRoadmapCategory(formData: FormData) {
+  const parsed = categorySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) throw new Error("Add a category name and color.");
+  const admin = await requirePlanningAdmin();
+  const { error } = await admin.from("roadmap_categories").insert({
+    fiscal_year_id: parsed.data.fiscalYearId,
+    name: parsed.data.name,
+    color_key: parsed.data.colorKey,
+    sort_order: parsed.data.sortOrder
+  });
+  if (error) throw new Error(error.message);
+  revalidatePlanning();
+}
+
+export async function updateRoadmapCategory(formData: FormData) {
+  const parsed = categorySchema.extend({ categoryId: z.string().uuid(), isActive: z.enum(["true", "false"]) }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) throw new Error("Check the category name, color, and state.");
+  const admin = await requirePlanningAdmin();
+  const { error } = await admin.from("roadmap_categories").update({
+    name: parsed.data.name,
+    color_key: parsed.data.colorKey,
+    sort_order: parsed.data.sortOrder,
+    is_active: parsed.data.isActive === "true"
+  }).eq("id", parsed.data.categoryId).eq("fiscal_year_id", parsed.data.fiscalYearId);
+  if (error) throw new Error(error.message);
   revalidatePlanning();
 }
 

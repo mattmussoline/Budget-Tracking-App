@@ -44,6 +44,10 @@ const deleteLicenseSchema = z.object({
   licenseId: z.string().uuid()
 });
 
+const fiscalYearIdSchema = z.object({
+  fiscalYearId: z.string().uuid()
+});
+
 const providerColorSchema = z.object({
   fiscalYearId: z.string().uuid(),
   provider: z.string().trim().min(1),
@@ -157,6 +161,63 @@ export async function updateFiscalYear(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
+}
+
+export async function pinFiscalYear(formData: FormData) {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    return;
+  }
+
+  const parsed = fiscalYearIdSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid fiscal year to pin.");
+  }
+
+  await requireInternalSession();
+
+  const { error } = await admin.rpc("pin_fiscal_year", {
+    target_fiscal_year_id: parsed.data.fiscalYearId
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidateFiscalYearPages();
+}
+
+export async function deleteFiscalYear(formData: FormData) {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    return;
+  }
+
+  const parsed = fiscalYearIdSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid fiscal year to delete.");
+  }
+
+  await requireInternalSession();
+
+  const { data: fiscalYear, error: findError } = await admin
+    .from("fiscal_years")
+    .select("id")
+    .eq("id", parsed.data.fiscalYearId)
+    .maybeSingle();
+
+  if (findError || !fiscalYear) {
+    throw new Error(findError?.message ?? "Could not find that fiscal year.");
+  }
+
+  const { error } = await admin.from("fiscal_years").delete().eq("id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidateFiscalYearPages();
+  redirect("/dashboard");
 }
 
 export async function updateContentLicense(formData: FormData) {
@@ -314,4 +375,10 @@ async function ensureSupabaseUserId(admin: NonNullable<ReturnType<typeof createS
   }
 
   return createdUser.user.id;
+}
+
+function revalidateFiscalYearPages() {
+  revalidatePath("/dashboard");
+  revalidatePath("/roadmap");
+  revalidatePath("/content-review");
 }

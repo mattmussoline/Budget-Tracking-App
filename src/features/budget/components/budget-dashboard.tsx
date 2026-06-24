@@ -1,17 +1,20 @@
-import Link from "next/link";
 import { CadenceSummary } from "./cadence-summary";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
 import { FiscalYearSettings } from "./fiscal-year-settings";
+import { FiscalYearManager } from "./fiscal-year-manager";
 import { LicenseManager } from "./license-manager";
 import { MonthBoard } from "./month-board";
 import { ProviderSummary } from "./provider-summary";
 import { SharePanel } from "./share-panel";
 import { SummaryMetrics } from "./summary-metrics";
 import { logout } from "../auth-actions";
+import { deleteFiscalYear, pinFiscalYear } from "../budget-actions";
 import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
+import { getNextFiscalYear } from "../fiscal-year-selection";
 import type { ProviderColorOverrides } from "../provider-colors";
+import { PlanningNavigation } from "@/features/planning/components/planning-navigation";
 
 type FiscalYearRow = {
   id: string;
@@ -19,6 +22,7 @@ type FiscalYearRow = {
   fiscal_year: number;
   fiscal_year_start_month: number;
   budget_cents: number;
+  is_pinned: boolean;
 };
 
 type BudgetDashboardProps = {
@@ -33,6 +37,7 @@ type BudgetDashboardProps = {
 
 export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, providerColorOverrides = {}, mode, userEmail }: BudgetDashboardProps) {
   const isDemo = mode === "demo";
+  const nextFiscalYear = getNextFiscalYear(fiscalYears, new Date().getFullYear());
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
   );
@@ -50,38 +55,21 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
               {fiscalYear?.label ?? "Licensing Budget"}
             </h1>
             {fiscalYears.length > 0 ? (
-              <nav className="mt-5 flex flex-wrap gap-2" aria-label="Fiscal year budgets">
-                {fiscalYears.map((year) => {
-                  const isActive = year.id === fiscalYear?.id;
-
-                  return (
-                    <Link
-                      key={year.id}
-                      href={`/dashboard?fy=${year.id}`}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`rounded-md px-3 py-2 text-sm font-extrabold transition ${
-                        isActive ? "bg-white text-blue-700" : "bg-blue-400 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      FY{String(year.fiscal_year).slice(-2)}
-                    </Link>
-                  );
-                })}
-              </nav>
+              <FiscalYearManager
+                fiscalYears={fiscalYears}
+                activeFiscalYearId={fiscalYear?.id}
+                pinAction={pinFiscalYear}
+                deleteAction={deleteFiscalYear}
+                createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
+                isDemo={isDemo}
+              />
             ) : null}
             </div>
             <div className="grid max-w-xl gap-3">
             <p className="text-base font-semibold leading-7 text-blue-50">
               Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.
             </p>
-            <nav className="flex flex-wrap gap-2" aria-label="Planning sections">
-              <Link className="rounded-md bg-white px-3 py-2 text-sm font-extrabold text-blue-700" href="/roadmap">
-                Roadmap
-              </Link>
-              <Link className="rounded-md bg-blue-400 px-3 py-2 text-sm font-extrabold text-white hover:bg-white/20" href="/content-review">
-                Content Review
-              </Link>
-            </nav>
+            <PlanningNavigation activeSection="dashboard" />
             {userEmail ? (
               <form action={logout} className="flex flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
                 <span>{userEmail}</span>
