@@ -1,11 +1,20 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentReviewDashboard } from "./content-review-dashboard";
 import type { ContentReviewItem } from "../planning-types";
 
+const actionMocks = vi.hoisted(() => ({
+  addContentReviewItem: vi.fn(),
+  deleteContentReviewItem: vi.fn(),
+  updateContentReviewItem: vi.fn()
+}));
+
+vi.mock("../planning-actions", () => actionMocks);
+
 afterEach(cleanup);
+beforeEach(() => vi.clearAllMocks());
 
 const item: ContentReviewItem = {
   id: "review-1",
@@ -50,5 +59,31 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Genre")).toContainHTML("Christian Formation");
     expect(screen.getByLabelText("Format")).toContainHTML("Docu-Series");
     expect(screen.getByLabelText("Format")).toContainHTML("Ministry Resource");
+  });
+
+  it("creates a draft only once from the explicit save button", async () => {
+    let resolveSave: ((saved: ContentReviewItem) => void) | undefined;
+    actionMocks.addContentReviewItem.mockReturnValue(new Promise<ContentReviewItem>((resolve) => {
+      resolveSave = resolve;
+    }));
+
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Content" }));
+    fireEvent.change(screen.getByLabelText("Summary Title"), { target: { value: "New Review" } });
+    fireEvent.blur(screen.getByLabelText("Summary Title"));
+
+    expect(actionMocks.addContentReviewItem).not.toHaveBeenCalled();
+
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
+    fireEvent.click(saveButton);
+    fireEvent.click(saveButton);
+
+    expect(actionMocks.addContentReviewItem).toHaveBeenCalledTimes(1);
+
+    resolveSave?.({ ...item, id: "review-saved", title: "New Review" });
+
+    expect(await screen.findByRole("heading", { name: "New Review" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "New Content Review" })).not.toBeInTheDocument();
   });
 });

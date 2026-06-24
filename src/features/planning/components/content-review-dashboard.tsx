@@ -59,13 +59,19 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
   }
 
   function save(item: ContentReviewItem) {
-    if (isDemo || !item.title.trim()) return;
+    if (isDemo || isPending || !item.title.trim()) return;
     setSaveState("saving");
     startTransition(async () => {
       try {
         const formData = itemFormData(item);
-        if (item.id === "draft") await addContentReviewItem(formData);
-        else await updateContentReviewItem(formData);
+        if (item.id === "draft") {
+          const savedItem = await addContentReviewItem(formData);
+          setRecords((current) => [savedItem, ...current]);
+          setDraft(null);
+          setSelectedId(savedItem.id);
+        } else {
+          await updateContentReviewItem(formData);
+        }
         setSaveState("saved");
       } catch {
         setSaveState("error");
@@ -98,10 +104,10 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
             const active = selectedId === item.id;
             return (
               <div key={item.id} role="button" tabIndex={0} aria-current={active ? "true" : undefined} onClick={() => setSelectedId(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.id); }} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
-                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
-                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                <input aria-label="Summary Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "proposedRateCents", Math.round(Number(event.target.value.replace(/[$,]/g, "")) * 100) || null)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
-                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} onBlur={() => save(item.id === "draft" ? draft! : records.find((record) => record.id === item.id)!)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
+                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
+                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                <input aria-label="Summary Proposed Rate" value={formatOptionalCurrency(item.proposedRateCents)} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "proposedRateCents", Math.round(Number(event.target.value.replace(/[$,]/g, "")) * 100) || null)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
+                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
               </div>
             );
           })}
@@ -109,13 +115,13 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
       </section>
 
       <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
-        {selected ? <ReviewEditor item={selected} isDemo={isDemo} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
+        {selected ? <ReviewEditor item={selected} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
       </section>
     </div>
   );
 }
 
-function ReviewEditor({ item, isDemo, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; isDemo?: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
+function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
   return <div className="grid gap-5">
     <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
     <div className="grid gap-4 md:grid-cols-2">
@@ -131,7 +137,7 @@ function ReviewEditor({ item, isDemo, saveState, onChange, onSave, fiscalYearId 
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
       {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}?`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : <span />}
-      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
+      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
     </div>
   </div>;
 }

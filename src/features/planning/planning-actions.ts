@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { dollarsToOptionalCents } from "./planning-model";
+import type { ContentReviewItem, ReviewStatus } from "./planning-types";
 
 const roadmapStatusSchema = z.enum(["planned", "in_progress", "ready", "released"]);
 const reviewStatusSchema = z.enum(["not_started", "in_progress", "blocked", "rejected", "approved"]);
@@ -141,24 +142,41 @@ export async function addContentReviewItem(formData: FormData) {
 
   const admin = await requirePlanningAdmin();
 
-  const { error } = await admin.from("content_review_items").insert({
-    fiscal_year_id: parsed.data.fiscalYearId,
-    title: parsed.data.title,
-    provider: optionalText(parsed.data.provider),
-    genre: optionalText(parsed.data.genre),
-    format: optionalText(parsed.data.format),
-    review_status: parsed.data.reviewStatus,
-    notes: optionalText(parsed.data.notes),
-    proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
-    review_link: optionalText(parsed.data.reviewLink),
-    comparable_content: optionalText(parsed.data.comparableContent)
-  });
+  const { data, error } = await admin
+    .from("content_review_items")
+    .insert({
+      fiscal_year_id: parsed.data.fiscalYearId,
+      title: parsed.data.title,
+      provider: optionalText(parsed.data.provider),
+      genre: optionalText(parsed.data.genre),
+      format: optionalText(parsed.data.format),
+      review_status: parsed.data.reviewStatus,
+      notes: optionalText(parsed.data.notes),
+      proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
+      review_link: optionalText(parsed.data.reviewLink),
+      comparable_content: optionalText(parsed.data.comparableContent)
+    })
+    .select("id,title,provider,genre,format,review_status,notes,proposed_rate_cents,review_link,comparable_content")
+    .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
   revalidatePlanning();
+
+  return {
+    id: data.id,
+    title: data.title,
+    provider: data.provider,
+    genre: data.genre,
+    format: data.format,
+    reviewStatus: data.review_status as ReviewStatus,
+    notes: data.notes,
+    proposedRateCents: data.proposed_rate_cents,
+    reviewLink: data.review_link,
+    comparableContent: data.comparable_content
+  } satisfies ContentReviewItem;
 }
 
 export async function updateContentReviewItem(formData: FormData) {
@@ -286,8 +304,7 @@ export async function deleteOngoingSeries(formData: FormData) {
 const categorySchema = z.object({
   fiscalYearId: z.string().uuid(),
   name: z.string().trim().min(1),
-  colorKey: z.enum(["blue", "amber", "green", "purple", "red", "cyan", "orange", "slate"]),
-  sortOrder: z.coerce.number().int().min(0).default(0)
+  colorKey: z.enum(["blue", "amber", "green", "purple", "red", "cyan", "orange", "slate"])
 });
 
 export async function addRoadmapCategory(formData: FormData) {
@@ -297,23 +314,36 @@ export async function addRoadmapCategory(formData: FormData) {
   const { error } = await admin.from("roadmap_categories").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
     name: parsed.data.name,
-    color_key: parsed.data.colorKey,
-    sort_order: parsed.data.sortOrder
+    color_key: parsed.data.colorKey
   });
   if (error) throw new Error(error.message);
   revalidatePlanning();
 }
 
 export async function updateRoadmapCategory(formData: FormData) {
-  const parsed = categorySchema.extend({ categoryId: z.string().uuid(), isActive: z.enum(["true", "false"]) }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) throw new Error("Check the category name, color, and state.");
+  const parsed = categorySchema.extend({ categoryId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) throw new Error("Check the category name and color.");
   const admin = await requirePlanningAdmin();
   const { error } = await admin.from("roadmap_categories").update({
     name: parsed.data.name,
-    color_key: parsed.data.colorKey,
-    sort_order: parsed.data.sortOrder,
-    is_active: parsed.data.isActive === "true"
+    color_key: parsed.data.colorKey
   }).eq("id", parsed.data.categoryId).eq("fiscal_year_id", parsed.data.fiscalYearId);
+  if (error) throw new Error(error.message);
+  revalidatePlanning();
+}
+
+export async function deleteRoadmapCategory(formData: FormData) {
+  const parsed = z.object({
+    categoryId: z.string().uuid(),
+    fiscalYearId: z.string().uuid()
+  }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) throw new Error("Choose a valid key to delete.");
+  const admin = await requirePlanningAdmin();
+  const { error } = await admin
+    .from("roadmap_categories")
+    .delete()
+    .eq("id", parsed.data.categoryId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
   if (error) throw new Error(error.message);
   revalidatePlanning();
 }
