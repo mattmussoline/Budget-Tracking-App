@@ -34,17 +34,21 @@ Fix duplicate content-review creation and make the roadmap planning surfaces eas
 - Replace the current expandable dropdown with a button that opens a modal dialog.
 - Reuse the native dialog interaction pattern already used by the Add Roadmap and Edit Roadmap modals.
 - The modal supports Cancel, Escape, backdrop click, focus restoration, and an accessible label.
-- Category creation and editing forms keep their existing server actions and fields.
+- Category creation and editing show only the category name and color. Active/Retired and numeric position controls are removed from the interface.
+- The existing database columns remain unchanged. New categories use the database defaults and all categories are shown in their existing fetched order.
+- Category edit inputs use controlled client state and submit deliberately instead of relying on native server-action form resets. After a successful save, the edited name and color stay visible.
+- Each saved category has a Delete action. Deletion requires a confirmation explaining that roadmap items remain but lose that category and color.
+- The database's existing `on delete set null` relationship handles category removal without deleting roadmap items.
 
 ## Error handling and verification
 
 - Existing save-state feedback remains visible for content-review saves, including error state.
-- Automated component tests cover duplicate prevention, month focus/restoration, fixed scroll container classes, striped series rows, and Manage Key modal interaction.
+- Automated component tests cover duplicate prevention, month focus/restoration, fixed scroll container classes, striped series rows, Manage Key modal interaction, simplified category fields, stable saved values, and confirmed category deletion.
 - Run lint, the complete test suite, and a production build.
 - Verify the four user flows in the rendered app before claiming completion.
 
 ## Out of scope
 
 - No database schema changes.
-- No changes to roadmap filtering, fiscal-year selection, or category data.
+- No changes to roadmap filtering or fiscal-year selection.
 - No production deployment unless separately requested.
