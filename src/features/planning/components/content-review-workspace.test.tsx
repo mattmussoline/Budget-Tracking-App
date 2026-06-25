@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,6 +27,27 @@ const item: ContentReviewItem = {
   proposedRateCents: 1200000,
   reviewLink: "https://example.com/review",
   comparableContent: "Symbolon"
+};
+
+const activeItem: ContentReviewItem = {
+  ...item,
+  id: "review-active",
+  title: "Active Review",
+  reviewStatus: "in_progress"
+};
+
+const approvedItem: ContentReviewItem = {
+  ...item,
+  id: "review-approved",
+  title: "Approved Review",
+  reviewStatus: "approved"
+};
+
+const rejectedItem: ContentReviewItem = {
+  ...item,
+  id: "review-rejected",
+  title: "Rejected Review",
+  reviewStatus: "rejected"
 };
 
 describe("ContentReviewDashboard", () => {
@@ -59,6 +80,53 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Genre")).toContainHTML("Christian Formation");
     expect(screen.getByLabelText("Format")).toContainHTML("Docu-Series");
     expect(screen.getByLabelText("Format")).toContainHTML("Ministry Resource");
+  });
+
+  it("keeps approved and rejected items out of the active decision queue", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, approvedItem, rejectedItem]} isDemo />);
+
+    const activeQueue = screen.getByTestId("active-review-queue");
+    expect(activeQueue).toHaveTextContent("Active Review");
+    expect(activeQueue).not.toHaveTextContent("Approved Review");
+    expect(activeQueue).not.toHaveTextContent("Rejected Review");
+
+    expect(screen.getByRole("button", { name: "Approved 1" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Rejected 1" })).toBeVisible();
+  });
+
+  it("expands archive sections and lets users select archived items", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, approvedItem, rejectedItem]} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Approved 1" }));
+    const approvedSection = screen.getByRole("button", { name: "Approved 1" }).closest("details");
+    expect(approvedSection).not.toBeNull();
+    fireEvent.click(within(approvedSection as HTMLElement).getByDisplayValue("Approved Review"));
+
+    expect(screen.getByLabelText("Detail Title")).toHaveValue("Approved Review");
+
+    fireEvent.click(screen.getByRole("button", { name: "Rejected 1" }));
+    const rejectedSection = screen.getByRole("button", { name: "Rejected 1" }).closest("details");
+    expect(rejectedSection).not.toBeNull();
+    fireEvent.click(within(rejectedSection as HTMLElement).getByDisplayValue("Rejected Review"));
+
+    expect(screen.getByLabelText("Detail Title")).toHaveValue("Rejected Review");
+  });
+
+  it("moves items between active and archive sections when review status changes", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, approvedItem]} />);
+
+    fireEvent.change(screen.getAllByDisplayValue("In Progress")[0], { target: { value: "approved" } });
+
+    expect(screen.getByTestId("active-review-queue")).not.toHaveTextContent("Active Review");
+    expect(screen.getByRole("button", { name: "Approved 2" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Approved 2" }));
+    const approvedSection = screen.getByRole("button", { name: "Approved 2" }).closest("details");
+    expect(approvedSection).not.toBeNull();
+    fireEvent.change(within(approvedSection as HTMLElement).getByDisplayValue("Approved Review"), { target: { value: "blocked" } });
+
+    expect(screen.getByTestId("active-review-queue")).toHaveTextContent("Approved Review");
+    expect(screen.getByRole("button", { name: "Approved 1" })).toBeVisible();
   });
 
   it("lets users type a multi-digit proposed rate before formatting it", () => {
