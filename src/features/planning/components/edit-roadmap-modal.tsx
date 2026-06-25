@@ -3,6 +3,7 @@
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
+import { getProviderColor } from "@/features/budget/provider-colors";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
 import { formatRoadmapDate } from "../planning-model";
 import type { RoadmapCategory, RoadmapItem } from "../planning-types";
@@ -17,6 +18,7 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const tone = (category?.colorKey && category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
+  const providerColor = item.provider ? getProviderColor(item.provider) : null;
 
   const openDialog = () => {
     const dialog = dialogRef.current;
@@ -58,7 +60,7 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
       <p className="font-extrabold leading-tight">{item.title}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
-        {item.provider ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
+        {item.provider && providerColor ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold", providerColor.bg, providerColor.text)}>{item.provider}</span> : null}
         {item.releaseDate ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{formatRoadmapDate(item.releaseDate)}</span> : null}
       </div>
     </button>

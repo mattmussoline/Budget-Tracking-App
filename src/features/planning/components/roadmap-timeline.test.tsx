@@ -28,6 +28,7 @@ const categories: RoadmapCategory[] = [
 
 const roadmapItems: RoadmapItem[] = [
   { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
+  { id: "road-4", title: "Pivotal Saints", provider: "Augustine Institute", releaseDate: "2027-02-03", status: "planned", notes: null, categoryId: null },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null }
 ];
@@ -92,6 +93,27 @@ describe("RoadmapDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(dialog).not.toHaveAttribute("open");
+  });
+
+  it("uses roadmap providers as typeable color-coded options", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    expect(screen.getAllByText("Thomistic").some((element) => element.className.includes("bg-"))).toBe(true);
+    expect(screen.getAllByText("Augustine Institute").some((element) => element.className.includes("bg-"))).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const providerInput = within(dialog).getByRole("combobox", { name: "Provider" });
+
+    fireEvent.focus(providerInput);
+    expect(within(dialog).getByRole("option", { name: "Augustine Institute" })).toBeVisible();
+    expect(within(dialog).getByRole("option", { name: "Thomistic" })).toBeVisible();
+
+    fireEvent.change(providerInput, { target: { value: "New Provider" } });
+    fireEvent.keyDown(providerInput, { key: "Enter" });
+
+    expect(providerInput).toHaveValue("New Provider");
+    expect(within(dialog).getByText("Use \"New Provider\"")).toBeVisible();
   });
 
   it("opens and closes a roadmap item editor in a modal dialog", () => {
