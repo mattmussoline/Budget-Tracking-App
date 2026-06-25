@@ -86,9 +86,9 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, approvedItem, rejectedItem]} isDemo />);
 
     const activeQueue = screen.getByTestId("active-review-queue");
-    expect(activeQueue).toHaveTextContent("Active Review");
-    expect(activeQueue).not.toHaveTextContent("Approved Review");
-    expect(activeQueue).not.toHaveTextContent("Rejected Review");
+    expect(within(activeQueue).getByDisplayValue("Active Review")).toBeVisible();
+    expect(within(activeQueue).queryByDisplayValue("Approved Review")).not.toBeInTheDocument();
+    expect(within(activeQueue).queryByDisplayValue("Rejected Review")).not.toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Approved 1" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Rejected 1" })).toBeVisible();
@@ -123,9 +123,11 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Approved 2" }));
     const approvedSection = screen.getByRole("button", { name: "Approved 2" }).closest("details");
     expect(approvedSection).not.toBeNull();
-    fireEvent.change(within(approvedSection as HTMLElement).getByDisplayValue("Approved Review"), { target: { value: "blocked" } });
+    const approvedReviewRow = within(approvedSection as HTMLElement).getByDisplayValue("Approved Review").closest('[role="button"]');
+    expect(approvedReviewRow).not.toBeNull();
+    fireEvent.change(within(approvedReviewRow as HTMLElement).getByLabelText("Summary Review Status"), { target: { value: "blocked" } });
 
-    expect(screen.getByTestId("active-review-queue")).toHaveTextContent("Approved Review");
+    expect(within(screen.getByTestId("active-review-queue")).getByDisplayValue("Approved Review")).toBeVisible();
     expect(screen.getByRole("button", { name: "Approved 1" })).toBeVisible();
   });
 

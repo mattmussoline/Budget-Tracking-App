@@ -26,6 +26,20 @@ const blankDraft = (): ContentReviewItem => ({
   comparableContent: ""
 });
 
+const ARCHIVED_REVIEW_STATUSES = new Set<ReviewStatus>(["approved", "rejected"]);
+
+function isArchivedReviewStatus(status: ReviewStatus) {
+  return ARCHIVED_REVIEW_STATUSES.has(status);
+}
+
+function groupReviewItems(items: ContentReviewItem[]) {
+  return {
+    active: items.filter((item) => !isArchivedReviewStatus(item.reviewStatus)),
+    approved: items.filter((item) => item.reviewStatus === "approved"),
+    rejected: items.filter((item) => item.reviewStatus === "rejected")
+  };
+}
+
 export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
@@ -87,6 +101,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
   }
 
   const queue = draft ? [draft, ...records] : records;
+  const groupedQueue = groupReviewItems(queue);
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
@@ -98,25 +113,160 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
         <div className="mb-2 hidden grid-cols-[1.3fr_1fr_0.9fr_1fr] gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid">
           <span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
         </div>
-        <div className="grid gap-2">
-          {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : queue.map((item) => {
-            const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
-            const active = selectedId === item.id;
-            return (
-              <div key={item.id} role="button" tabIndex={0} aria-current={active ? "true" : undefined} onClick={() => setSelectedId(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.id); }} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
-                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
-                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                <CurrencyInput ariaLabel="Summary Proposed Rate" value={item.proposedRateCents} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(value) => changeItem(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
-                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
-              </div>
-            );
-          })}
+        <div data-testid="active-review-queue" className="grid gap-2">
+          {groupedQueue.active.length === 0 ? (
+            <p className="rounded-lg bg-white p-5 font-bold text-muted">
+              {queue.length === 0 ? "Add content to start the decision queue." : "No active reviews. Approved and rejected work is archived below."}
+            </p>
+          ) : groupedQueue.active.map((item) => (
+            <QueueRow
+              key={item.id}
+              item={item}
+              active={selectedId === item.id}
+              isDemo={isDemo}
+              onSelect={() => setSelectedId(item.id)}
+              onChange={(field, value) => changeItem(item.id, field, value)}
+            />
+          ))}
+        </div>
+        <div className="mt-5 grid gap-3">
+          <ArchiveSection
+            title="Approved"
+            count={groupedQueue.approved.length}
+            items={groupedQueue.approved}
+            tone="green"
+            selectedId={selectedId}
+            isDemo={isDemo}
+            onSelect={setSelectedId}
+            onChange={changeItem}
+          />
+          <ArchiveSection
+            title="Rejected"
+            count={groupedQueue.rejected.length}
+            items={groupedQueue.rejected}
+            tone="orange"
+            selectedId={selectedId}
+            isDemo={isDemo}
+            onSelect={setSelectedId}
+            onChange={changeItem}
+          />
         </div>
       </section>
 
       <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
         {selected ? <ReviewEditor item={selected} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
       </section>
+    </div>
+  );
+}
+
+function ArchiveSection({
+  title,
+  count,
+  items,
+  tone,
+  selectedId,
+  isDemo,
+  onSelect,
+  onChange
+}: {
+  title: string;
+  count: number;
+  items: ContentReviewItem[];
+  tone: "green" | "orange";
+  selectedId: string;
+  isDemo?: boolean;
+  onSelect: (id: string) => void;
+  onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void;
+}) {
+  return (
+    <details className="rounded-lg bg-white/70 p-3">
+      <summary role="button" aria-label={`${title} ${count}`} className={cn("cursor-pointer rounded-md px-3 py-2 text-sm font-extrabold", TONE_CLASSES[tone].chip)}>
+        {title} {count}
+      </summary>
+      <div className="mt-3 grid gap-2">
+        {items.length === 0 ? (
+          <p className="rounded-md bg-white p-3 text-sm font-bold text-muted">No {title.toLowerCase()} reviews yet.</p>
+        ) : items.map((item) => (
+          <QueueRow
+            key={item.id}
+            item={item}
+            active={selectedId === item.id}
+            isDemo={isDemo}
+            onSelect={() => onSelect(item.id)}
+            onChange={(field, value) => onChange(item.id, field, value)}
+          />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function QueueRow({
+  item,
+  active,
+  isDemo,
+  onSelect,
+  onChange
+}: {
+  item: ContentReviewItem;
+  active: boolean;
+  isDemo?: boolean;
+  onSelect: () => void;
+  onChange: (field: keyof ContentReviewItem, value: string | number | null) => void;
+}) {
+  const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-current={active ? "true" : undefined}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect();
+      }}
+      className={cn(
+        "grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]",
+        TONE_CLASSES[status.tone].accent,
+        active && "ring-2 ring-blue-500"
+      )}
+    >
+      <input
+        aria-label="Summary Title"
+        value={item.title}
+        placeholder="Untitled review"
+        disabled={isDemo}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => onChange("title", event.target.value)}
+        className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold"
+      />
+      <select
+        aria-label="Summary Review Status"
+        value={item.reviewStatus}
+        disabled={isDemo}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => onChange("reviewStatus", event.target.value as ReviewStatus)}
+        className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}
+      >
+        {REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <CurrencyInput
+        ariaLabel="Summary Proposed Rate"
+        value={item.proposedRateCents}
+        disabled={isDemo}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(value) => onChange("proposedRateCents", value)}
+        className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm"
+      />
+      <input
+        aria-label="Summary Provider"
+        value={item.provider ?? ""}
+        disabled={isDemo}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => onChange("provider", event.target.value)}
+        className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800"
+      />
     </div>
   );
 }
