@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useRef } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
@@ -16,25 +16,29 @@ type EditRoadmapModalProps = {
 export function EditRoadmapModal({ item, category, children }: EditRoadmapModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const tone = (category?.colorKey && category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
 
-  const openDialog = () => {
+  useEffect(() => {
+    if (!isOpen) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    if (typeof dialog.showModal === "function") dialog.showModal();
+    if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
     else dialog.setAttribute("open", "");
+  }, [isOpen]);
+
+  const openDialog = () => {
+    setIsOpen(true);
   };
 
   const closeDialog = () => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
+    if (dialog?.open && typeof dialog.close === "function") dialog.close();
+    else dialog?.removeAttribute("open");
 
-    if (typeof dialog.close === "function") dialog.close();
-    else {
-      dialog.removeAttribute("open");
-      triggerRef.current?.focus();
-    }
+    setIsOpen(false);
+    triggerRef.current?.focus();
   };
 
   const closeFromBackdrop = (event: MouseEvent<HTMLDialogElement>) => {
@@ -59,15 +63,18 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
       <div className="mt-2 flex flex-wrap gap-2">
         {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
         {item.provider ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
-        {item.releaseDate ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{formatRoadmapDate(item.releaseDate)}</span> : null}
+        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", item.releaseDate === "TBD" ? "bg-red-100 text-red-700" : "bg-gray-100")}>{item.releaseDate === "TBD" ? "TBD" : formatRoadmapDate(item.releaseDate)}</span> : null}
       </div>
     </button>
-    <dialog
+    {isOpen ? <dialog
       ref={dialogRef}
       aria-labelledby={`edit-roadmap-title-${item.id}`}
       onClick={closeFromBackdrop}
       onKeyDown={closeFromEscape}
-      onClose={() => triggerRef.current?.focus()}
+      onClose={() => {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }}
       className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
     >
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
@@ -85,6 +92,6 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
           <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
         </footer>
       </div>
-    </dialog>
+    </dialog> : null}
   </>;
 }

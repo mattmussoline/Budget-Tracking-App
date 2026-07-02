@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RoadmapDashboard } from "./roadmap-dashboard";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
 
@@ -20,6 +20,7 @@ const actionMocks = vi.hoisted(() => ({
 vi.mock("../planning-actions", () => actionMocks);
 
 beforeEach(() => vi.clearAllMocks());
+afterEach(() => vi.useRealTimers());
 
 const categories: RoadmapCategory[] = [
   { id: "cat-parish", name: "Parish", colorKey: "blue", sortOrder: 0, isActive: true },
@@ -29,7 +30,8 @@ const categories: RoadmapCategory[] = [
 const roadmapItems: RoadmapItem[] = [
   { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
-  { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null }
+  { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
+  { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-12-12", status: "planned", notes: null, categoryId: null }
 ];
 
 const series: OngoingSeries[] = [
@@ -53,16 +55,41 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Aquinas 101")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Backlog" })).toBeVisible();
+    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("Everything else"));
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
     expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-blue-100"))).toBe(true);
+  });
+
+  it("splits backlog into past releases and everything else based on the current month", () => {
+    vi.setSystemTime(new Date("2027-03-15T12:00:00Z"));
+
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const releasedGroup = screen.getByTestId("backlog-released-content");
+    const otherGroup = screen.getByTestId("backlog-other-content");
+
+    expect(releasedGroup).not.toHaveAttribute("open");
+    expect(otherGroup).not.toHaveAttribute("open");
+
+    fireEvent.click(within(releasedGroup).getByText("Already released content"));
+    fireEvent.click(within(otherGroup).getByText("Everything else"));
+
+    expect(within(releasedGroup).getByText("Past Film")).toBeVisible();
+    expect(within(releasedGroup).queryByText("Future Film")).not.toBeInTheDocument();
+    expect(within(releasedGroup).queryByText("Undated Film")).not.toBeInTheDocument();
+    expect(within(otherGroup).getByText("Future Film")).toBeVisible();
+    expect(within(otherGroup).getByText("Undated Film")).toBeVisible();
   });
 
   it("shows and edits the exact release date", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     expect(screen.getByText("January 24, 2027")).toBeVisible();
-    const dateInput = screen.getByLabelText("Release date", { selector: "#road-1-date" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    const dateInput = within(dialog).getByLabelText("Release date", { selector: "#road-1-date" });
     expect(dateInput).toHaveAttribute("type", "date");
     expect(dateInput).toHaveValue("2027-01-24");
   });
@@ -79,19 +106,73 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const trigger = screen.getByRole("button", { name: "Add Roadmap Item" });
-    const dialog = screen.getAllByRole("dialog", { hidden: true }).find((element) => element.getAttribute("aria-labelledby") === "add-roadmap-title");
 
-    expect(dialog).toBeDefined();
-    expect(dialog).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog", { name: "Add Roadmap Item" })).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
 
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
     expect(dialog).toHaveAttribute("open");
     expect(screen.getByRole("heading", { name: "Add Roadmap Item" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(dialog).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog", { name: "Add Roadmap Item" })).not.toBeInTheDocument();
+  });
+
+  it("does not mount every closed roadmap dialog at once", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    expect(screen.getAllByRole("dialog", { hidden: true })).toHaveLength(1);
+  });
+
+  it("opens an add-roadmap form from a month with that month prefilled", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const januaryAddButton = screen.getByRole("button", { name: "Add item to January 2027" });
+    expect(januaryAddButton).toHaveTextContent("Add item");
+    expect(januaryAddButton).toHaveClass("!text-blue-700");
+
+    fireEvent.click(januaryAddButton);
+
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    expect(dialog).toHaveAttribute("open");
+    expect(within(dialog).getByLabelText("Release date")).toHaveValue("2027-01-01");
+    expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-9");
+    expect(within(dialog).queryByLabelText("Release date option")).not.toBeInTheDocument();
+  });
+
+  it("closes provider suggestions after choosing one in the add-roadmap form", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const providerInput = within(dialog).getByLabelText("Provider");
+
+    fireEvent.change(providerInput, { target: { value: "Tho" } });
+    expect(within(dialog).getByRole("button", { name: "Thomistic" })).toBeVisible();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Thomistic" }));
+
+    expect(providerInput).toHaveValue("Thomistic");
+    expect(within(dialog).queryByRole("button", { name: "Thomistic" })).not.toBeInTheDocument();
+  });
+
+  it("supports TBD release dates and shows TBD in red", () => {
+    const tbdItems: RoadmapItem[] = [
+      ...roadmapItems,
+      { id: "road-tbd", title: "Mystery Series", provider: "Thomistic", releaseDate: "TBD", status: "planned", notes: null, categoryId: null }
+    ];
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={tbdItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    expect(within(screen.getByRole("button", { name: "Edit Mystery Series" })).getByText("TBD")).toHaveClass("bg-red-100", "text-red-700");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark release date TBD" }));
+
+    expect(within(dialog).getByLabelText("Release date value")).toHaveValue("TBD");
+    expect(within(dialog).queryByLabelText("Release date")).not.toBeInTheDocument();
   });
 
   it("opens and closes a roadmap item editor in a modal dialog", () => {
@@ -107,13 +188,29 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByRole("button", { name: "Delete" })).toBeVisible();
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    expect(dialog).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog", { name: "Edit Roadmap Item" })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
 
     fireEvent.click(trigger);
-    fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(dialog).not.toHaveAttribute("open");
+    const reopenedDialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    fireEvent.keyDown(reopenedDialog, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Edit Roadmap Item" })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it("asks for confirmation before deleting roadmap items and ongoing series", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Edit Roadmap Item" })).getByRole("button", { name: "Delete" }));
+
+    const seriesRow = screen.getByTestId("series-row-series-1");
+    fireEvent.click(within(seriesRow).getByText("Edit"));
+    fireEvent.click(within(seriesRow).getByRole("button", { name: "Delete" }));
+
+    expect(confirm).toHaveBeenCalledWith("Delete Aquinas 101? This cannot be undone.");
+    expect(confirm).toHaveBeenCalledWith("Delete Practicing Catholic? This cannot be undone.");
   });
 
   it("uses a fixed scrolling timeline and focuses one month at a glance", () => {

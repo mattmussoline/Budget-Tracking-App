@@ -26,7 +26,7 @@ export function PlanningNavigation({ activeSection }: PlanningNavigationProps) {
             href={href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-extrabold transition",
+              "inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-extrabold transition",
               isActive ? "bg-white text-blue-700" : "bg-blue-400 text-white hover:bg-white/20"
             )}
           >
