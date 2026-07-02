@@ -14,21 +14,26 @@ type SharePanelProps = {
 
 export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePanelProps) {
   return (
-    <SoftSurface className="bg-gray-100 p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-emerald-500">
-          <Users className="h-5 w-5 text-white" aria-hidden="true" />
+    <SoftSurface className="border border-gray-200 bg-white p-5 md:p-6">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-emerald-500">
+            <Users className="h-5 w-5 text-white" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-display text-xl font-extrabold tracking-tight">Collaborators</h2>
+            <p className="max-w-xl text-sm font-medium leading-6 text-muted">
+              {isDemo
+                ? "Connect Supabase to manage who can sign in."
+                : "Add an approved work email, then share the app link and shared password."}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Collaborators</h2>
-          <p className="text-sm font-medium text-muted">
-            {isDemo
-              ? "Connect Supabase to manage who can sign in."
-              : "Add a work email here, then share the app link and shared password with that person."}
-          </p>
+        <div className="w-fit shrink-0 rounded-md bg-gray-100 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-muted">
+          {allowedEmails.length} {allowedEmails.length === 1 ? "person" : "people"}
         </div>
       </div>
-      <form action={addCollaborator} className="grid gap-4">
+      <form action={addCollaborator} className="grid gap-3 rounded-lg bg-gray-100 p-3">
         <SoftInput
           label="Collaborator email"
           name="email"
@@ -36,22 +41,29 @@ export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePan
           placeholder="name@augustineinstitute.org"
           required
           disabled={isDemo}
+          surface="white"
         />
-        <SoftButton type="submit" disabled={isDemo}>
+        <SoftButton type="submit" variant="primary" className="w-full" disabled={isDemo}>
           <UserPlus className="h-4 w-4" aria-hidden="true" />
           Allow access
         </SoftButton>
       </form>
-      <div className="mt-6 grid gap-3">
-        <h3 className="text-sm font-extrabold uppercase tracking-wide text-muted">Can sign in</h3>
+      <div className="mt-5 grid gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Can sign in</h3>
+          <span className="hidden text-xs font-bold text-muted sm:inline">Augustine email required</span>
+        </div>
         {allowedEmails.length > 0 ? (
-          <ul className="grid gap-2">
+          <ul className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 bg-white">
             {allowedEmails.map((email) => {
               const isCurrentUser = email === currentUserEmail;
 
               return (
-                <li key={email} className="flex min-h-12 items-center justify-between gap-3 rounded-md bg-white px-4 py-3">
-                  <span className="min-w-0 truncate text-sm font-bold text-foreground">{email}</span>
+                <li key={email} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-foreground">{email}</span>
+                    {isCurrentUser ? <span className="text-xs font-bold text-muted">You</span> : null}
+                  </div>
                   <form
                     action={removeCollaborator}
                     onSubmit={(event) => {
@@ -64,7 +76,7 @@ export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePan
                     <SoftButton
                       type="submit"
                       variant="ghost"
-                      className="min-h-10 px-3 py-2"
+                      className="min-h-9 rounded-full px-3 py-2 hover:bg-red-50 hover:text-red-600 disabled:hover:bg-transparent"
                       disabled={isDemo || isCurrentUser}
                       title={isCurrentUser ? "You cannot remove your own access while signed in." : "Remove access"}
                     >
@@ -77,7 +89,9 @@ export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePan
             })}
           </ul>
         ) : (
-          <p className="rounded-md bg-white px-4 py-3 text-sm font-semibold text-muted">No collaborators have been added yet.</p>
+          <p className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-4 text-sm font-semibold text-muted">
+            No collaborators have been added yet.
+          </p>
         )}
       </div>
     </SoftSurface>
