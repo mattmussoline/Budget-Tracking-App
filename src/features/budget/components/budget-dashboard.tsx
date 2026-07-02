@@ -123,7 +123,7 @@ export function BudgetDashboard({
                 <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
                 <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
               </div>
-              <div className="grid min-w-0 gap-8">
+              <div className="grid min-w-0 content-start gap-8">
                 <MonthBoard model={model} providerColorOverrides={providerColorOverrides} />
                 <LicenseManager
                   fiscalYearId={fiscalYear.id}

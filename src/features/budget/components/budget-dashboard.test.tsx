@@ -72,6 +72,16 @@ function renderDashboard() {
 }
 
 describe("BudgetDashboard", () => {
+  it("does not stretch the edit content panel to match the sidebar height", () => {
+    const { container } = renderDashboard();
+    const editContentPanel = Array.from(container.querySelectorAll("div.content-start")).find((element) =>
+      element.querySelector("details.group")
+    );
+
+    expect(editContentPanel).toBeInTheDocument();
+    expect(editContentPanel).toContainElement(container.querySelector("details.group"));
+  });
+
   it("renders dashboard form fields with unique ids", () => {
     const { container } = renderDashboard();
     const ids = Array.from(container.querySelectorAll("[id]"), (element) => element.id).filter(Boolean);
