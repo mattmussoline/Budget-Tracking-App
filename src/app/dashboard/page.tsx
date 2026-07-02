@@ -72,6 +72,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     throw new Error(providerColorError.message);
   }
 
+  const { data: accessRows, error: accessError } = await admin
+    .from("app_access_invites")
+    .select("email")
+    .order("email", { ascending: true });
+
+  if (accessError) {
+    throw new Error(accessError.message);
+  }
+
   const licenses: ContentLicense[] = (licenseRows ?? []).map((license) => ({
     id: license.id,
     title: license.title,
@@ -101,6 +110,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       providerColorOverrides={providerColorOverrides}
       mode="live"
       userEmail={session.email}
+      allowedEmails={(accessRows ?? []).map((row) => row.email)}
     />
   );
 }

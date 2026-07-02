@@ -1,4 +1,20 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
+
+function readLocalAppPassword() {
+  if (!existsSync(".env.local")) {
+    return null;
+  }
+
+  const line = readFileSync(".env.local", "utf8")
+    .split("\n")
+    .find((entry) => entry.startsWith("APP_PASSWORD="));
+
+  return line?.slice("APP_PASSWORD=".length).replace(/^['"]|['"]$/g, "") || null;
+}
+
+const appPassword = process.env.APP_PASSWORD ?? readLocalAppPassword() ?? "playwright-password";
+process.env.APP_PASSWORD = appPassword;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -7,7 +23,10 @@ export default defineConfig({
     trace: "on-first-retry"
   },
   webServer: {
-    command: "APP_PASSWORD=playwright-password npm run dev",
+    command: "npm run dev",
+    env: {
+      APP_PASSWORD: appPassword
+    },
     url: "http://127.0.0.1:5173",
     reuseExistingServer: true,
     timeout: 120_000

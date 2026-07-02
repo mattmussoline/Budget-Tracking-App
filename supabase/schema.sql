@@ -19,6 +19,21 @@ create table if not exists public.fiscal_year_members (
   primary key (fiscal_year_id, user_id)
 );
 
+create table if not exists public.app_access_invites (
+  email text primary key,
+  invited_by_email text not null,
+  created_at timestamptz not null default now(),
+  constraint app_access_invites_lowercase_email check (email = lower(email)),
+  constraint app_access_invites_allowed_domain check (
+    email like '%@augustineinstitute.org'
+    or email like '%@augustine.edu'
+  )
+);
+
+insert into public.app_access_invites (email, invited_by_email)
+values ('matt.mussoline@augustineinstitute.org', 'matt.mussoline@augustineinstitute.org')
+on conflict (email) do nothing;
+
 create table if not exists public.content_licenses (
   id uuid primary key default gen_random_uuid(),
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
@@ -236,6 +251,7 @@ for each row execute function public.create_owner_membership_for_fiscal_year();
 
 alter table public.fiscal_years enable row level security;
 alter table public.fiscal_year_members enable row level security;
+alter table public.app_access_invites enable row level security;
 alter table public.content_licenses enable row level security;
 alter table public.provider_color_overrides enable row level security;
 alter table public.roadmap_items enable row level security;

@@ -27,9 +27,7 @@ const licenseSchema = z.object({
 });
 
 const collaboratorSchema = z.object({
-  fiscalYearId: z.string().uuid(),
-  email: z.string().email(),
-  role: z.enum(["editor", "viewer"])
+  email: z.string().email()
 });
 
 const updateFiscalYearSchema = fiscalYearSchema.extend({
@@ -305,21 +303,40 @@ export async function addCollaborator(formData: FormData) {
     throw new Error(`Collaborators must use ${allowedEmailDomainText()} email addresses.`);
   }
 
-  await requireInternalSession();
+  const session = await requireInternalSession();
+  const email = parsed.data.email.trim().toLowerCase();
 
-  const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (usersError) {
-    throw new Error(usersError.message);
+  const { error } = await admin.from("app_access_invites").upsert({
+    email,
+    invited_by_email: session.email
+  });
+
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const collaborator = usersData.users.find((user) => user.email?.toLowerCase() === parsed.data.email.toLowerCase());
-  const collaboratorId = collaborator?.id ?? (await ensureSupabaseUserId(admin, parsed.data.email));
+  revalidatePath("/dashboard");
+}
 
-  const { error } = await admin.from("fiscal_year_members").upsert({
-    fiscal_year_id: parsed.data.fiscalYearId,
-    user_id: collaboratorId,
-    role: parsed.data.role
-  });
+export async function removeCollaborator(formData: FormData) {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    return;
+  }
+
+  const parsed = collaboratorSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid collaborator email.");
+  }
+
+  const session = await requireInternalSession();
+  const email = parsed.data.email.trim().toLowerCase();
+
+  if (email === session.email) {
+    throw new Error("You cannot remove your own access while signed in.");
+  }
+
+  const { error } = await admin.from("app_access_invites").delete().eq("email", email);
 
   if (error) {
     throw new Error(error.message);

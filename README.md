@@ -51,11 +51,11 @@ SUPABASE_SERVICE_ROLE_KEY=...
 APP_PASSWORD=...
 ```
 
-4. Sign in with an Augustine email and the shared internal password.
+4. Sign in with an email from `app_access_invites` and the shared internal password.
 5. Create the fiscal year.
-6. Share the app link with internal collaborators and give them the shared password.
+6. Add collaborators from the dashboard before sharing the app link and shared password.
 
-The app only accepts users whose email ends in `@augustineinstitute.org` or `@augustine.edu`. `APP_PASSWORD` must stay server-side only.
+The app only accepts users whose email ends in `@augustineinstitute.org` or `@augustine.edu` and appears in `public.app_access_invites`. `APP_PASSWORD` must stay server-side only.
 
 ## Vercel Deployment
 

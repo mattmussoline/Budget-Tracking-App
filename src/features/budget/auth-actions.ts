@@ -2,14 +2,40 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { isAllowedWorkEmail, normalizeWorkEmail } from "@/lib/auth/domain-access";
-import { createInternalSessionCookie, internalSessionCookieName, verifyAppPassword } from "@/lib/auth/internal-auth";
+import { canAccessInternalApp } from "@/lib/auth/access-list";
+import { normalizeWorkEmail } from "@/lib/auth/domain-access";
+import { createInternalSessionCookie, internalSessionCookieName } from "@/lib/auth/internal-auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function login(_previousState: string | null, formData: FormData) {
   const email = normalizeWorkEmail(String(formData.get("email") ?? ""));
   const password = String(formData.get("password") ?? "");
+  const admin = createSupabaseAdminClient();
 
-  if (!isAllowedWorkEmail(email) || !(await verifyAppPassword(password, process.env.APP_PASSWORD))) {
+  const canAccess = await canAccessInternalApp({
+    email,
+    password,
+    expectedPassword: process.env.APP_PASSWORD,
+    isEmailOnAccessList: async (normalizedEmail) => {
+      if (!admin) {
+        return false;
+      }
+
+      const { data, error } = await admin
+        .from("app_access_invites")
+        .select("email")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return Boolean(data);
+    }
+  });
+
+  if (!canAccess) {
     return "Check the email and shared password.";
   }
 
