@@ -21,6 +21,26 @@ const license: ContentLicense = {
 };
 
 describe("LicenseManager", () => {
+  it("keeps the edit content area compact", () => {
+    const { container } = render(
+      <LicenseManager
+        fiscalYearId="00000000-0000-0000-0000-000000000027"
+        fiscalYear={2027}
+        fiscalYearStartMonth={7}
+        licenses={[license]}
+        providerOptions={["Thomistic"]}
+        providerColorOverrides={{}}
+      />
+    );
+
+    const editContentSummary = screen.getByText("Edit Content").closest("summary");
+    expect(editContentSummary).toHaveClass("px-4", "py-3");
+    expect(container.querySelectorAll("details")).toHaveLength(2);
+    expect(screen.getByRole("combobox", { name: "Cadence" })).toHaveClass("min-h-9", "text-sm");
+    expect(screen.getByRole("combobox", { name: "Added month" })).toHaveClass("min-h-9", "text-sm");
+    expect(screen.getByRole("button", { name: "Save" })).toHaveClass("min-h-9", "text-xs");
+  });
+
   it("asks for confirmation before deleting a content title", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(

@@ -37,49 +37,52 @@ export function LicenseManager({
   return (
     <SoftSurface className="overflow-hidden bg-gray-900">
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-gray-900 p-6 text-white marker:hidden md:p-8">
-          <span className="flex min-w-0 items-center gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-500 text-white">
-              <Pencil className="h-5 w-5" aria-hidden="true" />
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gray-900 px-4 py-3 text-white marker:hidden md:px-5">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-500 text-white">
+              <Pencil className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block font-display text-2xl font-extrabold tracking-tight">Edit Content</span>
-              <span className="block text-sm font-medium text-gray-300">Adjust titles, providers, payment amounts, cadence, or added month.</span>
+              <span className="block font-display text-lg font-extrabold tracking-tight">Edit Content</span>
+              <span className="block text-xs font-medium text-gray-300">Adjust titles, providers, payment amounts, cadence, or added month.</span>
             </span>
           </span>
-          <ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
         <datalist id="license-manager-provider-options">
           {providerOptions.map((provider) => (
             <option key={provider} value={provider} />
           ))}
         </datalist>
-        <div className="grid gap-4 bg-gray-100 p-4 md:p-6">
+        <div className="grid gap-2 bg-gray-100 p-3 md:p-4">
           {licenses.length === 0 ? (
-            <p className="rounded-lg bg-gray-100 p-4 text-sm font-bold text-muted">Added content will appear here for editing.</p>
+            <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-muted">Added content will appear here for editing.</p>
           ) : (
             licenses.map((license, index) => {
               const providerColor = getProviderColor(license.provider, providerColorOverrides);
 
               return (
-                <div key={license.id} className="overflow-hidden rounded-lg bg-white">
-                  <div
-                    className={`flex flex-col gap-2 border-l-8 p-4 sm:flex-row sm:items-center sm:justify-between ${index % 2 === 0 ? "bg-white" : "bg-blue-50"}`}
+                <details key={license.id} className="group/license overflow-hidden rounded-md bg-white shadow-sm">
+                  <summary
+                    className={`flex cursor-pointer list-none items-center justify-between gap-3 border-l-4 px-3 py-2 marker:hidden ${index % 2 === 0 ? "bg-white" : "bg-blue-50"}`}
                     style={{ borderLeftColor: providerColor.hex }}
                   >
-                    <div>
-                      <h3 className="font-display text-xl font-extrabold tracking-tight">{license.title}</h3>
-                      <p className="text-sm font-bold text-muted">{license.provider}</p>
-                    </div>
-                    <span className={`w-fit rounded-md px-3 py-2 text-xs font-extrabold uppercase tracking-wide ${providerColor.bg} ${providerColor.text}`}>
-                      {license.cadence}
+                    <span className="min-w-0">
+                      <span className="block truncate font-display text-base font-extrabold tracking-tight">{license.title}</span>
+                      <span className="block truncate text-xs font-bold text-muted">{license.provider}</span>
                     </span>
-                  </div>
-                  <div className="p-4">
-                    <form action={updateContentLicense} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className={`rounded-md px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide ${providerColor.bg} ${providerColor.text}`}>
+                        {license.cadence}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted transition-transform group-open/license:rotate-180" aria-hidden="true" />
+                    </span>
+                  </summary>
+                  <div className="border-t border-gray-100 p-3">
+                    <form action={updateContentLicense} className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                       <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
                       <input type="hidden" name="licenseId" value={license.id} />
-                      <SoftInput label="Title" name="title" defaultValue={license.title} required disabled={isDemo} />
+                      <SoftInput label="Title" name="title" defaultValue={license.title} required disabled={isDemo} className="min-h-9 px-3 text-sm" />
                       <SoftInput
                         label="Provider"
                         name="provider"
@@ -87,6 +90,7 @@ export function LicenseManager({
                         defaultValue={license.provider}
                         required
                         disabled={isDemo}
+                        className="min-h-9 px-3 text-sm"
                       />
                       <SoftInput
                         label="Amount"
@@ -95,6 +99,7 @@ export function LicenseManager({
                         inputMode="decimal"
                         required
                         disabled={isDemo}
+                        className="min-h-9 px-3 text-sm"
                       />
                       <SoftSelect
                         label="Cadence"
@@ -105,6 +110,7 @@ export function LicenseManager({
                           { label: "Yearly", value: "yearly" }
                         ]}
                         disabled={isDemo}
+                        className="min-h-9 px-3 text-sm"
                       />
                       <SoftSelect
                         label="Added month"
@@ -112,17 +118,24 @@ export function LicenseManager({
                         defaultValue={String(license.addedFiscalMonth)}
                         options={monthOptions}
                         disabled={isDemo}
+                        className="min-h-9 px-3 text-sm"
                       />
-                      <SoftInput label="Notes" name="notes" defaultValue={license.notes ?? ""} disabled={isDemo} className="xl:col-span-2" />
-                      <div className="grid gap-2 sm:grid-cols-2 xl:col-span-1">
-                        <SoftButton type="submit" variant="primary" disabled={isDemo}>
+                      <SoftInput
+                        label="Notes"
+                        name="notes"
+                        defaultValue={license.notes ?? ""}
+                        disabled={isDemo}
+                        className="min-h-9 px-3 text-sm md:col-span-2 xl:col-span-1"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2 md:col-span-2 xl:col-span-6 xl:flex xl:justify-end">
+                        <SoftButton type="submit" variant="primary" disabled={isDemo} className="min-h-9 px-3 py-2 text-xs">
                           Save
                         </SoftButton>
                         <SoftButton
                           form={`delete-${license.id}`}
                           type="submit"
                           variant="ghost"
-                          className="text-red-700 hover:bg-red-100"
+                          className="min-h-9 px-3 py-2 text-xs text-red-700 hover:bg-red-100"
                           disabled={isDemo}
                           onClick={(event) => {
                             if (!window.confirm(`Delete ${license.title}? This cannot be undone.`)) {
@@ -139,7 +152,7 @@ export function LicenseManager({
                   <form id={`delete-${license.id}`} action={deleteContentLicense}>
                     <input type="hidden" name="licenseId" value={license.id} />
                   </form>
-                </div>
+                </details>
               );
             })
           )}
