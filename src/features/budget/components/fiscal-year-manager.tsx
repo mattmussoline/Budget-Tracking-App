@@ -72,7 +72,7 @@ export function FiscalYearManager({
                   event.preventDefault();
                   setMenuFiscalYearId(year.id);
                 }}
-                className={`flex items-center gap-1.5 rounded-l-md px-3 py-2 text-sm font-extrabold transition ${
+                className={`flex min-h-11 items-center gap-1.5 rounded-l-md px-3 py-2 text-sm font-extrabold transition ${
                   isActive ? "bg-white text-blue-700" : "text-white hover:bg-white/20"
                 }`}
               >
@@ -89,7 +89,7 @@ export function FiscalYearManager({
                   event.preventDefault();
                   setMenuFiscalYearId(year.id);
                 }}
-                className={`grid w-9 place-items-center rounded-r-md border-l transition ${
+                className={`grid min-h-11 w-11 place-items-center rounded-r-md border-l transition ${
                   isActive
                     ? "border-blue-100 bg-white text-blue-700 hover:bg-blue-50"
                     : "border-white/20 text-white hover:bg-white/20"
@@ -109,7 +109,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={year.is_pinned || isDemo}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Pin className="h-4 w-4" aria-hidden="true" />
                       {year.is_pinned ? "Pinned as default" : "Pin as default"}
@@ -132,7 +132,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={isDemo}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                       Delete budget
@@ -148,7 +148,7 @@ export function FiscalYearManager({
           type="button"
           disabled={isDemo}
           onClick={() => setIsCreateOpen((isOpen) => !isOpen)}
-          className="flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-extrabold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-11 items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-extrabold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add fiscal year
@@ -161,7 +161,7 @@ export function FiscalYearManager({
             type="button"
             aria-label="Cancel adding fiscal year"
             onClick={() => setIsCreateOpen(false)}
-            className="absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-md bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
+            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-md bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

@@ -1,4 +1,5 @@
 import { cn } from "./soft-surface";
+import { useId } from "react";
 
 type SoftSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
@@ -9,7 +10,8 @@ type SoftSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
 };
 
 export function SoftSelect({ label, options, placeholder, error, surface = "muted", className, id, ...props }: SoftSelectProps) {
-  const fieldId = id ?? props.name;
+  const generatedId = useId();
+  const fieldId = id ?? (props.name ? `${props.name}-${generatedId}` : generatedId);
 
   return (
     <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={fieldId}>

@@ -18,13 +18,13 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
   ];
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
-      <SoftSurface className={`p-6 ${health.tile}`}>
-        <div className="mb-5 flex items-center justify-between gap-4">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))]">
+      <SoftSurface className={`min-w-0 p-5 sm:p-6 ${health.tile}`}>
+        <div className="mb-5 flex min-w-0 items-center justify-between gap-4">
           <div className="grid h-12 w-12 place-items-center rounded-lg bg-white">
             <WalletCards className={health.icon} aria-hidden="true" />
           </div>
-          <span className="rounded-md bg-white px-3 py-1 text-sm font-extrabold text-foreground">{percentUsed}% used</span>
+          <span className="min-w-0 rounded-md bg-white px-3 py-1 text-sm font-extrabold text-foreground">{percentUsed}% used</span>
         </div>
         <p className="text-sm font-extrabold uppercase tracking-wide text-foreground">Fiscal year health</p>
         <div className="mt-4 h-5 rounded-md bg-white">
@@ -32,12 +32,12 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
         </div>
       </SoftSurface>
       {metrics.map((metric) => (
-        <SoftSurface key={metric.label} className={`p-6 ${metric.className}`}>
+        <SoftSurface key={metric.label} className={`min-w-0 p-5 sm:p-6 ${metric.className}`}>
           <div className="mb-4 grid h-12 w-12 place-items-center rounded-lg bg-white">
             <metric.icon className={health.icon} aria-hidden="true" />
           </div>
           <p className="text-sm font-extrabold uppercase tracking-wide text-foreground">{metric.label}</p>
-          <p className="font-display text-3xl font-extrabold tracking-tight">{metric.value}</p>
+          <p className="break-words font-display text-3xl font-extrabold tracking-tight">{metric.value}</p>
         </SoftSurface>
       ))}
     </div>

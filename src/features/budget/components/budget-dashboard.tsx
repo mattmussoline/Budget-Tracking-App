@@ -33,9 +33,19 @@ type BudgetDashboardProps = {
   providerColorOverrides?: ProviderColorOverrides;
   mode: "demo" | "live";
   userEmail?: string;
+  allowedEmails?: string[];
 };
 
-export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, providerColorOverrides = {}, mode, userEmail }: BudgetDashboardProps) {
+export function BudgetDashboard({
+  fiscalYear,
+  fiscalYears,
+  model,
+  licenses,
+  providerColorOverrides = {},
+  mode,
+  userEmail,
+  allowedEmails = []
+}: BudgetDashboardProps) {
   const isDemo = mode === "demo";
   const nextFiscalYear = getNextFiscalYear(fiscalYears, new Date().getFullYear());
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
@@ -43,13 +53,13 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
   );
 
   return (
-    <main className="min-h-screen bg-white px-5 py-6 md:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-7xl gap-8">
-        <header className="relative overflow-hidden rounded-lg bg-blue-500 p-8 text-white md:p-10">
-          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-white/10" aria-hidden="true" />
+    <main className="min-h-screen bg-white px-4 py-6 sm:px-5 md:px-8 lg:px-10">
+      <div className="mx-auto grid min-w-0 max-w-7xl gap-8">
+        <header className="relative overflow-hidden rounded-lg bg-blue-500 p-6 text-white sm:p-8 md:p-10">
+          <div className="absolute right-0 top-0 h-48 w-48 -translate-y-1/2 rounded-full bg-white/10" aria-hidden="true" />
           <div className="absolute bottom-6 right-28 h-20 w-20 rotate-12 bg-white/10" aria-hidden="true" />
-          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="min-w-0">
             <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-blue-100">Internal Licensing</p>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-6xl">
               {fiscalYear?.label ?? "Licensing Budget"}
@@ -65,15 +75,15 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
               />
             ) : null}
             </div>
-            <div className="grid max-w-xl gap-3">
+            <div className="grid min-w-0 max-w-xl gap-3">
             <p className="text-base font-semibold leading-7 text-blue-50">
               Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.
             </p>
             <PlanningNavigation activeSection="dashboard" />
             {userEmail ? (
-              <form action={logout} className="flex flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
-                <span>{userEmail}</span>
-                <button type="submit" className="rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
+              <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
+                <span className="min-w-0 break-all">{userEmail}</span>
+                <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
                   Logout
                 </button>
               </form>
@@ -90,11 +100,11 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
         {!fiscalYear || !model ? (
           <FiscalYearSettings isDemo={isDemo} />
         ) : (
-          <div className="grid gap-8">
+          <div className="grid min-w-0 gap-8">
             <SummaryMetrics model={model} />
             <DashboardInsights model={model} providerColorOverrides={providerColorOverrides} />
-            <div className="grid gap-8 xl:grid-cols-[420px_1fr]">
-              <div className="grid content-start gap-8">
+            <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+              <div className="grid min-w-0 content-start gap-8">
                 <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
                 <ContentLicenseForm
                   fiscalYearId={fiscalYear.id}
@@ -110,10 +120,10 @@ export function BudgetDashboard({ fiscalYear, fiscalYears, model, licenses, prov
                   isDemo={isDemo}
                 />
                 <CadenceSummary model={model} />
-                <SharePanel fiscalYearId={fiscalYear.id} isDemo={isDemo} />
+                <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
                 <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
               </div>
-              <div className="grid gap-8">
+              <div className="grid min-w-0 gap-8">
                 <MonthBoard model={model} providerColorOverrides={providerColorOverrides} />
                 <LicenseManager
                   fiscalYearId={fiscalYear.id}

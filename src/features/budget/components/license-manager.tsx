@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -116,7 +118,18 @@ export function LicenseManager({
                         <SoftButton type="submit" variant="primary" disabled={isDemo}>
                           Save
                         </SoftButton>
-                        <SoftButton form={`delete-${license.id}`} type="submit" variant="ghost" className="text-red-700 hover:bg-red-100" disabled={isDemo}>
+                        <SoftButton
+                          form={`delete-${license.id}`}
+                          type="submit"
+                          variant="ghost"
+                          className="text-red-700 hover:bg-red-100"
+                          disabled={isDemo}
+                          onClick={(event) => {
+                            if (!window.confirm(`Delete ${license.title}? This cannot be undone.`)) {
+                              event.preventDefault();
+                            }
+                          }}
+                        >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                           Delete
                         </SoftButton>

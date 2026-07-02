@@ -1,4 +1,5 @@
 import { cn } from "./soft-surface";
+import { useId } from "react";
 
 type SoftInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -7,7 +8,8 @@ type SoftInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export function SoftInput({ label, error, surface = "muted", className, id, ...props }: SoftInputProps) {
-  const fieldId = id ?? props.name;
+  const generatedId = useId();
+  const fieldId = id ?? (props.name ? `${props.name}-${generatedId}` : generatedId);
 
   return (
     <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={fieldId}>

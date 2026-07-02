@@ -24,7 +24,7 @@ export function SoftSurface({
   as: Component = "div"
 }: SoftSurfaceProps) {
   return (
-    <Component className={cn("rounded-lg shadow-none", depthClass[depth], className)}>
+    <Component className={cn("min-w-0 rounded-lg shadow-none", depthClass[depth], className)}>
       {children}
     </Component>
   );
