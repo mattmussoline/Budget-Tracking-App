@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,6 +29,20 @@ const item: ContentReviewItem = {
   comparableContent: "Symbolon"
 };
 
+const activeItem: ContentReviewItem = {
+  ...item,
+  id: "review-active",
+  title: "Catholic Basics",
+  reviewStatus: "in_progress"
+};
+
+const rejectedItem: ContentReviewItem = {
+  ...item,
+  id: "review-rejected",
+  title: "Archive Candidate",
+  reviewStatus: "rejected"
+};
+
 describe("ContentReviewDashboard", () => {
   it("renders the compact decision queue and selected detail editor", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
@@ -52,10 +66,30 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Detail Title")).toHaveValue("");
   });
 
-  it("uses explicit row selection instead of making the editable row itself a button", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("moves approved and rejected reviews into separate decision spaces", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item, rejectedItem]} isDemo />);
 
-    expect(screen.getByRole("button", { name: "Select Aquinas 101" })).toBeVisible();
+    const decisionQueue = screen.getByTestId("content-review-active-queue");
+    expect(within(decisionQueue).getByDisplayValue("Catholic Basics")).toBeVisible();
+    expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
+    expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
+
+    const approvedGroup = screen.getByTestId("content-review-approved-content");
+    const rejectedGroup = screen.getByTestId("content-review-rejected-content");
+    fireEvent.click(within(approvedGroup).getByText("Approved Content"));
+    fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
+
+    expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
+    expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeVisible();
+
+    fireEvent.click(within(rejectedGroup).getByRole("button", { name: "Select Archive Candidate" }));
+    expect(screen.getByLabelText("Detail Title")).toHaveValue("Archive Candidate");
+  });
+
+  it("uses explicit row selection instead of making the editable row itself a button", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+
+    expect(screen.getByRole("button", { name: "Select Catholic Basics" })).toBeVisible();
     expect(screen.getByLabelText("Summary Title").closest("[role='button']")).toBeNull();
   });
 
