@@ -11,7 +11,7 @@ import type { ContentReviewItem, ReviewStatus } from "../planning-types";
 import { ColoredSelect } from "./colored-select";
 
 type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; isDemo?: boolean };
-type SaveState = "idle" | "saving" | "saved" | "error";
+type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -34,7 +34,14 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
   const [isPending, startTransition] = useTransition();
   const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
 
+  function selectItem(id: string) {
+    if (id !== selectedId) setSaveState("idle");
+    setSelectedId(id);
+  }
+
   function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | null) {
+    setSelectedId(id);
+    setSaveState("unsaved");
     if (id === "draft") {
       setDraft((current) => current ? { ...current, [field]: value } : current);
       return;
@@ -95,19 +102,30 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
           <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
           <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
         </div>
-        <div className="mb-2 hidden grid-cols-[1.3fr_1fr_0.9fr_1fr] gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid">
-          <span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+        <div className="mb-2 hidden grid-cols-[auto_1.3fr_1fr_0.9fr_1fr] gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid">
+          <span className="sr-only">Select</span><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
         </div>
         <div className="grid gap-2">
           {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : queue.map((item) => {
             const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
             const active = selectedId === item.id;
             return (
-              <div key={item.id} role="button" tabIndex={0} aria-current={active ? "true" : undefined} onClick={() => setSelectedId(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.id); }} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
-                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
-                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                <CurrencyInput ariaLabel="Summary Proposed Rate" value={item.proposedRateCents} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(value) => changeItem(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
-                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onClick={(event) => event.stopPropagation()} onChange={(event) => changeItem(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
+              <div key={item.id} aria-current={active ? "true" : undefined} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[auto_1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+                <button
+                  type="button"
+                  aria-label={`Select ${item.title || "Untitled review"}`}
+                  onClick={() => selectItem(item.id)}
+                  className={cn(
+                    "min-h-10 rounded-md px-3 text-left text-xs font-extrabold uppercase tracking-wide transition",
+                    active ? "bg-blue-600 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
+                  )}
+                >
+                  Select
+                </button>
+                <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => selectItem(item.id)} onChange={(event) => changeItem(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
+                <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => selectItem(item.id)} onChange={(event) => { changeItem(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                <CurrencyInput ariaLabel="Summary Proposed Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => selectItem(item.id)} onChange={(value) => changeItem(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
+                <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => selectItem(item.id)} onChange={(event) => changeItem(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
               </div>
             );
           })}
@@ -136,7 +154,7 @@ function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fi
       <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}?`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : <span />}
+      {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : <span />}
       <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
     </div>
   </div>;
@@ -150,7 +168,7 @@ function CurrencyField({ label, value, onChange, disabled }: { label: string; va
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
 }
 
-function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, className }: { ariaLabel: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLInputElement>; className: string }) {
+function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus, className }: { ariaLabel: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLInputElement>; onFocus?: React.FocusEventHandler<HTMLInputElement>; className: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState("");
 
@@ -160,7 +178,8 @@ function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, classNam
     value={isEditing ? draftValue : formatOptionalCurrency(value)}
     disabled={disabled}
     onClick={onClick}
-    onFocus={() => {
+    onFocus={(event) => {
+      onFocus?.(event);
       setDraftValue(value === null ? "" : String(value / 100));
       setIsEditing(true);
     }}

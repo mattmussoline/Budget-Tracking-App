@@ -52,6 +52,21 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Detail Title")).toHaveValue("");
   });
 
+  it("uses explicit row selection instead of making the editable row itself a button", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    expect(screen.getByRole("button", { name: "Select Aquinas 101" })).toBeVisible();
+    expect(screen.getByLabelText("Summary Title").closest("[role='button']")).toBeNull();
+  });
+
+  it("marks edited review details as unsaved until the user saves", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    fireEvent.change(screen.getByLabelText("Detail Title"), { target: { value: "Aquinas 102" } });
+
+    expect(screen.getByText("unsaved")).toBeVisible();
+  });
+
   it("offers the exact approved controlled options", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
 
