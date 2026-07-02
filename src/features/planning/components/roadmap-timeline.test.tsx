@@ -230,6 +230,21 @@ describe("RoadmapDashboard", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("keeps an edited roadmap status visible after saving", async () => {
+    actionMocks.updateRoadmapItem.mockResolvedValue(undefined);
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    const statusSelect = within(dialog).getByLabelText("Status");
+
+    fireEvent.change(statusSelect, { target: { value: "ready" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save Item" }));
+
+    await waitFor(() => expect(actionMocks.updateRoadmapItem).toHaveBeenCalledTimes(1));
+    expect(statusSelect).toHaveValue("ready");
+  });
+
   it("asks for confirmation before deleting roadmap items and ongoing series", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);

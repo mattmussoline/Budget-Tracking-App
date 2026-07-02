@@ -111,8 +111,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
   const formRef = useRef<HTMLFormElement>(null);
   const [resetCount, setResetCount] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const fieldsDisabled = Boolean(isDemo || isAdding);
+  const [isSaving, setIsSaving] = useState(false);
+  const fieldsDisabled = Boolean(isDemo || isSaving);
   const categoryOptions = categories
     .filter((category) => category.isActive || category.id === item?.categoryId)
     .map((category) => ({ label: category.name, value: category.id }));
@@ -121,7 +121,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     if (item) return;
     event.preventDefault();
     setMessage(null);
-    setIsAdding(true);
+    setIsSaving(true);
 
     try {
       await addRoadmapItem(new FormData(event.currentTarget));
@@ -129,11 +129,28 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       setResetCount((count) => count + 1);
       setMessage("Roadmap item added.");
     } finally {
-      setIsAdding(false);
+      setIsSaving(false);
     }
   };
 
-  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? undefined : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
+  const handleEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    if (!item) return;
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    if (submitter?.dataset.roadmapDelete === "true") return;
+
+    event.preventDefault();
+    setMessage(null);
+    setIsSaving(true);
+
+    try {
+      await updateRoadmapItem(new FormData(event.currentTarget));
+      setMessage("Roadmap item saved.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
     {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
@@ -144,8 +161,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
     <div className="flex gap-2 md:col-span-2">
-      <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? "Save Item" : isAdding ? "Adding..." : "Add Item"}</SoftButton>
-      {item ? <SoftButton formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
+      <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
+      {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
     </div>
   </form>;
 }
