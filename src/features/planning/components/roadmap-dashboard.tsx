@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { type ChangeEvent, type FocusEvent, type ReactNode, useMemo, useState } from "react";
+import { type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -108,7 +108,46 @@ function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions
 function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultReleaseDate = "", idPrefix, isDemo }: { fiscalYearId: string; categories: RoadmapCategory[]; providerOptions: string[]; item?: RoadmapItem; defaultReleaseDate?: string; idPrefix?: string; isDemo?: boolean }) {
   const action = item ? updateRoadmapItem : addRoadmapItem;
   const fieldPrefix = idPrefix ?? item?.id ?? "new";
-  return <form action={action} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2"><input type="hidden" name="fiscalYearId" value={fiscalYearId} />{item ? <input type="hidden" name="itemId" value={item.id} /> : null}<SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={isDemo} /><ProviderInput id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={isDemo} /><ReleaseDateField id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={isDemo} /><SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-9 px-3 text-sm" disabled={isDemo} /><SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categories.filter((category) => category.isActive || category.id === item?.categoryId).map((category) => ({ label: category.name, value: category.id }))} disabled={isDemo} /><SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={isDemo} /><div className="flex gap-2 md:col-span-2"><SoftButton type="submit" variant="primary" disabled={isDemo}>{item ? "Save Item" : "Add Item"}</SoftButton>{item ? <SoftButton formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}</div></form>;
+  const formRef = useRef<HTMLFormElement>(null);
+  const [resetCount, setResetCount] = useState(0);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const fieldsDisabled = Boolean(isDemo || isAdding);
+  const categoryOptions = categories
+    .filter((category) => category.isActive || category.id === item?.categoryId)
+    .map((category) => ({ label: category.name, value: category.id }));
+
+  const handleAddSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    if (item) return;
+    event.preventDefault();
+    setMessage(null);
+    setIsAdding(true);
+
+    try {
+      await addRoadmapItem(new FormData(event.currentTarget));
+      formRef.current?.reset();
+      setResetCount((count) => count + 1);
+      setMessage("Roadmap item added.");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? undefined : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
+    <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
+    {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
+    {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
+    <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
+    <ProviderInput key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
+    <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-9 px-3 text-sm" disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
+    <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
+    <div className="flex gap-2 md:col-span-2">
+      <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? "Save Item" : isAdding ? "Adding..." : "Add Item"}</SoftButton>
+      {item ? <SoftButton formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
+    </div>
+  </form>;
 }
 
 function ProviderInput({ id, defaultValue, options, disabled }: { id: string; defaultValue: string; options: string[]; disabled?: boolean }) {

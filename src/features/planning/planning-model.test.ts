@@ -82,4 +82,11 @@ describe("planning workspace migration", () => {
     expect(sql).toContain("enable row level security");
     expect(sql).toContain("roadmap_categories_fiscal_year_id_idx");
   });
+
+  it("keeps roadmap release dates as text so TBD can be saved", () => {
+    const schemaPath = resolve("supabase/schema.sql");
+    const sql = readFileSync(schemaPath, "utf8");
+
+    expect(sql).toContain("release_month text");
+  });
 });

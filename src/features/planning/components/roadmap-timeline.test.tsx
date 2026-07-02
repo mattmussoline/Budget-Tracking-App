@@ -158,6 +158,38 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).queryByRole("button", { name: "Thomistic" })).not.toBeInTheDocument();
   });
 
+  it("confirms and resets the add-roadmap form after adding an item", async () => {
+    actionMocks.addRoadmapItem.mockResolvedValue(undefined);
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const titleInput = within(dialog).getByLabelText("Title");
+    const providerInput = within(dialog).getByLabelText("Provider");
+    const releaseDateInput = within(dialog).getByLabelText("Release date");
+    const statusSelect = within(dialog).getByLabelText("Status");
+    const categorySelect = within(dialog).getByLabelText("Color category");
+    const notesInput = within(dialog).getByLabelText("Notes");
+
+    fireEvent.change(titleInput, { target: { value: "New Catechesis" } });
+    fireEvent.change(providerInput, { target: { value: "Augustine Institute" } });
+    fireEvent.change(releaseDateInput, { target: { value: "2027-02-14" } });
+    fireEvent.change(statusSelect, { target: { value: "ready" } });
+    fireEvent.change(categorySelect, { target: { value: "cat-adult" } });
+    fireEvent.change(notesInput, { target: { value: "Launch notes" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add Item" }));
+
+    await waitFor(() => expect(actionMocks.addRoadmapItem).toHaveBeenCalledTimes(1));
+
+    expect(within(dialog).getByText("Roadmap item added.")).toBeVisible();
+    expect(within(dialog).getByLabelText("Title")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Provider")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Release date")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Status")).toHaveValue("planned");
+    expect(within(dialog).getByLabelText("Color category")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Notes")).toHaveValue("");
+  });
+
   it("supports TBD release dates and shows TBD in red", () => {
     const tbdItems: RoadmapItem[] = [
       ...roadmapItems,

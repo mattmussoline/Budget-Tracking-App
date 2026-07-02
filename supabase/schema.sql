@@ -73,7 +73,7 @@ create table if not exists public.roadmap_items (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   title text not null,
   provider text,
-  release_month date,
+  release_month text,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'ready', 'released')),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
