@@ -13,7 +13,7 @@ import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
 import { getNextFiscalYear } from "../fiscal-year-selection";
 import type { ProviderColorOverrides } from "../provider-colors";
-import { PlanningNavigation } from "@/features/planning/components/planning-navigation";
+import { PlanningHeader } from "@/features/planning/components/planning-header";
 
 type FiscalYearRow = {
   id: string;
@@ -54,47 +54,44 @@ export function BudgetDashboard({
   return (
     <main className="min-h-screen bg-white px-4 py-6 sm:px-5 md:px-8 lg:px-10">
       <div className="mx-auto grid min-w-0 max-w-7xl gap-8">
-        <header className="relative overflow-hidden rounded-lg bg-blue-500 p-6 text-white md:p-8">
-          <div className="absolute right-0 top-0 h-48 w-48 -translate-y-1/2 rounded-full bg-white/10" aria-hidden="true" />
-          <div className="absolute bottom-6 right-28 h-20 w-20 rotate-12 bg-white/10" aria-hidden="true" />
-          <div className="relative z-10 flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0">
-            <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-blue-100">Internal Licensing</p>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight md:text-5xl">
-              {fiscalYear?.label ?? "Licensing Budget"}
-            </h1>
-            {fiscalYears.length > 0 ? (
-              <FiscalYearManager
-                fiscalYears={fiscalYears}
-                activeFiscalYearId={fiscalYear?.id}
-                pinAction={pinFiscalYear}
-                deleteAction={deleteFiscalYear}
-                createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
-                isDemo={isDemo}
-              />
-            ) : null}
+        <PlanningHeader
+          title={fiscalYear?.label ?? "Licensing Budget"}
+          eyebrow="Internal Licensing"
+          description="Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place."
+          activeSection="dashboard"
+        />
+
+        {(fiscalYears.length > 0 || userEmail || isDemo) ? (
+          <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-blue-50 p-4 ring-1 ring-blue-100">
+            <div className="min-w-0 -mt-5">
+              {fiscalYears.length > 0 ? (
+                <FiscalYearManager
+                  fiscalYears={fiscalYears}
+                  activeFiscalYearId={fiscalYear?.id}
+                  pinAction={pinFiscalYear}
+                  deleteAction={deleteFiscalYear}
+                  createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
+                  isDemo={isDemo}
+                />
+              ) : null}
             </div>
-            <div className="grid min-w-0 max-w-xl gap-3">
-            <p className="text-base font-semibold leading-7 text-blue-50">
-              Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.
-            </p>
-            <PlanningNavigation activeSection="dashboard" />
-            {userEmail ? (
-              <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
-                <span className="min-w-0 break-all">{userEmail}</span>
-                <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
-                  Logout
-                </button>
-              </form>
-            ) : null}
-            {isDemo ? (
-              <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700">
-                Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
-              </p>
-            ) : null}
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+              {isDemo ? (
+                <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
+                  Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
+                </p>
+              ) : null}
+              {userEmail ? (
+                <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
+                  <span className="min-w-0 break-all">{userEmail}</span>
+                  <button type="submit" className="min-h-11 rounded-md bg-blue-600 px-3 py-2 text-xs uppercase text-white">
+                    Logout
+                  </button>
+                </form>
+              ) : null}
             </div>
-          </div>
-        </header>
+          </section>
+        ) : null}
 
         {!fiscalYear || !model ? (
           <FiscalYearSettings isDemo={isDemo} />
