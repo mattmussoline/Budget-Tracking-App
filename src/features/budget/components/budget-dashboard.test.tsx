@@ -114,10 +114,12 @@ describe("BudgetDashboard", () => {
   });
 
   it("shows cadence mix as a top-level dashboard data point", () => {
-    renderDashboard();
+    const { container } = renderDashboard();
 
     expect(screen.getByText("Cadence mix")).toBeInTheDocument();
     expect(screen.getByText("$48,000.00 quarterly")).toBeInTheDocument();
     expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
+    expect(container.querySelector(".bg-teal-100")).toHaveTextContent("Cadence mix");
+    expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
   });
 });

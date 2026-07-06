@@ -32,7 +32,7 @@ export function DashboardInsights({
       detail: `${formatCurrency(model.cadenceTotals.quarterlyCents)} quarterly`,
       secondaryDetail: `${formatCurrency(model.cadenceTotals.yearlyCents)} yearly`,
       icon: Repeat2,
-      className: "bg-rose-100 text-rose-950"
+      className: "bg-teal-100 text-teal-950"
     }
   ];
   const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
