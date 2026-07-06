@@ -1,4 +1,4 @@
-import { GalleryHorizontalEnd, Gauge } from "lucide-react";
+import { GalleryHorizontalEnd, Gauge, Repeat2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
@@ -26,6 +26,14 @@ export function DashboardInsights({
       icon: Gauge,
       className: "bg-emerald-100 text-emerald-950"
     },
+    {
+      label: "Cadence mix",
+      value: `${model.insights.quarterlyLicenseCount} / ${model.insights.yearlyLicenseCount}`,
+      detail: `${formatCurrency(model.cadenceTotals.quarterlyCents)} quarterly`,
+      secondaryDetail: `${formatCurrency(model.cadenceTotals.yearlyCents)} yearly`,
+      icon: Repeat2,
+      className: "bg-rose-100 text-rose-950"
+    }
   ];
   const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
   let runningPercent = 0;
@@ -53,7 +61,7 @@ export function DashboardInsights({
         <h2 className="font-display text-2xl font-extrabold tracking-tight">Dashboard</h2>
         <p className="text-sm font-medium text-muted">Quick signals for how the licensing year is taking shape.</p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.4fr]">
+      <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
         {items.map((item) => (
           <div key={item.label} className={`rounded-lg p-5 ${item.className}`}>
             <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
@@ -62,6 +70,7 @@ export function DashboardInsights({
             <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">{item.label}</p>
             <p className="font-display text-3xl font-extrabold tracking-tight">{item.value}</p>
             <p className="mt-1 text-sm font-bold opacity-75">{item.detail}</p>
+            {"secondaryDetail" in item ? <p className="text-sm font-bold opacity-75">{item.secondaryDetail}</p> : null}
           </div>
         ))}
         <div className="grid gap-5 rounded-lg bg-amber-100 p-5 text-amber-950 md:grid-cols-[140px_1fr]">

@@ -41,6 +41,40 @@ describe("LicenseManager", () => {
     expect(screen.getByRole("button", { name: "Save" })).toHaveClass("min-h-9", "text-xs");
   });
 
+  it("shows a formatted payment amount in the content preview row", () => {
+    render(
+      <LicenseManager
+        fiscalYearId="00000000-0000-0000-0000-000000000027"
+        fiscalYear={2027}
+        fiscalYearStartMonth={7}
+        licenses={[license]}
+        providerOptions={["Thomistic"]}
+        providerColorOverrides={{}}
+      />
+    );
+
+    expect(screen.getByText((_, element) => element?.textContent === "Thomistic - $12,000.00")).toBeInTheDocument();
+  });
+
+  it("uses short select placeholder text in the edit form", () => {
+    const unselectedLicense = { ...license, cadence: "", addedFiscalMonth: 0 } as unknown as ContentLicense;
+
+    render(
+      <LicenseManager
+        fiscalYearId="00000000-0000-0000-0000-000000000027"
+        fiscalYear={2027}
+        fiscalYearStartMonth={7}
+        licenses={[unselectedLicense]}
+        providerOptions={["Thomistic"]}
+        providerColorOverrides={{}}
+      />
+    );
+
+    expect(screen.getAllByText("Select")).toHaveLength(2);
+    expect(screen.queryByText("Select cadence")).not.toBeInTheDocument();
+    expect(screen.queryByText("Select month")).not.toBeInTheDocument();
+  });
+
   it("asks for confirmation before deleting a content title", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(

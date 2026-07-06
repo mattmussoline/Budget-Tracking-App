@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -88,5 +88,36 @@ describe("BudgetDashboard", () => {
     const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
 
     expect(duplicateIds).toEqual([]);
+  });
+
+  it("uses white fields inside the fiscal year and add content forms", () => {
+    renderDashboard();
+
+    expect(screen.getByRole("textbox", { name: "Label" })).toHaveClass("bg-white");
+    expect(screen.getByRole("spinbutton", { name: "Fiscal year" })).toHaveClass("bg-white");
+    expect(screen.getByRole("textbox", { name: "Budget" })).toHaveClass("bg-white");
+    expect(screen.getByPlaceholderText("Jesus Thirsts")).toHaveClass("bg-white");
+    expect(screen.getByPlaceholderText("Provider name")).toHaveClass("bg-white");
+    expect(screen.getByRole("textbox", { name: "Payment amount" })).toHaveClass("bg-white");
+  });
+
+  it("uses short placeholder text for add content dropdowns", () => {
+    const { container } = renderDashboard();
+    const addContentForm = screen.getByText("Add Content").closest("div")?.parentElement?.nextElementSibling;
+    const addContentSelectPlaceholders = Array.from(addContentForm?.querySelectorAll("option[value='']") ?? []).map(
+      (option) => option.textContent
+    );
+
+    expect(addContentSelectPlaceholders).toEqual(["Select", "Select"]);
+    expect(container).not.toHaveTextContent("Select cadence");
+    expect(container).not.toHaveTextContent("Select month");
+  });
+
+  it("shows cadence mix as a top-level dashboard data point", () => {
+    renderDashboard();
+
+    expect(screen.getByText("Cadence mix")).toBeInTheDocument();
+    expect(screen.getByText("$48,000.00 quarterly")).toBeInTheDocument();
+    expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
   });
 });

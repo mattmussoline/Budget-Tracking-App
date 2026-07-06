@@ -1,4 +1,3 @@
-import { CadenceSummary } from "./cadence-summary";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
 import { FiscalYearSettings } from "./fiscal-year-settings";
@@ -119,7 +118,6 @@ export function BudgetDashboard({
                   providerColorOverrides={providerColorOverrides}
                   isDemo={isDemo}
                 />
-                <CadenceSummary model={model} />
                 <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
                 <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
               </div>

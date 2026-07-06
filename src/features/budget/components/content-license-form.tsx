@@ -39,22 +39,23 @@ export function ContentLicenseForm({
       </div>
       <form action={addContentLicense} className="grid gap-4">
         <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-        <SoftInput label="Title" name="title" placeholder="Jesus Thirsts" required disabled={isDemo} />
-        <SoftInput label="Provider" name="provider" list="provider-options" placeholder="Provider name" required disabled={isDemo} />
+        <SoftInput label="Title" name="title" placeholder="Jesus Thirsts" required disabled={isDemo} surface="white" />
+        <SoftInput label="Provider" name="provider" list="provider-options" placeholder="Provider name" required disabled={isDemo} surface="white" />
         <datalist id="provider-options">
           {providerOptions.map((provider) => (
             <option key={provider} value={provider} />
           ))}
         </datalist>
         <div className="grid gap-4 md:grid-cols-3">
-          <SoftInput label="Payment amount" name="installment" inputMode="decimal" placeholder="1200" required disabled={isDemo} />
+          <SoftInput label="Payment amount" name="installment" inputMode="decimal" placeholder="1200" required disabled={isDemo} surface="white" />
           <SoftSelect
             label="Cadence"
             name="cadence"
             defaultValue=""
-            placeholder="Select cadence"
+            placeholder="Select"
             required
             disabled={isDemo}
+            surface="white"
             options={[
               { label: "Quarterly", value: "quarterly" },
               { label: "Yearly", value: "yearly" }
@@ -64,13 +65,14 @@ export function ContentLicenseForm({
             label="Added month"
             name="addedFiscalMonth"
             defaultValue=""
-            placeholder="Select month"
+            placeholder="Select"
             options={monthOptions}
             required
             disabled={isDemo}
+            surface="white"
           />
         </div>
-        <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} />
+        <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} surface="white" />
         <SoftButton type="submit" variant="primary" disabled={isDemo}>
           Add title
         </SoftButton>

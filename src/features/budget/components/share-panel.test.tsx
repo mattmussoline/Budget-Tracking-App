@@ -10,6 +10,19 @@ vi.mock("../budget-actions", () => ({
 }));
 
 describe("SharePanel", () => {
+  it("starts collapsed by default", () => {
+    render(
+      <SharePanel
+        allowedEmails={["matt.mussoline@augustineinstitute.org", "teammate@augustineinstitute.org"]}
+        currentUserEmail="matt.mussoline@augustineinstitute.org"
+      />
+    );
+
+    const panel = screen.getByText("Collaborators").closest("details");
+
+    expect(panel).not.toHaveAttribute("open");
+  });
+
   it("asks for confirmation before removing collaborator access", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(
@@ -19,6 +32,7 @@ describe("SharePanel", () => {
       />
     );
 
+    fireEvent.click(screen.getByText("Collaborators"));
     fireEvent.click(screen.getByRole("button", { name: "Remove teammate@augustineinstitute.org" }));
 
     expect(confirm).toHaveBeenCalledWith("Remove teammate@augustineinstitute.org from app access?");

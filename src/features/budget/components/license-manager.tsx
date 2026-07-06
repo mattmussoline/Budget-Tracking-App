@@ -9,6 +9,7 @@ import { deleteContentLicense, updateContentLicense } from "../budget-actions";
 import { getFiscalMonths } from "../budget-math";
 import type { ContentLicense } from "../budget-types";
 import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
+import { formatCurrency } from "@/lib/currency";
 
 type LicenseManagerProps = {
   fiscalYearId: string;
@@ -69,7 +70,9 @@ export function LicenseManager({
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-display text-base font-extrabold tracking-tight">{license.title}</span>
-                      <span className="block truncate text-xs font-bold text-muted">{license.provider}</span>
+                      <span className="block truncate text-xs font-bold text-muted">
+                        {license.provider} - {formatCurrency(license.installmentCents)}
+                      </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className={`rounded-md px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide ${providerColor.bg} ${providerColor.text}`}>
@@ -104,7 +107,8 @@ export function LicenseManager({
                       <SoftSelect
                         label="Cadence"
                         name="cadence"
-                        defaultValue={license.cadence}
+                        defaultValue={license.cadence || ""}
+                        placeholder="Select"
                         options={[
                           { label: "Quarterly", value: "quarterly" },
                           { label: "Yearly", value: "yearly" }
@@ -115,7 +119,8 @@ export function LicenseManager({
                       <SoftSelect
                         label="Added month"
                         name="addedFiscalMonth"
-                        defaultValue={String(license.addedFiscalMonth)}
+                        defaultValue={license.addedFiscalMonth ? String(license.addedFiscalMonth) : ""}
+                        placeholder="Select"
                         options={monthOptions}
                         disabled={isDemo}
                         className="min-h-9 px-3 text-sm"

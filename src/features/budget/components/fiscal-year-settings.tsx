@@ -59,6 +59,7 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
           defaultValue={fiscalYear?.label ?? `FY${String(defaultFiscalYear).slice(-2)} Licensing Budget`}
           required
           disabled={isDemo}
+          surface="white"
         />
         <SoftInput
           label="Fiscal year"
@@ -67,6 +68,7 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
           defaultValue={fiscalYear?.fiscal_year ?? defaultFiscalYear}
           required
           disabled={isDemo}
+          surface="white"
         />
         <SoftSelect
           label="FY starts in"
@@ -74,6 +76,7 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
           defaultValue={String(fiscalYear?.fiscal_year_start_month ?? 7)}
           options={monthOptions}
           disabled={isDemo}
+          surface="white"
         />
         <SoftInput
           label="Budget"
@@ -82,6 +85,7 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
           placeholder={formatCurrency(3000000)}
           required
           disabled={isDemo}
+          surface="white"
         />
         <SoftButton type="submit" variant="primary" className="md:col-span-2" disabled={isDemo}>
           {isEditing ? "Save budget settings" : "Create budget"}
