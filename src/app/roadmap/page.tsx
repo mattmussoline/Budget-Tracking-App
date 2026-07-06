@@ -36,21 +36,25 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     );
   }
 
-  await requireInternalSession();
+  const sessionPromise = requireInternalSession();
+  const paramsPromise = searchParams;
 
-  const params = await searchParams;
-  const selectedFiscalYearId = params?.fy;
-  const startMonth = parseMonthAnchor(params?.start);
-  const monthCount = normalizeMonthRange(params?.months);
-  const { data: fiscalYears, error: fiscalYearsError } = await admin
-    .from("fiscal_years")
-    .select("id,label,fiscal_year,is_pinned")
-    .order("fiscal_year", { ascending: false });
+  const [{ data: fiscalYears, error: fiscalYearsError }, params] = await Promise.all([
+    admin
+      .from("fiscal_years")
+      .select("id,label,fiscal_year,is_pinned")
+      .order("fiscal_year", { ascending: false }),
+    paramsPromise,
+    sessionPromise
+  ]);
 
   if (fiscalYearsError) {
     throw new Error(fiscalYearsError.message);
   }
 
+  const selectedFiscalYearId = params?.fy;
+  const startMonth = parseMonthAnchor(params?.start);
+  const monthCount = normalizeMonthRange(params?.months);
   const activeFiscalYear = selectFiscalYear(fiscalYears ?? [], selectedFiscalYearId);
 
   if (!activeFiscalYear) {

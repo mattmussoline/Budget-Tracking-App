@@ -19,6 +19,9 @@ vi.mock("../budget-actions", () => ({
   pinFiscalYear: vi.fn(),
   deleteFiscalYear: vi.fn()
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ prefetch: vi.fn() })
+}));
 
 const fiscalYear = {
   id: "00000000-0000-0000-0000-000000000027",
@@ -88,6 +91,13 @@ describe("BudgetDashboard", () => {
     const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
 
     expect(duplicateIds).toEqual([]);
+  });
+
+  it("uses the standardized page header scale", () => {
+    renderDashboard();
+
+    expect(screen.getByRole("banner")).toHaveClass("p-6", "md:p-8");
+    expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("text-3xl", "md:text-5xl");
   });
 
   it("uses white fields inside the fiscal year and add content forms", () => {

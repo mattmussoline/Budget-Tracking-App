@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
+import { useEffect } from "react";
 import { cn } from "@/components/ui/soft-surface";
 
 export type PlanningSection = "dashboard" | "roadmap" | "content-review";
@@ -15,6 +19,14 @@ const planningSections = [
 ] as const;
 
 export function PlanningNavigation({ activeSection }: PlanningNavigationProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    for (const { href, section } of planningSections) {
+      if (section !== activeSection) router.prefetch(href);
+    }
+  }, [activeSection, router]);
+
   return (
     <nav className="flex flex-wrap gap-2" aria-label="Planning sections">
       {planningSections.map(({ href, label, section }) => {

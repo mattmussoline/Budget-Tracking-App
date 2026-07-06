@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { internalSessionCookieName, verifyInternalSessionCookie } from "@/lib/auth/internal-auth";
 
 export async function middleware(request: NextRequest) {
-  if (!request.nextUrl.pathname.startsWith("/dashboard") || !process.env.APP_PASSWORD) {
+  const protectedRoutes = ["/dashboard", "/roadmap", "/content-review"];
+  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route));
+
+  if (!isProtectedRoute || !process.env.APP_PASSWORD) {
     return NextResponse.next();
   }
 
@@ -23,5 +26,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"]
+  matcher: ["/dashboard/:path*", "/roadmap/:path*", "/content-review/:path*"]
 };

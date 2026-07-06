@@ -33,18 +33,23 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     );
   }
 
-  await requireInternalSession();
+  const sessionPromise = requireInternalSession();
+  const paramsPromise = searchParams;
 
-  const selectedFiscalYearId = (await searchParams)?.fy;
-  const { data: fiscalYears, error: fiscalYearsError } = await admin
-    .from("fiscal_years")
-    .select("id,label,fiscal_year,is_pinned")
-    .order("fiscal_year", { ascending: false });
+  const [{ data: fiscalYears, error: fiscalYearsError }, params] = await Promise.all([
+    admin
+      .from("fiscal_years")
+      .select("id,label,fiscal_year,is_pinned")
+      .order("fiscal_year", { ascending: false }),
+    paramsPromise,
+    sessionPromise
+  ]);
 
   if (fiscalYearsError) {
     throw new Error(fiscalYearsError.message);
   }
 
+  const selectedFiscalYearId = params?.fy;
   const activeFiscalYear = selectFiscalYear(fiscalYears ?? [], selectedFiscalYearId);
 
   if (!activeFiscalYear) {
