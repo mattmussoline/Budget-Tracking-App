@@ -71,8 +71,15 @@ describe("RoadmapDashboard", () => {
 
     const summary = screen.getByTestId("roadmap-summary");
 
+    expect(summary).not.toHaveAttribute("open");
+    expect(summary).toHaveClass("bg-blue-50");
     expect(within(summary).getByRole("heading", { name: "Fiscal year at a glance" })).toBeVisible();
-    expect(within(summary).getByText("6 titles")).toBeVisible();
+    expect(within(summary).getByText("2 released")).not.toBeVisible();
+
+    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
+
+    expect(summary).toHaveAttribute("open");
+    expect(within(summary).getAllByText("6 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
     expect(within(summary).getByText("2 released")).toBeVisible();
     expect(within(summary).getByText("1 unscheduled")).toBeVisible();
     expect(within(summary).getByText("Top audience")).toBeVisible();

@@ -115,44 +115,58 @@ type RoadmapSummaryData = {
 };
 
 function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
-  return <section data-testid="roadmap-summary" className="rounded-lg bg-gray-100 p-5">
-    <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+  return <details data-testid="roadmap-summary" className="rounded-lg bg-blue-50 ring-1 ring-blue-100">
+    <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 p-5">
       <div>
-        <h2 className="font-display text-2xl font-extrabold">Fiscal year at a glance</h2>
-        <p className="text-sm text-muted">July - June roadmap snapshot.</p>
+        <h2 className="font-display text-2xl font-extrabold text-blue-950">Fiscal year at a glance</h2>
+        <p className="text-sm font-bold text-blue-700">July - June roadmap snapshot.</p>
       </div>
-      {summary.nextRelease ? <div className="rounded-md bg-white px-3 py-2 text-right text-xs font-bold text-muted">
-        <span className="block text-[10px] font-extrabold uppercase tracking-wide">Next up</span>
-        <span className="block text-foreground">{summary.nextRelease.title}</span>
-        <span>{formatRoadmapDate(summary.nextRelease.date)}</span>
-      </div> : null}
-    </div>
-    <div className="grid gap-3 md:grid-cols-4">
-      <SummaryMetric value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`} label="Total content" />
-      <SummaryMetric value={`${summary.releasedCount} released`} label="Already live" />
-      <SummaryMetric value={`${summary.inProgressCount} in progress`} label="Being worked on" />
-      <SummaryMetric value={`${summary.unscheduledCount} unscheduled`} label="Need a date" />
-    </div>
-    <div className="mt-4 grid gap-3 md:grid-cols-2">
-      <div className="rounded-md bg-white p-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Top audience</h3>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {summary.topAudiences.length ? summary.topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
+      <div className="flex flex-wrap justify-end gap-2">
+        <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">{summary.totalTitles} {summary.totalTitles === 1 ? "title" : "titles"}</span>
+        {summary.nextRelease ? <span className="rounded-full bg-amber-300 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-amber-950">Next up</span> : null}
+      </div>
+    </summary>
+    <div className="px-5 pb-5">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold text-blue-900">Snapshot of what is live, moving, and still needs a date.</p>
+        </div>
+        {summary.nextRelease ? <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-right text-xs font-bold text-amber-900">
+          <span className="block text-[10px] font-extrabold uppercase tracking-wide">Next up</span>
+          <span className="block text-foreground">{summary.nextRelease.title}</span>
+          <span>{formatRoadmapDate(summary.nextRelease.date)}</span>
+        </div> : null}
+      </div>
+      <div className="grid gap-3 md:grid-cols-4">
+        <SummaryMetric value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`} label="Total content" accentClassName="bg-blue-600" />
+        <SummaryMetric value={`${summary.releasedCount} released`} label="Already live" accentClassName="bg-green-500" />
+        <SummaryMetric value={`${summary.inProgressCount} in progress`} label="Being worked on" accentClassName="bg-violet-500" />
+        <SummaryMetric value={`${summary.unscheduledCount} unscheduled`} label="Need a date" accentClassName="bg-amber-400" />
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="rounded-md border border-blue-100 bg-white p-4">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-blue-700">Top audience</h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {summary.topAudiences.length ? summary.topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
+          </div>
+        </div>
+        <div className="rounded-md border border-amber-100 bg-white p-4">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Top provider</h3>
+          <p className="mt-2 text-lg font-extrabold text-foreground">{summary.topProvider ? summary.topProvider.name : "No provider yet"}</p>
+          <p className="text-xs font-bold text-muted">{summary.topProvider ? `${summary.topProvider.count} ${summary.topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
         </div>
       </div>
-      <div className="rounded-md bg-white p-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Top provider</h3>
-        <p className="mt-2 text-lg font-extrabold text-foreground">{summary.topProvider ? summary.topProvider.name : "No provider yet"}</p>
-        <p className="text-xs font-bold text-muted">{summary.topProvider ? `${summary.topProvider.count} ${summary.topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
-      </div>
     </div>
-  </section>;
+  </details>;
 }
 
-function SummaryMetric({ value, label }: { value: string; label: string }) {
-  return <div className="rounded-md bg-white p-4">
+function SummaryMetric({ value, label, accentClassName }: { value: string; label: string; accentClassName: string }) {
+  return <div className="overflow-hidden rounded-md bg-white">
+    <div className={cn("h-1", accentClassName)} />
+    <div className="p-4">
     <p className="text-xl font-extrabold text-foreground">{value}</p>
     <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
+    </div>
   </div>;
 }
 
