@@ -59,39 +59,38 @@ export function BudgetDashboard({
           eyebrow="Internal Licensing"
           description="Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place."
           activeSection="dashboard"
+          footer={(fiscalYears.length > 0 || userEmail || isDemo) ? (
+            <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/15 pt-4">
+              <div className="min-w-0 -mt-5">
+                {fiscalYears.length > 0 ? (
+                  <FiscalYearManager
+                    fiscalYears={fiscalYears}
+                    activeFiscalYearId={fiscalYear?.id}
+                    pinAction={pinFiscalYear}
+                    deleteAction={deleteFiscalYear}
+                    createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
+                    isDemo={isDemo}
+                  />
+                ) : null}
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+                {isDemo ? (
+                  <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
+                    Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
+                  </p>
+                ) : null}
+                {userEmail ? (
+                  <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
+                    <span className="min-w-0 break-all">{userEmail}</span>
+                    <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
+                      Logout
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         />
-
-        {(fiscalYears.length > 0 || userEmail || isDemo) ? (
-          <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-blue-50 p-4 ring-1 ring-blue-100">
-            <div className="min-w-0 -mt-5">
-              {fiscalYears.length > 0 ? (
-                <FiscalYearManager
-                  fiscalYears={fiscalYears}
-                  activeFiscalYearId={fiscalYear?.id}
-                  pinAction={pinFiscalYear}
-                  deleteAction={deleteFiscalYear}
-                  createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
-                  isDemo={isDemo}
-                />
-              ) : null}
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-              {isDemo ? (
-                <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
-                  Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
-                </p>
-              ) : null}
-              {userEmail ? (
-                <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
-                  <span className="min-w-0 break-all">{userEmail}</span>
-                  <button type="submit" className="min-h-11 rounded-md bg-blue-600 px-3 py-2 text-xs uppercase text-white">
-                    Logout
-                  </button>
-                </form>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
 
         {!fiscalYear || !model ? (
           <FiscalYearSettings isDemo={isDemo} />

@@ -21,7 +21,7 @@ describe("PlanningShell", () => {
       </PlanningShell>
     );
 
-    expect(screen.getByRole("banner")).toHaveClass("h-64", "md:h-60", "p-6", "md:p-8");
+    expect(screen.getByRole("banner")).toHaveClass("h-80", "md:h-80", "p-6", "md:p-8");
     expect(screen.getByRole("heading", { name: "Roadmap" })).toHaveClass("text-3xl", "md:text-5xl");
     expect(screen.getByRole("navigation", { name: "Planning sections" }).parentElement).toHaveClass("self-end");
   });

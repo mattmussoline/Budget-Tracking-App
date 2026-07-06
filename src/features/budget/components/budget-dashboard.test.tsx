@@ -96,10 +96,11 @@ describe("BudgetDashboard", () => {
   it("uses the standardized page header scale", () => {
     renderDashboard();
 
-    expect(screen.getByRole("banner")).toHaveClass("h-64", "md:h-60", "p-6", "md:p-8");
+    expect(screen.getByRole("banner")).toHaveClass("h-80", "md:h-80", "p-6", "md:p-8");
     expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("text-3xl", "md:text-5xl");
     expect(screen.getByRole("navigation", { name: "Planning sections" }).parentElement).toHaveClass("self-end");
-    expect(screen.getByRole("banner")).not.toContainElement(screen.getByRole("button", { name: "Logout" }).closest("form"));
+    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("navigation", { name: "Fiscal year budgets" }));
+    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("button", { name: "Logout" }).closest("form"));
   });
 
   it("uses white fields inside the fiscal year and add content forms", () => {
