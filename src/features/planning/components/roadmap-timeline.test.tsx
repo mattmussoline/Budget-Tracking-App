@@ -24,14 +24,17 @@ afterEach(() => vi.useRealTimers());
 
 const categories: RoadmapCategory[] = [
   { id: "cat-parish", name: "Parish", colorKey: "blue", sortOrder: 0, isActive: true },
-  { id: "cat-adult", name: "Adult", colorKey: "amber", sortOrder: 1, isActive: true }
+  { id: "cat-adult", name: "Adult", colorKey: "amber", sortOrder: 1, isActive: true },
+  { id: "cat-kids", name: "Kids", colorKey: "green", sortOrder: 2, isActive: true }
 ];
 
 const roadmapItems: RoadmapItem[] = [
   { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
-  { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-12-12", status: "planned", notes: null, categoryId: null }
+  { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
+  { id: "road-5", title: "Recent Film", provider: null, releaseDate: "2026-12-08", status: "released", notes: null, categoryId: "cat-kids" },
+  { id: "road-6", title: "Older Film", provider: null, releaseDate: "2026-12-01", status: "released", notes: null, categoryId: "cat-kids" }
 ];
 
 const series: OngoingSeries[] = [
@@ -55,27 +58,55 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Aquinas 101")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Backlog" })).toBeVisible();
-    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("Everything else"));
+    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
     expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-blue-100"))).toBe(true);
   });
 
-  it("splits backlog into past releases and everything else based on the current month", () => {
+  it("filters the roadmap when key chips are clicked", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Filter Adult" }));
+    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
+
+    expect(screen.getByText("Undated Film")).toBeVisible();
+    expect(screen.queryByText("Aquinas 101")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear Adult filter" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear Adult filter" }));
+
+    expect(screen.getByText("Aquinas 101")).toBeVisible();
+  });
+
+  it("splits backlog into in-progress and released groups with released months sorted newest first", () => {
     vi.setSystemTime(new Date("2027-03-15T12:00:00Z"));
 
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const releasedGroup = screen.getByTestId("backlog-released-content");
     const otherGroup = screen.getByTestId("backlog-other-content");
+    const backlog = screen.getByTestId("roadmap-backlog");
 
     expect(releasedGroup).not.toHaveAttribute("open");
     expect(otherGroup).not.toHaveAttribute("open");
 
-    fireEvent.click(within(releasedGroup).getByText("Already released content"));
-    fireEvent.click(within(otherGroup).getByText("Everything else"));
+    expect(backlog.textContent).toMatch(/In progress2.*Already released content3/);
 
-    expect(within(releasedGroup).getByText("Past Film")).toBeVisible();
+    fireEvent.click(within(releasedGroup).getByText("Already released content"));
+    fireEvent.click(within(otherGroup).getByText("In progress"));
+
+    const decemberGroup = within(releasedGroup).getByTestId("released-month-2026-12");
+    const novemberGroup = within(releasedGroup).getByTestId("released-month-2026-11");
+    fireEvent.click(within(decemberGroup).getByText("December 2026"));
+    fireEvent.click(within(novemberGroup).getByText("November 2026"));
+
+    expect(within(decemberGroup).getAllByRole("button").map((button) => button.textContent)).toEqual(expect.arrayContaining([
+      expect.stringContaining("Recent Film"),
+      expect.stringContaining("Older Film")
+    ]));
+    expect(within(decemberGroup).getAllByRole("button").map((button) => button.textContent).join(" ")).toMatch(/Recent Film.*Older Film/);
+    expect(within(novemberGroup).getByText("Past Film")).toBeVisible();
     expect(within(releasedGroup).queryByText("Future Film")).not.toBeInTheDocument();
     expect(within(releasedGroup).queryByText("Undated Film")).not.toBeInTheDocument();
     expect(within(otherGroup).getByText("Future Film")).toBeVisible();
@@ -138,7 +169,7 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
     expect(dialog).toHaveAttribute("open");
     expect(within(dialog).getByLabelText("Release date")).toHaveValue("2027-01-01");
-    expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-9");
+    expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-12", "self-start");
     expect(within(dialog).queryByLabelText("Release date option")).not.toBeInTheDocument();
   });
 
@@ -174,7 +205,7 @@ describe("RoadmapDashboard", () => {
     fireEvent.change(titleInput, { target: { value: "New Catechesis" } });
     fireEvent.change(providerInput, { target: { value: "Augustine Institute" } });
     fireEvent.change(releaseDateInput, { target: { value: "2027-02-14" } });
-    fireEvent.change(statusSelect, { target: { value: "ready" } });
+    fireEvent.change(statusSelect, { target: { value: "blocked" } });
     fireEvent.change(categorySelect, { target: { value: "cat-adult" } });
     fireEvent.change(notesInput, { target: { value: "Launch notes" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add Item" }));
@@ -230,6 +261,20 @@ describe("RoadmapDashboard", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("offers planned, in-progress, blocked, and released statuses in the edit form", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+
+    expect(within(dialog).getByLabelText("Status")).toHaveClass("self-start");
+    expect(within(dialog).getByRole("option", { name: "Planned" })).toBeVisible();
+    expect(within(dialog).getByRole("option", { name: "In progress" })).toBeVisible();
+    expect(within(dialog).getByRole("option", { name: "Blocked" })).toBeVisible();
+    expect(within(dialog).getByRole("option", { name: "Released" })).toBeVisible();
+    expect(within(dialog).queryByRole("option", { name: "Ready" })).not.toBeInTheDocument();
+  });
+
   it("keeps an edited roadmap status visible after saving", async () => {
     actionMocks.updateRoadmapItem.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
@@ -238,11 +283,11 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
     const statusSelect = within(dialog).getByLabelText("Status");
 
-    fireEvent.change(statusSelect, { target: { value: "ready" } });
+    fireEvent.change(statusSelect, { target: { value: "blocked" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save Item" }));
 
     await waitFor(() => expect(actionMocks.updateRoadmapItem).toHaveBeenCalledTimes(1));
-    expect(statusSelect).toHaveValue("ready");
+    expect(statusSelect).toHaveValue("blocked");
   });
 
   it("asks for confirmation before deleting roadmap items and ongoing series", () => {
@@ -260,22 +305,24 @@ describe("RoadmapDashboard", () => {
     expect(confirm).toHaveBeenCalledWith("Delete Practicing Catholic? This cannot be undone.");
   });
 
-  it("uses a fixed scrolling timeline and focuses one month at a glance", () => {
+  it("lets long month lists grow and opens a roadmap focus view", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const timeline = screen.getByTestId("roadmap-month-scroll");
-    expect(timeline).toHaveClass("h-[70vh]", "md:h-[600px]", "overflow-auto");
+    expect(timeline).toHaveClass("overflow-x-auto");
+    expect(timeline).not.toHaveClass("h-[70vh]", "md:h-[600px]");
     expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[320px]");
 
-    fireEvent.click(screen.getByRole("button", { name: "Focus January 2027" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand roadmap" }));
 
     expect(screen.getByRole("heading", { name: "January 2027" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "February 2027" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show all months" })).toBeVisible();
-
-    fireEvent.click(screen.getByRole("button", { name: "Show all months" }));
-
     expect(screen.getByRole("heading", { name: "February 2027" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Ongoing Series Cadence" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Exit focus view" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Exit focus view" }));
+
+    expect(screen.getByRole("heading", { name: "Ongoing Series Cadence" })).toBeVisible();
   });
 
   it("alternates ongoing series rows between white and light orange", () => {

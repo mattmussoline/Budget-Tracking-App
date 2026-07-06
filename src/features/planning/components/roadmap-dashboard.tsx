@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Plus, X, Trash2 } from "lucide-react";
 import { type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -31,57 +31,64 @@ type RoadmapDashboardProps = {
 
 const roadmapStatuses = [
   { label: "Planned", value: "planned" }, { label: "In progress", value: "in_progress" },
-  { label: "Ready", value: "ready" }, { label: "Released", value: "released" }
+  { label: "Blocked", value: "blocked" }, { label: "Released", value: "released" }
 ];
+
+type RoadmapFilter = { id: string; label: string };
 
 export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, monthCount, isDemo }: RoadmapDashboardProps) {
   const [focusedMonthKey, setFocusedMonthKey] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
+  const [isRoadmapFocus, setIsRoadmapFocus] = useState(false);
   const months = buildMonthWindow(startMonth, monthCount);
   const displayedMonths = focusedMonthKey ? months.filter((month) => month.key === focusedMonthKey) : months;
   const visibleKeys = new Set(months.map((month) => month.key));
-  const backlog = roadmapItems.filter((item) => !item.releaseDate || !visibleKeys.has(item.releaseDate.slice(0, 7)));
+  const filteredItems = activeFilter ? roadmapItems.filter((item) => item.categoryId === activeFilter.id) : roadmapItems;
+  const backlog = filteredItems.filter((item) => !item.releaseDate || !visibleKeys.has(item.releaseDate.slice(0, 7)));
   const currentMonthKey = parseMonthAnchor(null);
-  const releasedBacklog = backlog.filter((item) => isBeforeCurrentMonth(item.releaseDate, currentMonthKey));
-  const otherBacklog = backlog.filter((item) => !isBeforeCurrentMonth(item.releaseDate, currentMonthKey));
+  const releasedBacklog = sortReleasedItems(backlog.filter((item) => item.status === "released" || isBeforeCurrentMonth(item.releaseDate, currentMonthKey)));
+  const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
+  const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `/roadmap?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
 
   return <div className="grid min-w-0 gap-7">
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    {!isRoadmapFocus ? <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="flex flex-wrap gap-2">
         <AddRoadmapModal>
           <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} isDemo={isDemo} />
         </AddRoadmapModal>
         <CategoryManagerModal fiscalYearId={fiscalYearId} categories={categories} isDemo={isDemo} />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" aria-label="Roadmap filters">
         {categories.filter((category) => category.isActive).map((category) => {
           const tone = (category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
-          return <span key={category.id} className={cn("rounded-md px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide", TONE_CLASSES[tone].chip)}>{category.name}</span>;
+          const isActive = activeFilter?.id === category.id;
+          return <button key={category.id} type="button" aria-label={isActive ? `Clear ${category.name} filter` : `Filter ${category.name}`} aria-pressed={isActive} onClick={() => setActiveFilter(isActive ? null : { id: category.id, label: category.name })} className={cn("rounded-md px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide transition hover:-translate-y-0.5", TONE_CLASSES[tone].chip, isActive && "ring-2 ring-gray-900")}>{category.name}</button>;
         })}
       </div>
-    </div>
+    </div> : null}
 
-    <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-900 p-3 text-white">
+    {!isRoadmapFocus ? <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-900 p-3 text-white">
       <div className="flex flex-wrap gap-2"><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, -monthCount))}><ChevronLeft className="inline h-4 w-4" /> Previous</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-amber-400 px-3 py-2 text-sm font-extrabold text-gray-900" href={href(today)}>Today</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, monthCount))}>Next <ChevronRight className="inline h-4 w-4" /></Link></div>
       <div className="flex flex-wrap gap-2">{([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-bold", monthCount === count ? "bg-white text-gray-900" : "bg-white/10 text-white")}>{count} months</Link>)}</div>
-    </nav>
+    </nav> : null}
 
-    <section className="min-w-0"><div className="mb-3 flex items-end justify-between gap-3"><div><h2 className="font-display text-3xl font-extrabold">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">Scroll through the roadmap, or click a month to see it at a glance.</p></div>{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-blue-100" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}</div>
-      <div data-testid="roadmap-month-scroll" className="flex h-[70vh] gap-4 overflow-auto rounded-lg bg-gray-200 p-3 md:h-[600px]">
+    <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-gray-200 md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-3xl font-extrabold">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-blue-100" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-blue-100")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
+      <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-gray-200 p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
-          const items = roadmapItems.filter((item) => item.releaseDate?.slice(0, 7) === month.key);
-          return <article data-testid="roadmap-month-column" key={month.key} className={cn("min-h-full shrink-0 rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</div></article>;
+          const items = filteredItems.filter((item) => item.releaseDate?.slice(0, 7) === month.key);
+          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</div></article>;
         })}
       </div>
     </section>
 
-    <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
+    {!isRoadmapFocus ? <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <section className="rounded-lg bg-gray-100 p-5"><h2 className="font-display text-2xl font-extrabold">Backlog</h2><p className="mb-4 text-sm text-muted">Undated items and releases outside this visible window.</p><div className="grid gap-3">{backlog.length ? <><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Everything else" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div></section>
-    </div>
+      <section data-testid="roadmap-backlog" className="rounded-lg bg-gray-100 p-5"><h2 className="font-display text-2xl font-extrabold">Backlog</h2><p className="mb-4 text-sm text-muted">Undated items and releases outside this visible window.</p><div className="grid gap-3">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div></section>
+    </div> : null}
   </div>;
 }
 
@@ -97,6 +104,30 @@ function BacklogGroup({ title, count, testId, children }: { title: string; count
     </summary>
     <div className="mt-3 grid gap-2">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
   </details>;
+}
+
+function sortReleasedItems(items: RoadmapItem[]) {
+  return [...items].sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""));
+}
+
+function groupReleasedItemsByMonth(items: RoadmapItem[]) {
+  const grouped = new Map<string, RoadmapItem[]>();
+  for (const item of items) {
+    if (!item.releaseDate || !/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(item.releaseDate)) continue;
+    const monthKey = item.releaseDate.slice(0, 7);
+    grouped.set(monthKey, [...(grouped.get(monthKey) ?? []), item]);
+  }
+
+  return Array.from(grouped.entries()).map(([monthKey, monthItems]) => ({
+    monthKey,
+    monthLabel: formatMonthKey(monthKey),
+    items: sortReleasedItems(monthItems)
+  }));
+}
+
+function formatMonthKey(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions, isDemo }: { item: RoadmapItem; category?: RoadmapCategory; categories: RoadmapCategory[]; fiscalYearId: string; providerOptions: string[]; isDemo?: boolean }) {
@@ -157,7 +188,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
     <ProviderInput key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
     <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-9 px-3 text-sm" disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
     <div className="flex gap-2 md:col-span-2">

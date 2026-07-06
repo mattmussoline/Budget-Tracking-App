@@ -7,7 +7,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { dollarsToOptionalCents } from "./planning-model";
 import type { ContentReviewItem, ReviewStatus } from "./planning-types";
 
-const roadmapStatusSchema = z.enum(["planned", "in_progress", "ready", "released"]);
+const roadmapStatusSchema = z.enum(["planned", "in_progress", "blocked", "released"]);
 const reviewStatusSchema = z.enum(["not_started", "in_progress", "blocked", "rejected", "approved"]);
 const nullableDateSchema = z.union([z.literal(""), z.literal("TBD"), z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/)]).optional();
 const nullableUuidSchema = z.union([z.literal(""), z.string().uuid()]).optional();

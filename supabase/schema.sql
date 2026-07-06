@@ -74,7 +74,7 @@ create table if not exists public.roadmap_items (
   title text not null,
   provider text,
   release_month text,
-  status text not null default 'planned' check (status in ('planned', 'in_progress', 'ready', 'released')),
+  status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
   created_at timestamptz not null default now(),

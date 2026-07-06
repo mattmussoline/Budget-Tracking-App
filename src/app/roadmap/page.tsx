@@ -90,7 +90,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     title: item.title,
     provider: item.provider,
     releaseDate: item.release_month,
-    status: item.status as RoadmapStatus,
+    status: (item.status === "ready" ? "in_progress" : item.status) as RoadmapStatus,
     notes: item.notes,
     categoryId: item.category_id
   }));

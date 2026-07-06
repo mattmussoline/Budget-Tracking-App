@@ -1,4 +1,4 @@
-export type RoadmapStatus = "planned" | "in_progress" | "ready" | "released";
+export type RoadmapStatus = "planned" | "in_progress" | "blocked" | "released";
 
 export type RoadmapItem = {
   id: string;

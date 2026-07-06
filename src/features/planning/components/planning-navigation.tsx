@@ -24,6 +24,7 @@ export function PlanningNavigation({ activeSection }: PlanningNavigationProps) {
           <Link
             key={section}
             href={href}
+            prefetch
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-extrabold transition",
