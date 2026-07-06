@@ -13,7 +13,7 @@ import {
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
-import { buildMonthWindow, parseMonthAnchor, shiftMonthAnchor } from "../planning-model";
+import { buildMonthWindow, formatRoadmapDate, parseMonthAnchor, shiftMonthAnchor } from "../planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
 import { CategoryManagerModal } from "./category-manager-modal";
@@ -50,6 +50,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
   const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
+  const summary = buildRoadmapSummary(roadmapItems, categories, currentMonthKey);
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `/roadmap?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
@@ -76,6 +77,8 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
       <div className="flex flex-wrap gap-2">{([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-bold", monthCount === count ? "bg-white text-gray-900" : "bg-white/10 text-white")}>{count} months</Link>)}</div>
     </nav> : null}
 
+    {!isRoadmapFocus ? <RoadmapSummary summary={summary} /> : null}
+
     <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-gray-200 md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-3xl font-extrabold">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-blue-100" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-blue-100")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-gray-200 p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
@@ -87,13 +90,118 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
 
     {!isRoadmapFocus ? <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <section data-testid="roadmap-backlog" className="rounded-lg bg-gray-100 p-5"><h2 className="font-display text-2xl font-extrabold">Backlog</h2><p className="mb-4 text-sm text-muted">Undated items and releases outside this visible window.</p><div className="grid gap-3">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div></section>
+      <details data-testid="roadmap-backlog" className="rounded-lg bg-gray-100">
+        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 p-5">
+          <div>
+            <h2 className="font-display text-2xl font-extrabold">Backlog</h2>
+            <p className="text-sm text-muted">Undated items and releases outside this visible window.</p>
+          </div>
+          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">{backlog.length} {backlog.length === 1 ? "item" : "items"}</span>
+        </summary>
+        <div className="grid gap-3 px-5 pb-5">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div>
+      </details>
     </div> : null}
   </div>;
 }
 
+type RoadmapSummaryData = {
+  totalTitles: number;
+  releasedCount: number;
+  inProgressCount: number;
+  unscheduledCount: number;
+  topAudiences: Array<{ name: string; count: number; tone: PlanningTone }>;
+  topProvider: { name: string; count: number } | null;
+  nextRelease: { title: string; date: string } | null;
+};
+
+function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
+  return <section data-testid="roadmap-summary" className="rounded-lg bg-gray-100 p-5">
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+      <div>
+        <h2 className="font-display text-2xl font-extrabold">Fiscal year at a glance</h2>
+        <p className="text-sm text-muted">July - June roadmap snapshot.</p>
+      </div>
+      {summary.nextRelease ? <div className="rounded-md bg-white px-3 py-2 text-right text-xs font-bold text-muted">
+        <span className="block text-[10px] font-extrabold uppercase tracking-wide">Next up</span>
+        <span className="block text-foreground">{summary.nextRelease.title}</span>
+        <span>{formatRoadmapDate(summary.nextRelease.date)}</span>
+      </div> : null}
+    </div>
+    <div className="grid gap-3 md:grid-cols-4">
+      <SummaryMetric value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`} label="Total content" />
+      <SummaryMetric value={`${summary.releasedCount} released`} label="Already live" />
+      <SummaryMetric value={`${summary.inProgressCount} in progress`} label="Being worked on" />
+      <SummaryMetric value={`${summary.unscheduledCount} unscheduled`} label="Need a date" />
+    </div>
+    <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="rounded-md bg-white p-4">
+        <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Top audience</h3>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {summary.topAudiences.length ? summary.topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
+        </div>
+      </div>
+      <div className="rounded-md bg-white p-4">
+        <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted">Top provider</h3>
+        <p className="mt-2 text-lg font-extrabold text-foreground">{summary.topProvider ? summary.topProvider.name : "No provider yet"}</p>
+        <p className="text-xs font-bold text-muted">{summary.topProvider ? `${summary.topProvider.count} ${summary.topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
+      </div>
+    </div>
+  </section>;
+}
+
+function SummaryMetric({ value, label }: { value: string; label: string }) {
+  return <div className="rounded-md bg-white p-4">
+    <p className="text-xl font-extrabold text-foreground">{value}</p>
+    <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
+  </div>;
+}
+
+function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], currentMonthKey: string): RoadmapSummaryData {
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const audienceCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
+  const providerCounts = new Map<string, number>();
+
+  for (const item of roadmapItems) {
+    if (item.categoryId) {
+      const category = categoryById.get(item.categoryId);
+      if (category) {
+        const tone = (category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
+        const existing = audienceCounts.get(category.id);
+        audienceCounts.set(category.id, { name: category.name, tone, count: (existing?.count ?? 0) + 1 });
+      }
+    }
+
+    const provider = item.provider?.trim();
+    if (provider) providerCounts.set(provider, (providerCounts.get(provider) ?? 0) + 1);
+  }
+
+  const topAudiences = Array.from(audienceCounts.values())
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 3);
+  const topProvider = Array.from(providerCounts.entries())
+    .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
+    .map(([name, count]) => ({ name, count }))[0] ?? null;
+  const nextReleaseItem = roadmapItems
+    .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate!.slice(0, 7) >= currentMonthKey)
+    .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
+
+  return {
+    totalTitles: roadmapItems.length,
+    releasedCount: roadmapItems.filter((item) => item.status === "released").length,
+    inProgressCount: roadmapItems.filter((item) => item.status === "in_progress").length,
+    unscheduledCount: roadmapItems.filter((item) => !isExactRoadmapDate(item.releaseDate)).length,
+    topAudiences,
+    topProvider,
+    nextRelease: nextReleaseItem ? { title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
+  };
+}
+
+function isExactRoadmapDate(releaseDate: string | null) {
+  return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(releaseDate ?? "");
+}
+
 function isBeforeCurrentMonth(releaseDate: string | null, currentMonthKey: string) {
-  return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(releaseDate ?? "") && releaseDate!.slice(0, 7) < currentMonthKey;
+  return isExactRoadmapDate(releaseDate) && releaseDate!.slice(0, 7) < currentMonthKey;
 }
 
 function BacklogGroup({ title, count, testId, children }: { title: string; count: number; testId: string; children: ReactNode }) {

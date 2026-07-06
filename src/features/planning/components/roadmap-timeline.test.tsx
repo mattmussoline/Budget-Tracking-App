@@ -58,16 +58,34 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Aquinas 101")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Backlog" })).toBeVisible();
+    expect(screen.getByTestId("roadmap-backlog")).not.toHaveAttribute("open");
+    fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
     fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
     expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-blue-100"))).toBe(true);
   });
 
+  it("summarizes fiscal-year roadmap progress at a glance", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const summary = screen.getByTestId("roadmap-summary");
+
+    expect(within(summary).getByRole("heading", { name: "Fiscal year at a glance" })).toBeVisible();
+    expect(within(summary).getByText("6 titles")).toBeVisible();
+    expect(within(summary).getByText("2 released")).toBeVisible();
+    expect(within(summary).getByText("1 unscheduled")).toBeVisible();
+    expect(within(summary).getByText("Top audience")).toBeVisible();
+    expect(within(summary).getByText("Kids")).toBeVisible();
+    expect(within(summary).getByText("Top provider")).toBeVisible();
+    expect(within(summary).getByText("Thomistic")).toBeVisible();
+  });
+
   it("filters the roadmap when key chips are clicked", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     fireEvent.click(screen.getByRole("button", { name: "Filter Adult" }));
+    fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
     fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
 
     expect(screen.getByText("Undated Film")).toBeVisible();
@@ -87,6 +105,8 @@ describe("RoadmapDashboard", () => {
     const releasedGroup = screen.getByTestId("backlog-released-content");
     const otherGroup = screen.getByTestId("backlog-other-content");
     const backlog = screen.getByTestId("roadmap-backlog");
+
+    fireEvent.click(within(backlog).getByText("Backlog"));
 
     expect(releasedGroup).not.toHaveAttribute("open");
     expect(otherGroup).not.toHaveAttribute("open");
