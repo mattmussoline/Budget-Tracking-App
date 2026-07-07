@@ -90,15 +90,18 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
 
     {!isRoadmapFocus ? <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <details data-testid="roadmap-backlog" className="rounded-lg bg-gray-100">
-        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 p-5">
+      <details data-testid="roadmap-backlog" className="self-start rounded-lg bg-gray-100">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
           <div>
-            <h2 className="font-display text-2xl font-extrabold">Backlog</h2>
+            <h2 className="font-display text-lg font-extrabold">Backlog</h2>
             <p className="text-sm text-muted">Undated items and releases outside this visible window.</p>
           </div>
-          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">{backlog.length} {backlog.length === 1 ? "item" : "items"}</span>
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-muted shadow-sm ring-1 ring-gray-200">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Expand Backlog section</span>
+          </span>
         </summary>
-        <div className="grid gap-3 px-5 pb-5">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div>
+        <div className="grid gap-3 px-4 pb-4">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div>
       </details>
     </div> : null}
   </div>;

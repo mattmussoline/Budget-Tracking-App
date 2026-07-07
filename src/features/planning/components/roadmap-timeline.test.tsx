@@ -58,8 +58,17 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Aquinas 101")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Backlog" })).toBeVisible();
-    expect(screen.getByTestId("roadmap-backlog")).not.toHaveAttribute("open");
-    fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
+    const backlog = screen.getByTestId("roadmap-backlog");
+    const backlogSummary = within(backlog).getByText("Backlog").closest("summary");
+
+    expect(backlog).not.toHaveAttribute("open");
+    expect(backlog).toHaveClass("self-start");
+    expect(backlogSummary).toHaveClass("py-3");
+    expect(backlogSummary).not.toHaveClass("min-h-16");
+    expect(within(backlogSummary!).getByText("Expand Backlog section")).toBeInTheDocument();
+    expect(within(backlog).queryByText(/^\d+ items?$/)).not.toBeInTheDocument();
+
+    fireEvent.click(within(backlog).getByText("Backlog"));
     fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
