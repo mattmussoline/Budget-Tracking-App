@@ -1,3 +1,5 @@
+"use client";
+
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
@@ -18,6 +20,22 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
     isCurrentQuarter: model.currentFiscalQuarter === quarter,
     months: model.months.filter((month) => month.quarter === quarter)
   }));
+  const openLicenseEditor = (licenseId: string) => {
+    const manager = document.getElementById("edit-content-manager");
+    const licensePanel = document.getElementById(`edit-license-${licenseId}`);
+
+    if (manager instanceof HTMLDetailsElement) {
+      manager.open = true;
+    }
+
+    if (licensePanel instanceof HTMLDetailsElement) {
+      licensePanel.open = true;
+      licensePanel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      const titleInput = licensePanel.querySelector<HTMLInputElement>("input[name='title']");
+      titleInput?.focus({ preventScroll: true });
+    }
+  };
 
   return (
     <div className="grid gap-6">
@@ -62,7 +80,13 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
                       const tileClass = `${providerColor.bg} ${providerColor.text}`;
 
                       return (
-                      <div key={`${payment.licenseId}-${payment.fiscalMonth}`} className={`rounded-lg p-3 ${tileClass}`}>
+                      <button
+                        key={`${payment.licenseId}-${payment.fiscalMonth}`}
+                        type="button"
+                        className={`w-full rounded-lg p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 ${tileClass}`}
+                        aria-label={`Edit ${payment.title}`}
+                        onClick={() => openLicenseEditor(payment.licenseId)}
+                      >
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <p className="text-sm font-extrabold">{payment.title}</p>
                           {payment.isFirstPayment ? (
@@ -80,7 +104,7 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
                             </span>
                           ) : null}
                         </div>
-                      </div>
+                      </button>
                     );
                     })
                   )}

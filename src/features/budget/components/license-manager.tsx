@@ -37,7 +37,7 @@ export function LicenseManager({
 
   return (
     <SoftSurface className="overflow-hidden bg-gray-900">
-      <details className="group">
+      <details id="edit-content-manager" className="group">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gray-900 px-4 py-3 text-white marker:hidden md:px-5">
           <span className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-500 text-white">
@@ -63,7 +63,7 @@ export function LicenseManager({
               const providerColor = getProviderColor(license.provider, providerColorOverrides);
 
               return (
-                <details key={license.id} className="group/license overflow-hidden rounded-md bg-white shadow-sm">
+                <details id={`edit-license-${license.id}`} key={license.id} className="group/license overflow-hidden rounded-md bg-white shadow-sm">
                   <summary
                     className={`flex cursor-pointer list-none items-center justify-between gap-3 border-l-4 px-3 py-2 marker:hidden ${index % 2 === 0 ? "bg-white" : "bg-blue-50"}`}
                     style={{ borderLeftColor: providerColor.hex }}
