@@ -97,6 +97,22 @@ describe("RoadmapDashboard", () => {
     expect(within(summary).getByText("Thomistic")).toBeVisible();
   });
 
+  it("uses the next future exact date for Next up", () => {
+    vi.setSystemTime(new Date(2026, 6, 7, 12));
+    const julyItems: RoadmapItem[] = [
+      { id: "road-past-july", title: "GK Chesterton", provider: "Augustine Institute", releaseDate: "2026-07-01", status: "planned", notes: null, categoryId: null },
+      { id: "road-future-july", title: "Future July Release", provider: "Augustine Institute", releaseDate: "2026-07-15", status: "planned", notes: null, categoryId: null }
+    ];
+
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={julyItems} ongoingSeries={series} categories={categories} startMonth="2026-07" monthCount={6} isDemo />);
+
+    const summary = screen.getByTestId("roadmap-summary");
+    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
+
+    expect(within(summary).getByText("Future July Release")).toBeVisible();
+    expect(within(summary).queryByText("GK Chesterton")).not.toBeInTheDocument();
+  });
+
   it("filters the roadmap when key chips are clicked", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 

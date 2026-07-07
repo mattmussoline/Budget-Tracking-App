@@ -50,7 +50,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
   const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
-  const summary = buildRoadmapSummary(roadmapItems, categories, currentMonthKey);
+  const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey());
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `/roadmap?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
@@ -173,7 +173,7 @@ function SummaryMetric({ value, label, accentClassName }: { value: string; label
   </div>;
 }
 
-function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], currentMonthKey: string): RoadmapSummaryData {
+function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], todayKey: string): RoadmapSummaryData {
   const categoryById = new Map(categories.map((category) => [category.id, category]));
   const audienceCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
   const providerCounts = new Map<string, number>();
@@ -199,7 +199,7 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
     .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
     .map(([name, count]) => ({ name, count }))[0] ?? null;
   const nextReleaseItem = roadmapItems
-    .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate!.slice(0, 7) >= currentMonthKey)
+    .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate! >= todayKey)
     .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
 
   return {
@@ -215,6 +215,10 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
 
 function isExactRoadmapDate(releaseDate: string | null) {
   return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(releaseDate ?? "");
+}
+
+function getTodayKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function isBeforeCurrentMonth(releaseDate: string | null, currentMonthKey: string) {
