@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-label="FORMED Licensing">
-  <rect width="1254" height="1254" fill="#ffffff"/>
+  <rect width="1254" height="1254" rx="220" fill="#ffffff"/>
   <g fill="#1f78ff">
     <path d="M555 334 806 201v171L660 290v194h146v89H660v396l-105 55V573H412v-89h143Z"/>
     <path d="M412 484h394v89H412Z"/>
