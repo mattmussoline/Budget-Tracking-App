@@ -1,6 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Licensing Budget">
-  <rect width="64" height="64" rx="14" fill="#0f172a"/>
-  <circle cx="44" cy="20" r="10" fill="#14b8a6"/>
-  <path d="M17 46h30" stroke="#f8fafc" stroke-width="5" stroke-linecap="round"/>
-  <path d="M20 42V28m12 14V18m12 24V31" stroke="#facc15" stroke-width="7" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-label="FORMED Licensing">
+  <rect width="1254" height="1254" fill="#ffffff"/>
+  <g fill="#1f78ff">
+    <path d="M555 334 806 201v171L660 290v194h146v89H660v396l-105 55V573H412v-89h143Z"/>
+    <path d="M412 484h394v89H412Z"/>
+  </g>
 </svg>
