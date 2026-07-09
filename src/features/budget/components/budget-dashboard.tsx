@@ -106,8 +106,10 @@ export function BudgetDashboard({
           <div className="grid min-w-0 gap-8">
             <SummaryMetrics model={model} />
             <DashboardInsights model={model} providerColorOverrides={providerColorOverrides} />
-            <BudgetSourcesPanel items={budgetSourceSummary} />
-            <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
+            <div className="grid min-w-0 gap-8 lg:grid-cols-2">
+              <BudgetSourcesPanel items={budgetSourceSummary} />
+              <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
+            </div>
             <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
               <div className="grid min-w-0 content-start gap-8">
                 <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
@@ -159,17 +161,17 @@ function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <details data-testid="budget-sources-panel" className="rounded-lg bg-white ring-1 ring-gray-200">
+    <details data-testid="budget-sources-panel" className="rounded-lg bg-purple-50 ring-1 ring-purple-100">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 marker:hidden md:p-6">
         <div>
           <h2 className="font-display text-2xl font-extrabold tracking-tight">Budget Sources</h2>
           <p className="text-sm font-medium text-muted">Content counted across budget items, roadmap titles, and content reviews.</p>
         </div>
         <span className="flex shrink-0 items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">
+          <span className="rounded-full bg-white/80 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-purple-900">
             {total} tracked
           </span>
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-gray-100 text-muted shadow-sm ring-1 ring-gray-200">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-white/80 text-purple-900 shadow-sm ring-1 ring-purple-100">
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Open Budget Sources</span>
           </span>
@@ -189,17 +191,17 @@ function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
 
 function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: string; items: NeedsAttentionItem[]; isDemo?: boolean }) {
   return (
-    <details data-testid="needs-attention-panel" className="rounded-lg bg-gray-100">
+    <details data-testid="needs-attention-panel" className="rounded-lg bg-red-50">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 marker:hidden md:p-6">
         <div>
           <h2 className="font-display text-2xl font-extrabold tracking-tight">Needs Attention</h2>
           <p className="text-sm font-medium text-muted">Items that are blocked, undated, approved, released, or close to budget limits.</p>
         </div>
         <span className="flex shrink-0 items-center gap-2">
-          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">
+          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-red-900">
             {items.length} open
           </span>
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-muted shadow-sm ring-1 ring-gray-200">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-red-900 shadow-sm ring-1 ring-red-100">
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Open Needs Attention</span>
           </span>
