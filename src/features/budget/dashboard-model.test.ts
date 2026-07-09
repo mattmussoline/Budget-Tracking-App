@@ -42,6 +42,33 @@ describe("buildDashboardModel", () => {
     expect(model.remainingCents).toBe(573333);
   });
 
+  it("excludes donor-funded titles from committed misc budget totals", () => {
+    const model = buildDashboardModel({
+      fiscalYear: 2026,
+      fiscalYearStartMonth: 7,
+      budgetCents: 3000000,
+      licenses: [
+        ...licenses,
+        {
+          id: "donor-special",
+          title: "Donor Special",
+          provider: "Provider D",
+          installmentCents: 500000,
+          cadence: "yearly",
+          addedFiscalMonth: 1,
+          budgetSource: "donor_funded"
+        }
+      ]
+    });
+
+    expect(model.totalSpentCents).toBe(2426667);
+    expect(model.remainingCents).toBe(573333);
+    expect(model.months.find((month) => month.index === 1)?.payments.map((payment) => payment.title)).not.toContain(
+      "Donor Special"
+    );
+    expect(model.providers.some((provider) => provider.provider === "Provider D")).toBe(false);
+  });
+
   it("groups payment rows by fiscal month", () => {
     const model = buildDashboardModel({
       fiscalYear: 2026,

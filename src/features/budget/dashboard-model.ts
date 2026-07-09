@@ -49,7 +49,8 @@ export function buildDashboardModel({
   licenses: ContentLicense[];
   now?: Date;
 }): DashboardModel {
-  const schedules = licenses.map((license) => ({
+  const committedBudgetLicenses = licenses.filter((license) => (license.budgetSource ?? "misc_licensing") === "misc_licensing");
+  const schedules = committedBudgetLicenses.map((license) => ({
     license,
     payments: calculateLicenseSchedule(license)
   }));
@@ -89,7 +90,8 @@ export function buildDashboardModel({
         provider,
         totalCents,
         licenseCount,
-        licenseSharePercent: licenses.length > 0 ? Math.round((licenseCount / licenses.length) * 100) : 0
+        licenseSharePercent:
+          committedBudgetLicenses.length > 0 ? Math.round((licenseCount / committedBudgetLicenses.length) * 100) : 0
       };
     })
     .sort((a, b) => b.totalCents - a.totalCents);
