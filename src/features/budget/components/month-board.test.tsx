@@ -55,9 +55,10 @@ describe("MonthBoard", () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  it("opens the matching edit form when a payment tile is clicked", () => {
+  it("opens the matching edit form from an expanded compact payment row", () => {
     renderMonthBoardWithEditor();
 
+    fireEvent.click(screen.getAllByRole("button", { name: "Expand Aquinas 101 payment details" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "Edit Aquinas 101" })[0]);
 
     expect(document.getElementById("edit-content-manager")).toHaveAttribute("open");
@@ -65,13 +66,29 @@ describe("MonthBoard", () => {
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveFocus();
   });
 
-  it("shows budget-source tags and renders quarters as collapsible sections", () => {
+  it("keeps payment rows compact until they are expanded", () => {
+    renderMonthBoardWithEditor();
+
+    expect(screen.getAllByText("Aquinas 101")[0]).toBeVisible();
+    expect(screen.getAllByText("$12,000.00")[0]).toBeVisible();
+    expect(screen.queryByText("Thomistic")).toBeNull();
+    expect(screen.queryByText("Misc licensing budget")).toBeNull();
+    expect(screen.getAllByRole("button", { name: "Expand Aquinas 101 payment details" })[0]).toBeVisible();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Expand Aquinas 101 payment details" })[0]);
+
+    expect(screen.getByText("Thomistic")).toBeVisible();
+    expect(screen.getAllByText("Misc licensing budget")[0]).toBeVisible();
+    expect(screen.getAllByRole("button", { name: "Edit Aquinas 101" })[0]).toBeVisible();
+  });
+
+  it("shows budget-source tags when rows are expanded and renders quarters as collapsible sections", () => {
     renderMonthBoardWithEditor();
 
     expect(screen.getByTestId("quarter-1")).toHaveAttribute("open");
     expect(screen.getByTestId("quarter-2")).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByRole("button", { name: "Expand Donor Film payment details" }));
     expect(screen.getByRole("button", { name: "Edit Donor Film" })).toBeVisible();
     expect(screen.getByText("Donor-funded budget")).toBeVisible();
-    expect(screen.getAllByText("Misc licensing budget").length).toBeGreaterThan(0);
   });
 });

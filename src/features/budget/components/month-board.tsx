@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import type { DashboardModel } from "../dashboard-model";
 import { getBudgetSourceLabel } from "../budget-source";
@@ -11,6 +13,7 @@ type MonthBoardProps = {
 };
 
 export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
+  const [expandedPayments, setExpandedPayments] = useState<Record<string, boolean>>({});
   const providerColorMap = getProviderColorMap(
     model.providers.map((provider) => provider.provider),
     providerColorOverrides
@@ -39,6 +42,12 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
       const titleInput = licensePanel.querySelector<HTMLInputElement>("input[name='title']");
       titleInput?.focus({ preventScroll: true });
     }
+  };
+  const togglePayment = (paymentKey: string) => {
+    setExpandedPayments((current) => ({
+      ...current,
+      [paymentKey]: !current[paymentKey]
+    }));
   };
 
   return (
@@ -85,36 +94,57 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
                       const providerColor = providerColorMap[payment.provider];
                       const tileClass = `${providerColor.bg} ${providerColor.text}`;
                       const budgetSourceLabel = getBudgetSourceLabel(payment.budgetSource);
+                      const paymentKey = `${payment.licenseId}-${payment.fiscalMonth}`;
+                      const isExpanded = Boolean(expandedPayments[paymentKey]);
 
                       return (
-                      <button
-                        key={`${payment.licenseId}-${payment.fiscalMonth}`}
-                        type="button"
-                        className={`w-full rounded-lg p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 ${tileClass}`}
-                        aria-label={`Edit ${payment.title}`}
-                        onClick={() => openLicenseEditor(payment.licenseId)}
-                      >
-                        <div className="mb-2 flex items-start justify-between gap-3">
-                          <p className="text-sm font-extrabold">{payment.title}</p>
-                          {payment.isFirstPayment ? (
-                            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
-                              first
+                        <div key={paymentKey} className={`overflow-hidden rounded-lg ${tileClass}`}>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-3 p-3 text-left transition hover:bg-white/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+                            aria-label={`${isExpanded ? "Collapse" : "Expand"} ${payment.title} payment details`}
+                            aria-expanded={isExpanded}
+                            onClick={() => togglePayment(paymentKey)}
+                          >
+                            <span className="min-w-0 text-sm font-extrabold leading-snug">{payment.title}</span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="text-sm font-extrabold">{formatCurrency(payment.amountCents)}</span>
+                              <ChevronDown
+                                aria-hidden="true"
+                                className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              />
                             </span>
+                          </button>
+                          {isExpanded ? (
+                            <div className="border-t border-white/40 px-3 pb-3 pt-2">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                {payment.isFirstPayment ? (
+                                  <span className="rounded-md bg-white px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
+                                    first
+                                  </span>
+                                ) : null}
+                                {payment.isProrated ? (
+                                  <span className="rounded-md bg-white/70 px-2 py-1 text-xs font-extrabold">
+                                    prorated
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="text-xs font-bold opacity-80">{payment.provider}</p>
+                              <span className="mt-2 inline-flex rounded-md bg-white/80 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
+                                {budgetSourceLabel}
+                              </span>
+                              <button
+                                type="button"
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-white/85 px-2.5 py-1.5 text-xs font-extrabold text-gray-900 transition hover:bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+                                aria-label={`Edit ${payment.title}`}
+                                onClick={() => openLicenseEditor(payment.licenseId)}
+                              >
+                                <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                            </div>
                           ) : null}
                         </div>
-                        <p className="text-xs font-bold opacity-80">{payment.provider}</p>
-                        <span className="mt-2 inline-flex rounded-md bg-white/80 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
-                          {budgetSourceLabel}
-                        </span>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-sm font-extrabold">{formatCurrency(payment.amountCents)}</span>
-                          {payment.isProrated ? (
-                            <span className="rounded-md bg-white/70 px-2 py-1 text-xs font-extrabold">
-                              prorated
-                            </span>
-                          ) : null}
-                        </div>
-                      </button>
                     );
                     })
                   )}
