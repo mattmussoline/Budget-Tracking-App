@@ -155,6 +155,13 @@ describe("BudgetDashboard", () => {
     expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
   });
 
+  it("labels provider pie slices for hover and assistive technology", () => {
+    renderDashboard();
+
+    expect(screen.getByLabelText("Thomistic: 1 content piece, 50%")).toBeInTheDocument();
+    expect(screen.getByLabelText("Studio: 1 content piece, 50%")).toBeInTheDocument();
+  });
+
   it("shows non-misc spending as a separate top-line data point", () => {
     renderDashboard();
     const otherBudgetsLabel = screen.getByText("Other Budgets");

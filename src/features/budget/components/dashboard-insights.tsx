@@ -40,18 +40,30 @@ export function DashboardInsights({
     }
   ];
   const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
-  let runningPercent = 0;
-  const providerStops = model.providers.map((provider, index) => {
+  const pieSize = 112;
+  const pieCenter = pieSize / 2;
+  const pieStrokeWidth = 40;
+  const pieRadius = (pieSize - pieStrokeWidth) / 2;
+  const pieCircumference = 2 * Math.PI * pieRadius;
+  let runningShare = 0;
+  const providerSlices = model.providers.map((provider, index) => {
     const color = providerColorMap[provider.provider];
-    const nextPercent =
+    const nextShare =
       index === model.providers.length - 1
         ? 100
-        : runningPercent + Math.round((provider.licenseCount / Math.max(providerTotal, 1)) * 100);
-    const stop = `${color.hex} ${runningPercent}% ${nextPercent}%`;
-    runningPercent = nextPercent;
-    return stop;
+        : runningShare + Math.round((provider.licenseCount / Math.max(providerTotal, 1)) * 100);
+    const share = Math.max(nextShare - runningShare, 0);
+    const label = `${provider.provider}: ${provider.licenseCount} content piece${provider.licenseCount === 1 ? "" : "s"}, ${provider.licenseSharePercent}%`;
+    const slice = {
+      provider: provider.provider,
+      color: color.hex,
+      dashArray: `${(share / 100) * pieCircumference} ${pieCircumference}`,
+      dashOffset: -((runningShare / 100) * pieCircumference),
+      label
+    };
+    runningShare = nextShare;
+    return slice;
   });
-  const pieBackground = providerStops.length > 0 ? `conic-gradient(${providerStops.join(", ")})` : "#e5e7eb";
   const topProviders = model.providers.slice(0, 4);
 
   const providerLabel = [
@@ -79,7 +91,32 @@ export function DashboardInsights({
         ))}
         <div className="grid min-w-0 gap-4 rounded-lg bg-amber-100 p-5 text-amber-950 md:grid-cols-[112px_minmax(0,1fr)]">
           <div className="grid place-items-center">
-            <div className="relative h-28 w-28 rounded-full" style={{ background: pieBackground }}>
+            <div className="relative h-28 w-28 rounded-full">
+              <svg aria-label="Provider content pie chart" className="absolute inset-0 h-full w-full" role="img" viewBox={`0 0 ${pieSize} ${pieSize}`}>
+                {providerSlices.length === 0 ? (
+                  <circle cx={pieCenter} cy={pieCenter} fill="none" r={pieRadius} stroke="#e5e7eb" strokeWidth={pieStrokeWidth} />
+                ) : (
+                  providerSlices.map((slice) => (
+                    <circle
+                      key={slice.provider}
+                      aria-label={slice.label}
+                      cx={pieCenter}
+                      cy={pieCenter}
+                      fill="none"
+                      r={pieRadius}
+                      role="img"
+                      stroke={slice.color}
+                      strokeDasharray={slice.dashArray}
+                      strokeDashoffset={slice.dashOffset}
+                      strokeWidth={pieStrokeWidth}
+                      tabIndex={0}
+                      transform={`rotate(-90 ${pieCenter} ${pieCenter})`}
+                    >
+                      <title>{slice.label}</title>
+                    </circle>
+                  ))
+                )}
+              </svg>
               <div className="absolute inset-5 grid place-items-center rounded-full bg-amber-100 text-center">
                 <span className="font-display text-3xl font-extrabold">{model.insights.providerCount}</span>
               </div>
