@@ -155,11 +155,16 @@ describe("BudgetDashboard", () => {
     expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
   });
 
-  it("labels provider pie slices for hover and assistive technology", () => {
+  it("shows a visible provider tooltip when a pie slice is hovered", () => {
     renderDashboard();
 
-    expect(screen.getByLabelText("Thomistic: 1 content piece, 50%")).toBeInTheDocument();
-    expect(screen.getByLabelText("Studio: 1 content piece, 50%")).toBeInTheDocument();
+    expect(screen.queryByTestId("provider-pie-tooltip")).not.toBeInTheDocument();
+
+    fireEvent.mouseEnter(screen.getByLabelText("Thomistic: 1 content piece, 50%"));
+
+    expect(screen.getByTestId("provider-pie-tooltip")).toHaveTextContent("Thomistic");
+    expect(screen.getByTestId("provider-pie-tooltip")).toHaveTextContent("1 content piece");
+    expect(screen.getByTestId("provider-pie-tooltip")).toHaveTextContent("50%");
   });
 
   it("shows non-misc spending as a separate top-line data point", () => {

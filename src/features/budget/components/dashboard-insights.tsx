@@ -3,6 +3,7 @@ import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
 import { getProviderColorMap, type ProviderColorOverrides } from "../provider-colors";
+import { ProviderPieChart } from "./provider-pie-chart";
 
 export function DashboardInsights({
   model,
@@ -53,13 +54,17 @@ export function DashboardInsights({
         ? 100
         : runningShare + Math.round((provider.licenseCount / Math.max(providerTotal, 1)) * 100);
     const share = Math.max(nextShare - runningShare, 0);
-    const label = `${provider.provider}: ${provider.licenseCount} content piece${provider.licenseCount === 1 ? "" : "s"}, ${provider.licenseSharePercent}%`;
+    const contentLabel = `${provider.licenseCount} content piece${provider.licenseCount === 1 ? "" : "s"}`;
+    const percentLabel = `${provider.licenseSharePercent}%`;
+    const ariaLabel = `${provider.provider}: ${contentLabel}, ${percentLabel}`;
     const slice = {
       provider: provider.provider,
       color: color.hex,
       dashArray: `${(share / 100) * pieCircumference} ${pieCircumference}`,
       dashOffset: -((runningShare / 100) * pieCircumference),
-      label
+      ariaLabel,
+      contentLabel,
+      percentLabel
     };
     runningShare = nextShare;
     return slice;
@@ -91,36 +96,14 @@ export function DashboardInsights({
         ))}
         <div className="grid min-w-0 gap-4 rounded-lg bg-amber-100 p-5 text-amber-950 md:grid-cols-[112px_minmax(0,1fr)]">
           <div className="grid place-items-center">
-            <div className="relative h-28 w-28 rounded-full">
-              <svg aria-label="Provider content pie chart" className="absolute inset-0 h-full w-full" role="img" viewBox={`0 0 ${pieSize} ${pieSize}`}>
-                {providerSlices.length === 0 ? (
-                  <circle cx={pieCenter} cy={pieCenter} fill="none" r={pieRadius} stroke="#e5e7eb" strokeWidth={pieStrokeWidth} />
-                ) : (
-                  providerSlices.map((slice) => (
-                    <circle
-                      key={slice.provider}
-                      aria-label={slice.label}
-                      cx={pieCenter}
-                      cy={pieCenter}
-                      fill="none"
-                      r={pieRadius}
-                      role="img"
-                      stroke={slice.color}
-                      strokeDasharray={slice.dashArray}
-                      strokeDashoffset={slice.dashOffset}
-                      strokeWidth={pieStrokeWidth}
-                      tabIndex={0}
-                      transform={`rotate(-90 ${pieCenter} ${pieCenter})`}
-                    >
-                      <title>{slice.label}</title>
-                    </circle>
-                  ))
-                )}
-              </svg>
-              <div className="absolute inset-5 grid place-items-center rounded-full bg-amber-100 text-center">
-                <span className="font-display text-3xl font-extrabold">{model.insights.providerCount}</span>
-              </div>
-            </div>
+            <ProviderPieChart
+              center={pieCenter}
+              providerCount={model.insights.providerCount}
+              radius={pieRadius}
+              size={pieSize}
+              slices={providerSlices}
+              strokeWidth={pieStrokeWidth}
+            />
           </div>
           <div className="grid min-w-0 content-center gap-3">
             <div>
