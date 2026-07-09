@@ -298,7 +298,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
 export async function sendRoadmapItemToBudget(formData: FormData) {
   const parsed = roadmapPipelineSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error("Choose a valid released roadmap item to add to the budget.");
+    throw new Error("Choose a valid roadmap item to add to the dashboard.");
   }
 
   const admin = await requirePlanningAdmin();
@@ -311,10 +311,6 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
 
   if (roadmapError || !roadmapItem) {
     throw new Error(roadmapError?.message ?? "Could not find that roadmap item.");
-  }
-
-  if (roadmapItem.status !== "released") {
-    throw new Error("Only released roadmap items can be added to the budget.");
   }
 
   const { error } = await admin.from("content_licenses").insert({

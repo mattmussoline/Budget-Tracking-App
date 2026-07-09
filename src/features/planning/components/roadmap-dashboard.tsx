@@ -319,7 +319,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
 
     try {
       await sendRoadmapItemToBudget(new FormData(formRef.current));
-      setMessage("Added to Budget with a $0 yearly placeholder. Update the amount on the Dashboard.");
+      setMessage("Pushed to Dashboard with a $0 yearly placeholder. Update the amount on the Dashboard.");
     } catch {
       setMessage("Could not add this roadmap item to the budget.");
     } finally {
@@ -338,10 +338,10 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
-    <div className="flex gap-2 md:col-span-2">
+    <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap gap-2 md:col-span-2", item && "pb-5 sm:pb-6")}>
       <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
       {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
-      {item?.status === "released" ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Add to Budget</SoftButton> : null}
+      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
     </div>
   </form>;
 }
