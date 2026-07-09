@@ -67,7 +67,7 @@ export function DashboardInsights({
       </div>
       <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
         {items.map((item) => (
-          <div key={item.label} className={`rounded-lg p-5 ${item.className}`}>
+          <div key={item.label} className={`min-w-0 rounded-lg p-5 ${item.className}`}>
             <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
               <item.icon className="h-5 w-5" aria-hidden="true" />
             </div>
@@ -77,18 +77,18 @@ export function DashboardInsights({
             {"secondaryDetail" in item ? <p className="text-sm font-bold opacity-75">{item.secondaryDetail}</p> : null}
           </div>
         ))}
-        <div className="grid gap-5 rounded-lg bg-amber-100 p-5 text-amber-950 md:grid-cols-[140px_1fr]">
+        <div className="grid min-w-0 gap-4 rounded-lg bg-amber-100 p-5 text-amber-950 md:grid-cols-[112px_minmax(0,1fr)]">
           <div className="grid place-items-center">
-            <div className="relative h-32 w-32 rounded-full" style={{ background: pieBackground }}>
-              <div className="absolute inset-6 grid place-items-center rounded-full bg-amber-100 text-center">
+            <div className="relative h-28 w-28 rounded-full" style={{ background: pieBackground }}>
+              <div className="absolute inset-5 grid place-items-center rounded-full bg-amber-100 text-center">
                 <span className="font-display text-3xl font-extrabold">{model.insights.providerCount}</span>
               </div>
             </div>
           </div>
-          <div className="grid content-center gap-3">
+          <div className="grid min-w-0 content-center gap-3">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">Providers</p>
-              <p className="font-display text-2xl font-extrabold tracking-tight">{providerLabel[0]}</p>
+              <p className="text-wrap font-display text-xl font-extrabold leading-tight tracking-tight">{providerLabel[0]}</p>
               <p className="text-sm font-bold opacity-75">{providerLabel[1]}</p>
             </div>
             <div className="grid gap-2">
