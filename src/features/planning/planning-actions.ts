@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { budgetSourceOptions } from "@/features/budget/budget-source";
 import { dollarsToOptionalCents } from "./planning-model";
 import type { ContentReviewItem, ReviewStatus } from "./planning-types";
 
 const roadmapStatusSchema = z.enum(["planned", "in_progress", "blocked", "released"]);
 const reviewStatusSchema = z.enum(["not_started", "in_progress", "blocked", "rejected", "approved"]);
+const budgetSourceSchema = z.enum(budgetSourceOptions.map((option) => option.value) as [string, ...string[]]);
 const nullableDateSchema = z.union([z.literal(""), z.literal("TBD"), z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/)]).optional();
 const nullableUuidSchema = z.union([z.literal(""), z.string().uuid()]).optional();
 
@@ -18,6 +20,7 @@ const roadmapItemSchema = z.object({
   provider: z.string().trim().optional(),
   releaseDate: nullableDateSchema,
   status: roadmapStatusSchema,
+  budgetSource: budgetSourceSchema.default("misc_licensing"),
   notes: z.string().trim().optional(),
   categoryId: nullableUuidSchema
 });
@@ -33,6 +36,7 @@ const reviewItemSchema = z.object({
   genre: z.string().trim().optional(),
   format: z.string().trim().optional(),
   reviewStatus: reviewStatusSchema,
+  budgetSource: budgetSourceSchema.default("misc_licensing"),
   notes: z.string().trim().optional(),
   proposedRate: z.string().trim().optional(),
   reviewLink: z.union([z.literal(""), z.string().url()]).optional(),
@@ -45,6 +49,16 @@ const updateReviewItemSchema = reviewItemSchema.extend({
 
 const deleteReviewItemSchema = z.object({
   itemId: z.string().trim().min(1),
+  fiscalYearId: z.string().uuid()
+});
+
+const reviewPipelineSchema = z.object({
+  itemId: z.string().trim().min(1),
+  fiscalYearId: z.string().uuid()
+});
+
+const roadmapPipelineSchema = z.object({
+  itemId: z.string().uuid(),
   fiscalYearId: z.string().uuid()
 });
 
@@ -78,6 +92,7 @@ export async function addRoadmapItem(formData: FormData) {
     provider: optionalText(parsed.data.provider),
     release_month: optionalText(parsed.data.releaseDate),
     status: parsed.data.status,
+    budget_source: parsed.data.budgetSource,
     notes: optionalText(parsed.data.notes),
     category_id: optionalText(parsed.data.categoryId)
   });
@@ -104,6 +119,7 @@ export async function updateRoadmapItem(formData: FormData) {
       provider: optionalText(parsed.data.provider),
       release_month: optionalText(parsed.data.releaseDate),
       status: parsed.data.status,
+      budget_source: parsed.data.budgetSource,
       notes: optionalText(parsed.data.notes),
       category_id: optionalText(parsed.data.categoryId)
     })
@@ -151,12 +167,13 @@ export async function addContentReviewItem(formData: FormData) {
       genre: optionalText(parsed.data.genre),
       format: optionalText(parsed.data.format),
       review_status: parsed.data.reviewStatus,
+      budget_source: parsed.data.budgetSource,
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
       comparable_content: optionalText(parsed.data.comparableContent)
     })
-    .select("id,title,provider,genre,format,review_status,notes,proposed_rate_cents,review_link,comparable_content")
+    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content")
     .single();
 
   if (error) {
@@ -172,6 +189,7 @@ export async function addContentReviewItem(formData: FormData) {
     genre: data.genre,
     format: data.format,
     reviewStatus: data.review_status as ReviewStatus,
+    budgetSource: data.budget_source ?? "misc_licensing",
     notes: data.notes,
     proposedRateCents: data.proposed_rate_cents,
     reviewLink: data.review_link,
@@ -195,6 +213,7 @@ export async function updateContentReviewItem(formData: FormData) {
       genre: optionalText(parsed.data.genre),
       format: optionalText(parsed.data.format),
       review_status: parsed.data.reviewStatus,
+      budget_source: parsed.data.budgetSource,
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
@@ -223,6 +242,91 @@ export async function deleteContentReviewItem(formData: FormData) {
     .delete()
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePlanning();
+}
+
+export async function sendReviewToRoadmap(formData: FormData) {
+  const parsed = reviewPipelineSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid approved review to send to the roadmap.");
+  }
+
+  const admin = await requirePlanningAdmin();
+  const { data: review, error: reviewError } = await admin
+    .from("content_review_items")
+    .select("id,title,provider,review_status,budget_source,notes,proposed_rate_cents")
+    .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .single();
+
+  if (reviewError || !review) {
+    throw new Error(reviewError?.message ?? "Could not find that review.");
+  }
+
+  if (review.review_status !== "approved") {
+    throw new Error("Only approved reviews can be sent to the roadmap.");
+  }
+
+  const noteParts = [
+    "Created from content review.",
+    review.notes ? `Review notes: ${review.notes}` : null,
+    review.proposed_rate_cents ? `Proposed rate: ${formatCents(review.proposed_rate_cents)}` : null
+  ].filter(Boolean);
+
+  const { error } = await admin.from("roadmap_items").insert({
+    fiscal_year_id: parsed.data.fiscalYearId,
+    title: review.title,
+    provider: optionalText(review.provider),
+    release_month: "TBD",
+    status: "planned",
+    budget_source: review.budget_source ?? "misc_licensing",
+    notes: noteParts.join(" ")
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePlanning();
+}
+
+export async function sendRoadmapItemToBudget(formData: FormData) {
+  const parsed = roadmapPipelineSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid released roadmap item to add to the budget.");
+  }
+
+  const admin = await requirePlanningAdmin();
+  const { data: roadmapItem, error: roadmapError } = await admin
+    .from("roadmap_items")
+    .select("id,title,provider,release_month,status,budget_source,notes")
+    .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .single();
+
+  if (roadmapError || !roadmapItem) {
+    throw new Error(roadmapError?.message ?? "Could not find that roadmap item.");
+  }
+
+  if (roadmapItem.status !== "released") {
+    throw new Error("Only released roadmap items can be added to the budget.");
+  }
+
+  const { error } = await admin.from("content_licenses").insert({
+    fiscal_year_id: parsed.data.fiscalYearId,
+    title: roadmapItem.title,
+    provider: optionalText(roadmapItem.provider) ?? "Provider TBD",
+    installment_cents: 0,
+    cadence: "yearly",
+    added_fiscal_month: monthToFiscalMonth(roadmapItem.release_month),
+    budget_source: roadmapItem.budget_source ?? "misc_licensing",
+    notes: ["Created from roadmap.", roadmapItem.notes].filter(Boolean).join(" ")
+  });
 
   if (error) {
     throw new Error(error.message);
@@ -359,11 +463,23 @@ async function requirePlanningAdmin() {
   return admin;
 }
 
-function optionalText(value: string | undefined) {
-  return value && value.length > 0 ? value : null;
+function optionalText(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function formatCents(value: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value / 100);
+}
+
+function monthToFiscalMonth(value: string | null | undefined) {
+  if (!value || !/^\d{4}-(0[1-9]|1[0-2])/.test(value)) return 1;
+  const month = Number(value.slice(5, 7));
+  return ((month + 5) % 12) + 1;
 }
 
 function revalidatePlanning() {
   revalidatePath("/roadmap");
   revalidatePath("/content-review");
+  revalidatePath("/dashboard");
 }

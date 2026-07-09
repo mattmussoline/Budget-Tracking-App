@@ -7,6 +7,7 @@ import { SoftSelect } from "@/components/ui/soft-select";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import { deleteContentLicense, updateContentLicense } from "../budget-actions";
 import { getFiscalMonths } from "../budget-math";
+import { budgetSourceOptions } from "../budget-source";
 import type { ContentLicense } from "../budget-types";
 import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
 import { formatCurrency } from "@/lib/currency";
@@ -122,6 +123,14 @@ export function LicenseManager({
                         defaultValue={license.addedFiscalMonth ? String(license.addedFiscalMonth) : ""}
                         placeholder="Select"
                         options={monthOptions}
+                        disabled={isDemo}
+                        className="min-h-9 px-3 text-sm"
+                      />
+                      <SoftSelect
+                        label="Budget source"
+                        name="budgetSource"
+                        defaultValue={license.budgetSource ?? "misc_licensing"}
+                        options={[...budgetSourceOptions]}
                         disabled={isDemo}
                         className="min-h-9 px-3 text-sm"
                       />

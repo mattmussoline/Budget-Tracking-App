@@ -1,17 +1,21 @@
 "use client";
 
-import { Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Save, Trash2 } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
-import { addContentReviewItem, deleteContentReviewItem, updateContentReviewItem } from "../planning-actions";
+import { budgetSourceOptions } from "@/features/budget/budget-source";
+import { addContentReviewItem, deleteContentReviewItem, sendReviewToRoadmap, updateContentReviewItem } from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
 import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ReviewStatus } from "../planning-types";
 import { ColoredSelect } from "./colored-select";
+import { ProviderCombobox } from "./provider-combobox";
 
-type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; isDemo?: boolean };
+type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; providerOptions?: string[]; isDemo?: boolean };
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
+
+const decisionQueueGridClass = "md:grid-cols-[4.5rem_1.3fr_1fr_0.9fr_1fr]";
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -20,13 +24,14 @@ const blankDraft = (): ContentReviewItem => ({
   genre: "",
   format: "",
   reviewStatus: "not_started",
+  budgetSource: "misc_licensing",
   notes: "",
   proposedRateCents: null,
   reviewLink: "",
   comparableContent: ""
 });
 
-export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentReviewDashboardProps) {
+export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = [], isDemo }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
   const [draft, setDraft] = useState<ContentReviewItem | null>(null);
@@ -58,6 +63,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
     formData.set("genre", item.genre ?? "");
     formData.set("format", item.format ?? "");
     formData.set("reviewStatus", item.reviewStatus);
+    formData.set("budgetSource", item.budgetSource ?? "misc_licensing");
     formData.set("notes", item.notes ?? "");
     formData.set("proposedRate", formatOptionalCurrency(item.proposedRateCents));
     formData.set("reviewLink", item.reviewLink ?? "");
@@ -105,8 +111,8 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
           <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
           <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
         </div>
-        <div className="mb-2 hidden grid-cols-[auto_1.3fr_1fr_0.9fr_1fr] gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid">
-          <span className="sr-only">Select</span><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+        <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
+          <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
         </div>
         <div data-testid="content-review-active-queue" className="grid gap-2">
           {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
@@ -122,7 +128,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, isDemo }: ContentR
       </section>
 
       <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
-        {selected ? <ReviewEditor item={selected} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
+        {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
       </section>
     </div>
   );
@@ -135,7 +141,7 @@ function isFinalReviewStatus(status: ReviewStatus) {
 function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition md:grid-cols-[auto_1.3fr_1fr_0.9fr_1fr]", TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+    <div aria-current={active ? "true" : undefined} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
       <button
         type="button"
         aria-label={`Select ${item.title || "Untitled review"}`}
@@ -165,14 +171,41 @@ function ContentReviewGroup({ title, count, testId, children }: { title: string;
   </details>;
 }
 
-function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
+function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
+  const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
+  const [isPipelinePending, startPipelineTransition] = useTransition();
+
+  function sendToRoadmap() {
+    if (isDemo || item.id === "draft") return;
+    setPipelineMessage(null);
+    startPipelineTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.set("fiscalYearId", fiscalYearId);
+        formData.set("itemId", item.id);
+        await sendReviewToRoadmap(formData);
+        setPipelineMessage("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.");
+      } catch {
+        setPipelineMessage("Could not send this review to the roadmap.");
+      }
+    });
+  }
+
   return <div className="grid gap-5">
     <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
     <div className="grid gap-4 md:grid-cols-2">
       <Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} />
       <CurrencyField label="Proposed Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} />
-      <Field label="Provider" value={item.provider ?? ""} onChange={(value) => onChange("provider", value)} disabled={isDemo} />
+      <ProviderCombobox
+        id={`review-provider-${item.id}`}
+        value={item.provider ?? ""}
+        options={providerOptions}
+        disabled={isDemo}
+        onChange={(value) => onChange("provider", value)}
+        inputClassName="min-h-11 w-full rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"
+      />
       <ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} />
+      <SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} />
       <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} />
       <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} />
       <div className="md:col-span-2"><Field label="Review Link" type="url" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} /></div>
@@ -180,14 +213,22 @@ function ReviewEditor({ item, isDemo, isPending, saveState, onChange, onSave, fi
       <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : <span />}
+      <div className="flex flex-wrap gap-2">
+        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : null}
+        {item.id !== "draft" && item.reviewStatus === "approved" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to Roadmap"}</SoftButton> : null}
+      </div>
       <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
     </div>
+    {pipelineMessage ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{pipelineMessage}</p> : null}
   </div>;
 }
 
 function Field({ label, value, onChange, disabled, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; type?: string }) {
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+}
+
+function SelectField({ label, value, options, onChange, disabled }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean }) {
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal">{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
 }
 
 function CurrencyField({ label, value, onChange, disabled }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean }) {

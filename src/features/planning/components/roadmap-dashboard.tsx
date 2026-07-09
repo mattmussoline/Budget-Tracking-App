@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Plus, X, Trash2 } from "lucide-react";
-import { type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, DollarSign, Maximize2, Minimize2, Plus, X, Trash2 } from "lucide-react";
+import { type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
 import { cn } from "@/components/ui/soft-surface";
+import { budgetSourceOptions } from "@/features/budget/budget-source";
 import {
-  addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem,
+  addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget,
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
@@ -18,6 +19,7 @@ import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-ty
 import { AddRoadmapModal } from "./add-roadmap-modal";
 import { CategoryManagerModal } from "./category-manager-modal";
 import { EditRoadmapModal } from "./edit-roadmap-modal";
+import { ProviderCombobox } from "./provider-combobox";
 
 type RoadmapDashboardProps = {
   fiscalYearId: string;
@@ -310,58 +312,38 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     }
   };
 
+  const handleSendToBudget = async () => {
+    if (!item || !formRef.current) return;
+    setMessage(null);
+    setIsSaving(true);
+
+    try {
+      await sendRoadmapItemToBudget(new FormData(formRef.current));
+      setMessage("Added to Budget with a $0 yearly placeholder. Update the amount on the Dashboard.");
+    } catch {
+      setMessage("Could not add this roadmap item to the budget.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
     {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
     <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
-    <ProviderInput key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
+    <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
     <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
     <div className="flex gap-2 md:col-span-2">
       <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
       {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
+      {item?.status === "released" ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Add to Budget</SoftButton> : null}
     </div>
   </form>;
-}
-
-function ProviderInput({ id, defaultValue, options, disabled }: { id: string; defaultValue: string; options: string[]; disabled?: boolean }) {
-  const [value, setValue] = useState(defaultValue);
-  const [isOpen, setIsOpen] = useState(false);
-  const normalizedValue = value.trim().toLowerCase();
-  const suggestions = options.filter((option) => {
-    const normalizedOption = option.toLowerCase();
-    return normalizedOption !== normalizedValue && (!normalizedValue || normalizedOption.includes(normalizedValue));
-  }).slice(0, 5);
-
-  const showSuggestions = !disabled && isOpen && suggestions.length > 0;
-  const closeOnBlur = (event: FocusEvent<HTMLDivElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false);
-  };
-
-  return <div className="relative" onBlur={closeOnBlur}>
-    <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={id}>
-      Provider
-      <input
-        id={id}
-        name="provider"
-        value={value}
-        autoComplete="off"
-        disabled={disabled}
-        onFocus={() => setIsOpen(true)}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          setValue(event.target.value);
-          setIsOpen(true);
-        }}
-        className="min-h-12 w-full rounded-md border-0 bg-gray-100 px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-gray-500 focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70"
-      />
-    </label>
-    {showSuggestions ? <div className="absolute z-20 mt-1 grid max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg">
-      {suggestions.map((option) => <button key={option} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(option); setIsOpen(false); }} className="rounded px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-blue-50">{option}</button>)}
-    </div> : null}
-  </div>;
 }
 
 function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultValue: string; disabled?: boolean }) {

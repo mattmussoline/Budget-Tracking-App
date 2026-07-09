@@ -12,6 +12,7 @@ const actionMocks = vi.hoisted(() => ({
   deleteOngoingSeries: vi.fn(),
   deleteRoadmapCategory: vi.fn(),
   deleteRoadmapItem: vi.fn(),
+  sendRoadmapItemToBudget: vi.fn(),
   updateOngoingSeries: vi.fn(),
   updateRoadmapCategory: vi.fn(),
   updateRoadmapItem: vi.fn()
@@ -325,6 +326,34 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByRole("option", { name: "Blocked" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "Released" })).toBeVisible();
     expect(within(dialog).queryByRole("option", { name: "Ready" })).not.toBeInTheDocument();
+  });
+
+  it("lets released roadmap items move forward to the budget", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Recent Film" }));
+
+    expect(within(screen.getByRole("dialog", { name: "Edit Roadmap Item" })).getByRole("button", { name: "Add to Budget" })).toBeInTheDocument();
+  });
+
+  it("confirms when a released roadmap item is added to the budget", async () => {
+    actionMocks.sendRoadmapItemToBudget.mockResolvedValue(undefined);
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Recent Film" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add to Budget" }));
+
+    await waitFor(() => expect(actionMocks.sendRoadmapItemToBudget).toHaveBeenCalledTimes(1));
+    expect(within(dialog).getByText("Added to Budget with a $0 yearly placeholder. Update the amount on the Dashboard.")).toBeVisible();
+  });
+
+  it("does not offer budget sending for roadmap items that are not released", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+
+    expect(within(screen.getByRole("dialog", { name: "Edit Roadmap Item" })).queryByRole("button", { name: "Add to Budget" })).not.toBeInTheDocument();
   });
 
   it("keeps an edited roadmap status visible after saving", async () => {

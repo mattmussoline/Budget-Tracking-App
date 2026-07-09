@@ -5,6 +5,7 @@ import { SoftSelect } from "@/components/ui/soft-select";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import { getFiscalMonths } from "../budget-math";
 import { addContentLicense } from "../budget-actions";
+import { budgetSourceOptions } from "../budget-source";
 
 type ContentLicenseFormProps = {
   fiscalYearId: string;
@@ -72,6 +73,15 @@ export function ContentLicenseForm({
             surface="white"
           />
         </div>
+        <SoftSelect
+          label="Budget source"
+          name="budgetSource"
+          defaultValue="misc_licensing"
+          options={[...budgetSourceOptions]}
+          required
+          disabled={isDemo}
+          surface="white"
+        />
         <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} surface="white" />
         <SoftButton type="submit" variant="primary" disabled={isDemo}>
           Add title

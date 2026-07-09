@@ -8,12 +8,16 @@ import { ProviderSummary } from "./provider-summary";
 import { SharePanel } from "./share-panel";
 import { SummaryMetrics } from "./summary-metrics";
 import { logout } from "../auth-actions";
-import { deleteFiscalYear, pinFiscalYear } from "../budget-actions";
+import { deleteFiscalYear, dismissNeedsAttentionItem, pinFiscalYear } from "../budget-actions";
+import type { BudgetSourceSummaryItem } from "../budget-source";
 import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
 import { getNextFiscalYear } from "../fiscal-year-selection";
 import type { ProviderColorOverrides } from "../provider-colors";
 import { PlanningHeader } from "@/features/planning/components/planning-header";
+import Link from "next/link";
+import type { NeedsAttentionItem } from "../attention-model";
+import { Plus } from "lucide-react";
 
 type FiscalYearRow = {
   id: string;
@@ -33,6 +37,8 @@ type BudgetDashboardProps = {
   mode: "demo" | "live";
   userEmail?: string;
   allowedEmails?: string[];
+  needsAttention?: NeedsAttentionItem[];
+  budgetSourceSummary?: BudgetSourceSummaryItem[];
 };
 
 export function BudgetDashboard({
@@ -43,7 +49,9 @@ export function BudgetDashboard({
   providerColorOverrides = {},
   mode,
   userEmail,
-  allowedEmails = []
+  allowedEmails = [],
+  needsAttention = [],
+  budgetSourceSummary = []
 }: BudgetDashboardProps) {
   const isDemo = mode === "demo";
   const nextFiscalYear = getNextFiscalYear(fiscalYears, new Date().getFullYear());
@@ -98,6 +106,8 @@ export function BudgetDashboard({
           <div className="grid min-w-0 gap-8">
             <SummaryMetrics model={model} />
             <DashboardInsights model={model} providerColorOverrides={providerColorOverrides} />
+            <BudgetSourcesPanel items={budgetSourceSummary} />
+            <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
             <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
               <div className="grid min-w-0 content-start gap-8">
                 <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
@@ -134,5 +144,93 @@ export function BudgetDashboard({
         )}
       </div>
     </main>
+  );
+}
+
+const attentionToneClasses: Record<NeedsAttentionItem["tone"], string> = {
+  amber: "border-amber-300 bg-amber-50 text-amber-950",
+  blue: "border-blue-300 bg-blue-50 text-blue-950",
+  red: "border-red-300 bg-red-50 text-red-950"
+};
+
+function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
+  if (!items.length) return null;
+
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+
+  return (
+    <details data-testid="budget-sources-panel" className="rounded-lg bg-white ring-1 ring-gray-200">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 marker:hidden md:p-6">
+        <div>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight">Budget Sources</h2>
+          <p className="text-sm font-medium text-muted">Content counted across budget items, roadmap titles, and content reviews.</p>
+        </div>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">
+            {total} tracked
+          </span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-gray-100 text-muted shadow-sm ring-1 ring-gray-200">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Open Budget Sources</span>
+          </span>
+        </span>
+      </summary>
+      <div className="grid gap-3 px-5 pb-5 md:grid-cols-4 md:px-6 md:pb-6">
+        {items.map((item) => (
+          <div key={item.source} className="rounded-md border border-gray-200 bg-gray-50 p-4">
+            <p className="text-2xl font-extrabold text-foreground">{item.count}</p>
+            <p className="text-xs font-extrabold uppercase tracking-wide text-muted">{item.label}</p>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: string; items: NeedsAttentionItem[]; isDemo?: boolean }) {
+  return (
+    <details data-testid="needs-attention-panel" className="rounded-lg bg-gray-100">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 marker:hidden md:p-6">
+        <div>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight">Needs Attention</h2>
+          <p className="text-sm font-medium text-muted">Items that are blocked, undated, approved, released, or close to budget limits.</p>
+        </div>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted">
+            {items.length} open
+          </span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-muted shadow-sm ring-1 ring-gray-200">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Open Needs Attention</span>
+          </span>
+        </span>
+      </summary>
+      {items.length ? (
+        <div className="grid gap-3 px-5 pb-5 md:grid-cols-2 md:px-6 md:pb-6 xl:grid-cols-3">
+          {items.map((item) => (
+            <div key={item.id} className={`grid gap-3 rounded-md border p-4 ${attentionToneClasses[item.tone]}`}>
+              <Link href={item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
+                <p className="text-sm font-extrabold">{item.title}</p>
+                <p className="mt-1 text-xs font-bold opacity-80">{item.detail}</p>
+              </Link>
+              <form action={dismissNeedsAttentionItem}>
+                <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
+                <input type="hidden" name="attentionKey" value={item.id} />
+                <button
+                  type="submit"
+                  aria-label={`Mark ${item.title} complete`}
+                  disabled={isDemo}
+                  className="min-h-9 rounded-md bg-white px-3 py-2 text-xs font-extrabold text-foreground shadow-sm ring-1 ring-black/5 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Mark complete
+                </button>
+              </form>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mx-5 mb-5 rounded-md bg-white px-4 py-3 text-sm font-extrabold text-muted md:mx-6 md:mb-6">Nothing needs attention right now.</p>
+      )}
+    </details>
   );
 }

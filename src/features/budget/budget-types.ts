@@ -1,3 +1,5 @@
+import type { BudgetSource } from "./budget-source";
+
 export type PaymentCadence = "quarterly" | "yearly";
 
 export type ContentLicense = {
@@ -7,6 +9,7 @@ export type ContentLicense = {
   installmentCents: number;
   cadence: PaymentCadence;
   addedFiscalMonth: number;
+  budgetSource?: BudgetSource | null;
   notes?: string | null;
 };
 

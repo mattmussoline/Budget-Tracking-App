@@ -1,6 +1,7 @@
 "use client";
 
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CalendarPlus, X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 
@@ -61,15 +62,17 @@ export function AddRoadmapModal({
       {triggerIcon}
       {triggerLabel}
     </button>
-    {isOpen ? <dialog
+    {isOpen ? createPortal(<dialog
       ref={dialogRef}
+      open={isOpen}
+      style={{ display: "block", visibility: "visible" }}
       aria-labelledby={titleId}
       onClick={closeFromBackdrop}
       onClose={() => {
         setIsOpen(false);
         triggerRef.current?.focus();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
     >
       <div className="max-h-[calc(100vh-2rem)] overflow-y-auto p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
@@ -86,6 +89,6 @@ export function AddRoadmapModal({
           <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
         </div>
       </div>
-    </dialog> : null}
+    </dialog>, document.body) : null}
   </>;
 }

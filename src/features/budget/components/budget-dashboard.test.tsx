@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { BudgetDashboard } from "./budget-dashboard";
 import type { ContentLicense } from "../budget-types";
 import { buildDashboardModel } from "../dashboard-model";
+import type { NeedsAttentionItem } from "../attention-model";
 
 vi.mock("../auth-actions", () => ({ logout: vi.fn() }));
 vi.mock("../budget-actions", () => ({
@@ -17,7 +18,8 @@ vi.mock("../budget-actions", () => ({
   addCollaborator: vi.fn(),
   removeCollaborator: vi.fn(),
   pinFiscalYear: vi.fn(),
-  deleteFiscalYear: vi.fn()
+  deleteFiscalYear: vi.fn(),
+  dismissNeedsAttentionItem: vi.fn()
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ prefetch: vi.fn() })
@@ -53,7 +55,17 @@ const licenses: ContentLicense[] = [
   }
 ];
 
-function renderDashboard() {
+const needsAttention: NeedsAttentionItem[] = [
+  {
+    id: "review-approved-review-1",
+    title: "Approved Review",
+    detail: "Approved review is ready to send to the roadmap.",
+    tone: "blue",
+    href: "/content-review"
+  }
+];
+
+function renderDashboard(options: { needsAttention?: NeedsAttentionItem[] } = {}) {
   const model = buildDashboardModel({
     fiscalYear: fiscalYear.fiscal_year,
     fiscalYearStartMonth: fiscalYear.fiscal_year_start_month,
@@ -70,6 +82,12 @@ function renderDashboard() {
       mode="live"
       userEmail="matt.mussoline@augustineinstitute.org"
       allowedEmails={["matt.mussoline@augustineinstitute.org", "teammate@augustineinstitute.org"]}
+      needsAttention={options.needsAttention}
+      budgetSourceSummary={[
+        { source: "misc_licensing", label: "Misc licensing budget", count: 2 },
+        { source: "internal", label: "Internal production", count: 1 },
+        { source: "donor_funded", label: "Donor-funded budget", count: 1 }
+      ]}
     />
   );
 }
@@ -134,5 +152,31 @@ describe("BudgetDashboard", () => {
     expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
     expect(container.querySelector(".bg-teal-100")).toHaveTextContent("Cadence mix");
     expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
+  });
+
+  it("shows workflow items that need attention", () => {
+    renderDashboard({ needsAttention });
+
+    const panel = screen.getByTestId("needs-attention-panel");
+
+    expect(panel).not.toHaveAttribute("open");
+    expect(screen.getByRole("heading", { name: "Needs Attention" })).toBeVisible();
+    fireEvent.click(within(panel).getByText("Needs Attention"));
+    expect(screen.getByText("Approved Review")).toBeVisible();
+    expect(screen.getByText("Approved review is ready to send to the roadmap.")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open Approved Review" })).toHaveAttribute("href", "/content-review");
+    expect(screen.getByRole("button", { name: "Mark Approved Review complete" })).toBeVisible();
+  });
+
+  it("shows budget sources at a glance", () => {
+    renderDashboard();
+    const panel = screen.getByTestId("budget-sources-panel");
+
+    expect(panel).not.toHaveAttribute("open");
+    expect(screen.getByRole("heading", { name: "Budget Sources" })).toBeVisible();
+    fireEvent.click(within(panel).getByText("Budget Sources"));
+    expect(within(panel).getByText("Misc licensing budget")).toBeVisible();
+    expect(within(panel).getByText("Internal production")).toBeVisible();
+    expect(within(panel).getByText("Donor-funded budget")).toBeVisible();
   });
 });

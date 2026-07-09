@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import type { ContentReviewItem } from "../planning-types";
 const actionMocks = vi.hoisted(() => ({
   addContentReviewItem: vi.fn(),
   deleteContentReviewItem: vi.fn(),
+  sendReviewToRoadmap: vi.fn(),
   updateContentReviewItem: vi.fn()
 }));
 
@@ -55,6 +56,40 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
     expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
     expect(screen.getByLabelText("Comparable Content")).toHaveValue("Symbolon");
+  });
+
+  it("uses the roadmap provider picker for review details", () => {
+    render(
+      <ContentReviewDashboard
+        fiscalYearId="00000000-0000-0000-0000-000000000028"
+        items={[item]}
+        providerOptions={["Thomistic Institute", "Wonderborn"]}
+      />
+    );
+
+    const providerInput = screen.getByLabelText("Provider");
+    fireEvent.change(providerInput, { target: { value: "Won" } });
+
+    expect(screen.getByRole("button", { name: "Wonderborn" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Wonderborn" }));
+
+    expect(providerInput).toHaveValue("Wonderborn");
+    expect(screen.queryByRole("button", { name: "Wonderborn" })).not.toBeInTheDocument();
+  });
+
+  it("keeps decision queue column headers aligned with row columns", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} isDemo />);
+
+    const header = screen.getByText("Title").parentElement;
+
+    expect(header?.children).toHaveLength(5);
+    expect(header).toHaveClass("text-center");
+    expect(header?.children[0]).toHaveAttribute("aria-hidden", "true");
+    expect(header?.children[1]).toHaveTextContent("Title");
+    expect(header?.children[2]).toHaveTextContent("Review Status");
+    expect(header?.children[3]).toHaveTextContent("Proposed Rate");
+    expect(header?.children[4]).toHaveTextContent("Provider");
   });
 
   it("opens a blank unsaved draft from Add Content", () => {
@@ -149,5 +184,27 @@ describe("ContentReviewDashboard", () => {
 
     expect(await screen.findByRole("heading", { name: "New Review" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "New Content Review" })).not.toBeInTheDocument();
+  });
+
+  it("lets approved reviews move forward to the roadmap", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    expect(screen.getByRole("button", { name: "Send to Roadmap" })).toBeVisible();
+  });
+
+  it("confirms when an approved review is sent to the roadmap", async () => {
+    actionMocks.sendReviewToRoadmap.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Send to Roadmap" }));
+
+    await waitFor(() => expect(actionMocks.sendReviewToRoadmap).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.")).toBeVisible();
+  });
+
+  it("does not offer roadmap sending for reviews that are not approved", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+
+    expect(screen.queryByRole("button", { name: "Send to Roadmap" })).not.toBeInTheDocument();
   });
 });

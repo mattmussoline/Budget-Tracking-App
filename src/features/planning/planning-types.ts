@@ -1,3 +1,5 @@
+import type { BudgetSource } from "@/features/budget/budget-source";
+
 export type RoadmapStatus = "planned" | "in_progress" | "blocked" | "released";
 
 export type RoadmapItem = {
@@ -6,6 +8,7 @@ export type RoadmapItem = {
   provider: string | null;
   releaseDate: string | null;
   status: RoadmapStatus;
+  budgetSource?: BudgetSource | null;
   notes: string | null;
   categoryId: string | null;
 };
@@ -34,6 +37,7 @@ export type ContentReviewItem = {
   genre: string | null;
   format: string | null;
   reviewStatus: ReviewStatus;
+  budgetSource?: BudgetSource | null;
   notes: string | null;
   proposedRateCents: number | null;
   reviewLink: string | null;

@@ -1,6 +1,7 @@
 "use client";
 
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
@@ -66,8 +67,10 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
         {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", item.releaseDate === "TBD" ? "bg-red-100 text-red-700" : "bg-gray-100")}>{item.releaseDate === "TBD" ? "TBD" : formatRoadmapDate(item.releaseDate)}</span> : null}
       </div>
     </button>
-    {isOpen ? <dialog
+    {isOpen ? createPortal(<dialog
       ref={dialogRef}
+      open={isOpen}
+      style={{ display: "block", visibility: "visible" }}
       aria-labelledby={`edit-roadmap-title-${item.id}`}
       onClick={closeFromBackdrop}
       onKeyDown={closeFromEscape}
@@ -75,7 +78,7 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
         setIsOpen(false);
         triggerRef.current?.focus();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
     >
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:p-7">
@@ -92,6 +95,6 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
           <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
         </footer>
       </div>
-    </dialog> : null}
+    </dialog>, document.body) : null}
   </>;
 }

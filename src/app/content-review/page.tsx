@@ -56,14 +56,26 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     redirect("/dashboard");
   }
 
-  const { data: reviewRows, error: reviewError } = await admin
-    .from("content_review_items")
-    .select("id,title,provider,genre,format,review_status,notes,proposed_rate_cents,review_link,comparable_content")
-    .eq("fiscal_year_id", activeFiscalYear.id)
-    .order("created_at", { ascending: false });
+  const [
+    { data: reviewRows, error: reviewError },
+    { data: roadmapProviderRows, error: roadmapProviderError }
+  ] = await Promise.all([
+    admin
+      .from("content_review_items")
+      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content")
+      .eq("fiscal_year_id", activeFiscalYear.id)
+      .order("created_at", { ascending: false }),
+    admin
+      .from("roadmap_items")
+      .select("provider")
+      .eq("fiscal_year_id", activeFiscalYear.id)
+  ]);
 
   if (reviewError) {
     throw new Error(reviewError.message);
+  }
+  if (roadmapProviderError) {
+    throw new Error(roadmapProviderError.message);
   }
 
   const items: ContentReviewItem[] = (reviewRows ?? []).map((item) => ({
@@ -73,11 +85,16 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     genre: item.genre,
     format: item.format,
     reviewStatus: item.review_status as ReviewStatus,
+    budgetSource: item.budget_source ?? "misc_licensing",
     notes: item.notes,
     proposedRateCents: item.proposed_rate_cents,
     reviewLink: item.review_link,
     comparableContent: item.comparable_content
   }));
+  const providerOptions = Array.from(new Set([
+    ...(reviewRows ?? []).map((item) => item.provider).filter(Boolean),
+    ...(roadmapProviderRows ?? []).map((item) => item.provider).filter(Boolean)
+  ] as string[])).sort((a, b) => a.localeCompare(b));
 
   return (
     <PlanningShell
@@ -86,7 +103,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
       description="Track possible titles before they move to the roadmap or budget."
       activeSection="content-review"
     >
-      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} />
+      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} />
     </PlanningShell>
   );
 }

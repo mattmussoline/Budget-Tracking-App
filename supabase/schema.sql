@@ -42,6 +42,7 @@ create table if not exists public.content_licenses (
   installment_cents integer not null check (installment_cents >= 0),
   cadence text not null check (cadence in ('quarterly', 'yearly')),
   added_fiscal_month integer not null check (added_fiscal_month between 1 and 12),
+  budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -75,6 +76,7 @@ create table if not exists public.roadmap_items (
   provider text,
   release_month text,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
+  budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
   created_at timestamptz not null default now(),
@@ -99,6 +101,7 @@ create table if not exists public.content_review_items (
   genre text,
   format text,
   review_status text not null default 'not_started' check (review_status in ('not_started', 'in_progress', 'blocked', 'rejected', 'approved')),
+  budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   proposed_rate_cents bigint check (proposed_rate_cents >= 0),
   review_link text,
@@ -118,6 +121,16 @@ create index if not exists roadmap_categories_fiscal_year_id_idx on public.roadm
 create index if not exists roadmap_items_category_id_idx on public.roadmap_items(category_id);
 create index if not exists ongoing_series_fiscal_year_id_idx on public.ongoing_series(fiscal_year_id);
 create index if not exists content_review_items_fiscal_year_id_idx on public.content_review_items(fiscal_year_id);
+
+create table if not exists public.attention_dismissals (
+  fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
+  attention_key text not null,
+  dismissed_by_email text,
+  dismissed_at timestamptz not null default now(),
+  primary key (fiscal_year_id, attention_key)
+);
+
+create index if not exists attention_dismissals_fiscal_year_id_idx on public.attention_dismissals(fiscal_year_id);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -258,6 +271,7 @@ alter table public.roadmap_items enable row level security;
 alter table public.roadmap_categories enable row level security;
 alter table public.ongoing_series enable row level security;
 alter table public.content_review_items enable row level security;
+alter table public.attention_dismissals enable row level security;
 
 create policy "members can read fiscal years"
 on public.fiscal_years for select
@@ -333,3 +347,12 @@ create policy "owners and editors can manage content review items"
 on public.content_review_items for all
 using (public.has_fiscal_year_role(content_review_items.fiscal_year_id, auth.uid(), array['owner', 'editor']))
 with check (public.has_fiscal_year_role(content_review_items.fiscal_year_id, auth.uid(), array['owner', 'editor']));
+
+create policy "members can read attention dismissals"
+on public.attention_dismissals for select
+using (public.is_fiscal_year_member(attention_dismissals.fiscal_year_id, auth.uid()));
+
+create policy "owners and editors can manage attention dismissals"
+on public.attention_dismissals for all
+using (public.has_fiscal_year_role(attention_dismissals.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(attention_dismissals.fiscal_year_id, auth.uid(), array['owner', 'editor']));
