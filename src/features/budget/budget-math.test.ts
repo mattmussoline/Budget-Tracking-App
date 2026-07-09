@@ -102,6 +102,7 @@ describe("calculateLicenseSchedule", () => {
         licenseId: "yearly",
         title: "Annual License",
         provider: "Example Provider",
+        budgetSource: "misc_licensing",
         fiscalMonth: 10,
         quarter: 4,
         amountCents: 240000,

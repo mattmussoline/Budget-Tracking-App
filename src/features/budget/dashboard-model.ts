@@ -5,6 +5,7 @@ export type DashboardModel = {
   fiscalYear: number;
   budgetCents: number;
   totalSpentCents: number;
+  otherBudgetSpentCents: number;
   remainingCents: number;
   percentUsed: number;
   remainingPercent: number;
@@ -49,13 +50,15 @@ export function buildDashboardModel({
   licenses: ContentLicense[];
   now?: Date;
 }): DashboardModel {
-  const committedBudgetLicenses = licenses.filter((license) => (license.budgetSource ?? "misc_licensing") === "misc_licensing");
-  const schedules = committedBudgetLicenses.map((license) => ({
+  const schedules = licenses.map((license) => ({
     license,
     payments: calculateLicenseSchedule(license)
   }));
   const payments = schedules.flatMap((schedule) => schedule.payments);
-  const totalSpentCents = payments.reduce((total, payment) => total + payment.amountCents, 0);
+  const committedPayments = payments.filter((payment) => payment.budgetSource === "misc_licensing");
+  const otherBudgetPayments = payments.filter((payment) => payment.budgetSource !== "misc_licensing");
+  const totalSpentCents = committedPayments.reduce((total, payment) => total + payment.amountCents, 0);
+  const otherBudgetSpentCents = otherBudgetPayments.reduce((total, payment) => total + payment.amountCents, 0);
   const fiscalMonths = getFiscalMonths(fiscalYear, fiscalYearStartMonth);
 
   const months = fiscalMonths.map((month) => {
@@ -91,7 +94,7 @@ export function buildDashboardModel({
         totalCents,
         licenseCount,
         licenseSharePercent:
-          committedBudgetLicenses.length > 0 ? Math.round((licenseCount / committedBudgetLicenses.length) * 100) : 0
+          licenses.length > 0 ? Math.round((licenseCount / licenses.length) * 100) : 0
       };
     })
     .sort((a, b) => b.totalCents - a.totalCents);
@@ -119,6 +122,7 @@ export function buildDashboardModel({
     fiscalYear,
     budgetCents,
     totalSpentCents,
+    otherBudgetSpentCents,
     remainingCents,
     percentUsed,
     remainingPercent,

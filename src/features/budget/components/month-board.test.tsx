@@ -15,6 +15,16 @@ const licenses: ContentLicense[] = [
     cadence: "quarterly",
     addedFiscalMonth: 1,
     notes: ""
+  },
+  {
+    id: "license-2",
+    title: "Donor Film",
+    provider: "Donor Studio",
+    installmentCents: 500000,
+    cadence: "yearly",
+    addedFiscalMonth: 1,
+    budgetSource: "donor_funded",
+    notes: ""
   }
 ];
 
@@ -53,5 +63,15 @@ describe("MonthBoard", () => {
     expect(document.getElementById("edit-content-manager")).toHaveAttribute("open");
     expect(document.getElementById("edit-license-license-1")).toHaveAttribute("open");
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveFocus();
+  });
+
+  it("shows budget-source tags and renders quarters as collapsible sections", () => {
+    renderMonthBoardWithEditor();
+
+    expect(screen.getByTestId("quarter-1")).toHaveAttribute("open");
+    expect(screen.getByTestId("quarter-2")).not.toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "Edit Donor Film" })).toBeVisible();
+    expect(screen.getByText("Donor-funded budget")).toBeVisible();
+    expect(screen.getAllByText("Misc licensing budget").length).toBeGreaterThan(0);
   });
 });

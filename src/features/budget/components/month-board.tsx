@@ -1,8 +1,8 @@
 "use client";
 
 import { formatCurrency } from "@/lib/currency";
-import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
+import { getBudgetSourceLabel } from "../budget-source";
 import { getProviderColorMap, type ProviderColorOverrides } from "../provider-colors";
 
 type MonthBoardProps = {
@@ -44,11 +44,13 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
   return (
     <div className="grid gap-6">
       {quarters.map((quarter) => (
-        <SoftSurface
+        <details
           key={quarter.quarter}
-          className={`p-5 md:p-6 ${quarter.isCurrentQuarter ? "bg-amber-50 outline outline-4 outline-amber-300" : "bg-gray-100"}`}
+          data-testid={`quarter-${quarter.quarter}`}
+          open={quarter.isCurrentQuarter}
+          className={`min-w-0 rounded-lg shadow-none soft-raised p-5 md:p-6 ${quarter.isCurrentQuarter ? "bg-amber-50 outline outline-4 outline-amber-300" : "bg-gray-100"}`}
         >
-          <div className="mb-5 flex items-center justify-between gap-4">
+          <summary className="mb-5 flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
             <div>
               {quarter.isCurrentQuarter ? (
                 <p className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Current quarter</p>
@@ -58,7 +60,7 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
             <p className="rounded-md bg-white px-4 py-2 text-sm font-extrabold text-muted">
               {formatCurrency(quarter.months.reduce((total, month) => total + month.totalCents, 0))}
             </p>
-          </div>
+          </summary>
           <div className="grid gap-4 lg:grid-cols-3">
             {quarter.months.map((month) => {
               const isCurrentMonth = model.currentFiscalMonth === month.index;
@@ -82,6 +84,7 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
                     month.payments.map((payment) => {
                       const providerColor = providerColorMap[payment.provider];
                       const tileClass = `${providerColor.bg} ${providerColor.text}`;
+                      const budgetSourceLabel = getBudgetSourceLabel(payment.budgetSource);
 
                       return (
                       <button
@@ -100,6 +103,9 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
                           ) : null}
                         </div>
                         <p className="text-xs font-bold opacity-80">{payment.provider}</p>
+                        <span className="mt-2 inline-flex rounded-md bg-white/80 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-gray-900">
+                          {budgetSourceLabel}
+                        </span>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-sm font-extrabold">{formatCurrency(payment.amountCents)}</span>
                           {payment.isProrated ? (
@@ -117,7 +123,7 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
               );
             })}
           </div>
-        </SoftSurface>
+        </details>
       ))}
     </div>
   );

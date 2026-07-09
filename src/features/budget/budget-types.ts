@@ -17,6 +17,7 @@ export type LicensePayment = {
   licenseId: string;
   title: string;
   provider: string;
+  budgetSource: BudgetSource;
   fiscalMonth: number;
   quarter: number;
   amountCents: number;

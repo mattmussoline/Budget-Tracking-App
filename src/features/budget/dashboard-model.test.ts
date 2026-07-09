@@ -42,7 +42,7 @@ describe("buildDashboardModel", () => {
     expect(model.remainingCents).toBe(573333);
   });
 
-  it("excludes donor-funded titles from committed misc budget totals", () => {
+  it("tracks donor-funded titles outside the committed misc budget while keeping them visible", () => {
     const model = buildDashboardModel({
       fiscalYear: 2026,
       fiscalYearStartMonth: 7,
@@ -62,11 +62,15 @@ describe("buildDashboardModel", () => {
     });
 
     expect(model.totalSpentCents).toBe(2426667);
+    expect(model.otherBudgetSpentCents).toBe(500000);
     expect(model.remainingCents).toBe(573333);
-    expect(model.months.find((month) => month.index === 1)?.payments.map((payment) => payment.title)).not.toContain(
+    expect(model.months.find((month) => month.index === 1)?.payments.map((payment) => payment.title)).toContain(
       "Donor Special"
     );
-    expect(model.providers.some((provider) => provider.provider === "Provider D")).toBe(false);
+    expect(model.months.find((month) => month.index === 1)?.payments[0]).toMatchObject({
+      budgetSource: "donor_funded"
+    });
+    expect(model.providers.some((provider) => provider.provider === "Provider D")).toBe(true);
   });
 
   it("groups payment rows by fiscal month", () => {

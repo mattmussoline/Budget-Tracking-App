@@ -51,6 +51,7 @@ const licenses: ContentLicense[] = [
     installmentCents: 600000,
     cadence: "yearly",
     addedFiscalMonth: 3,
+    budgetSource: "donor_funded",
     notes: ""
   }
 ];
@@ -152,6 +153,18 @@ describe("BudgetDashboard", () => {
     expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
     expect(container.querySelector(".bg-teal-100")).toHaveTextContent("Cadence mix");
     expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
+  });
+
+  it("shows non-misc spending as a separate top-line data point", () => {
+    renderDashboard();
+    const otherBudgetsLabel = screen.getByText("Other Budgets");
+    const otherBudgetsCard = otherBudgetsLabel.closest(".soft-raised");
+
+    expect(otherBudgetsCard).toBeInTheDocument();
+    expect(within(otherBudgetsCard as HTMLElement).getByText("$6,000.00")).toBeVisible();
+    const committedCard = screen.getByText("Committed").closest(".soft-raised");
+    expect(committedCard).toBeInTheDocument();
+    expect(within(committedCard as HTMLElement).getByText("$48,000.00")).toBeVisible();
   });
 
   it("shows workflow items that need attention", () => {

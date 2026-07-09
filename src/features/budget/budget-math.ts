@@ -36,6 +36,7 @@ export function getFiscalMonths(fiscalYear: number, fiscalYearStartMonth: number
 
 export function calculateLicenseSchedule(license: ContentLicense): LicensePayment[] {
   assertFiscalMonth(license.addedFiscalMonth);
+  const budgetSource = license.budgetSource ?? "misc_licensing";
 
   if (!Number.isInteger(license.installmentCents) || license.installmentCents < 0) {
     throw new Error("Installment amount must be a positive number of cents.");
@@ -47,6 +48,7 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
         licenseId: license.id,
         title: license.title,
         provider: license.provider,
+        budgetSource,
         fiscalMonth: license.addedFiscalMonth,
         quarter: getQuarterForFiscalMonth(license.addedFiscalMonth),
         amountCents: license.installmentCents,
@@ -63,6 +65,7 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
       licenseId: license.id,
       title: license.title,
       provider: license.provider,
+      budgetSource,
       fiscalMonth: license.addedFiscalMonth,
       quarter: firstQuarter,
       amountCents: firstAmount,
@@ -76,6 +79,7 @@ export function calculateLicenseSchedule(license: ContentLicense): LicensePaymen
       licenseId: license.id,
       title: license.title,
       provider: license.provider,
+      budgetSource,
       fiscalMonth: (quarter - 1) * 3 + 1,
       quarter,
       amountCents: license.installmentCents,

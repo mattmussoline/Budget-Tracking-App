@@ -14,11 +14,12 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
   const metrics = [
     { label: "Budget", value: formatCurrency(model.budgetCents), icon: PiggyBank, className: health.tile },
     { label: "Committed", value: formatCurrency(model.totalSpentCents), icon: CircleDollarSign, className: health.committed },
+    { label: "Other Budgets", value: formatCurrency(model.otherBudgetSpentCents), icon: WalletCards, className: "bg-blue-100 text-blue-950" },
     { label: "Remaining", value: formatCurrency(model.remainingCents), icon: TrendingDown, className: health.tile }
   ];
 
   return (
-    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))]">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,1fr))]">
       <SoftSurface className={`min-w-0 p-5 sm:p-6 ${health.tile}`}>
         <div className="mb-5 flex min-w-0 items-center justify-between gap-4">
           <div className="grid h-12 w-12 place-items-center rounded-lg bg-white">
