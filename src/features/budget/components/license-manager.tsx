@@ -9,7 +9,7 @@ import { deleteContentLicense, updateContentLicense } from "../budget-actions";
 import { getFiscalMonths } from "../budget-math";
 import { budgetSourceOptions } from "../budget-source";
 import type { ContentLicense } from "../budget-types";
-import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
+import { getProviderColorMap, type ProviderColorOverrides } from "../provider-colors";
 import { formatCurrency } from "@/lib/currency";
 
 type LicenseManagerProps = {
@@ -31,6 +31,7 @@ export function LicenseManager({
   providerColorOverrides,
   isDemo
 }: LicenseManagerProps) {
+  const providerColorMap = getProviderColorMap(providerOptions, providerColorOverrides);
   const monthOptions = getFiscalMonths(fiscalYear, fiscalYearStartMonth).map((month) => ({
     label: month.label,
     value: String(month.index)
@@ -61,7 +62,7 @@ export function LicenseManager({
             <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-muted">Added content will appear here for editing.</p>
           ) : (
             licenses.map((license, index) => {
-              const providerColor = getProviderColor(license.provider, providerColorOverrides);
+              const providerColor = providerColorMap[license.provider];
 
               return (
                 <details id={`edit-license-${license.id}`} key={license.id} className="group/license overflow-hidden rounded-md bg-white shadow-sm">

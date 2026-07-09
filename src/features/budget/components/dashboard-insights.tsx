@@ -2,7 +2,7 @@ import { GalleryHorizontalEnd, Gauge, Repeat2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
-import { getProviderColor, type ProviderColorOverrides } from "../provider-colors";
+import { getProviderColorMap, type ProviderColorOverrides } from "../provider-colors";
 
 export function DashboardInsights({
   model,
@@ -11,6 +11,10 @@ export function DashboardInsights({
   model: DashboardModel;
   providerColorOverrides: ProviderColorOverrides;
 }) {
+  const providerColorMap = getProviderColorMap(
+    model.providers.map((provider) => provider.provider),
+    providerColorOverrides
+  );
   const items = [
     {
       label: "Content pieces",
@@ -38,7 +42,7 @@ export function DashboardInsights({
   const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
   let runningPercent = 0;
   const providerStops = model.providers.map((provider, index) => {
-    const color = getProviderColor(provider.provider, providerColorOverrides);
+    const color = providerColorMap[provider.provider];
     const nextPercent =
       index === model.providers.length - 1
         ? 100
@@ -92,7 +96,7 @@ export function DashboardInsights({
                 <p className="text-sm font-bold opacity-75">Providers appear here after content is added.</p>
               ) : (
                 topProviders.map((provider) => {
-                  const color = getProviderColor(provider.provider, providerColorOverrides);
+                  const color = providerColorMap[provider.provider];
 
                   return (
                     <div key={provider.provider} className="flex items-center justify-between gap-3 text-sm font-extrabold">

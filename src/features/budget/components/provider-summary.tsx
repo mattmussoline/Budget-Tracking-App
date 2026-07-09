@@ -3,7 +3,7 @@ import { SoftButton } from "@/components/ui/soft-button";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import { updateProviderColor } from "../budget-actions";
 import type { DashboardModel } from "../dashboard-model";
-import { getProviderColor, providerColorOptions, type ProviderColorOverrides } from "../provider-colors";
+import { getProviderColorMap, providerColorOptions, type ProviderColorOverrides } from "../provider-colors";
 
 type ProviderSummaryProps = {
   model: DashboardModel;
@@ -13,6 +13,11 @@ type ProviderSummaryProps = {
 };
 
 export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, isDemo }: ProviderSummaryProps) {
+  const providerColorMap = getProviderColorMap(
+    model.providers.map((provider) => provider.provider),
+    providerColorOverrides
+  );
+
   return (
     <SoftSurface className="bg-white p-6 md:p-8">
       <h2 className="mb-5 font-display text-2xl font-extrabold tracking-tight">Provider Summary</h2>
@@ -21,7 +26,7 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
           <p className="text-sm font-medium text-muted">Providers will appear here after content is added.</p>
         ) : (
           model.providers.map((provider) => {
-            const color = getProviderColor(provider.provider, providerColorOverrides);
+            const color = providerColorMap[provider.provider];
 
             return (
             <div key={provider.provider} className={`grid gap-4 rounded-lg p-4 ${color.bg} ${color.text}`}>

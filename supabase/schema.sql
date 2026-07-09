@@ -51,7 +51,7 @@ create table if not exists public.content_licenses (
 create table if not exists public.provider_color_overrides (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   provider text not null,
-  color_key text not null check (color_key in ('blue', 'emerald', 'amber', 'rose', 'violet', 'cyan', 'lime')),
+  color_key text not null check (color_key in ('blue', 'emerald', 'amber', 'rose', 'violet', 'cyan', 'lime', 'teal', 'sky', 'indigo', 'fuchsia', 'pink', 'orange', 'yellow', 'green', 'red', 'purple', 'slate', 'zinc', 'stone', 'neutral', 'gray')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (fiscal_year_id, provider)
