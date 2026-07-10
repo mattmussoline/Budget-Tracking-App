@@ -26,6 +26,7 @@ type RoadmapDashboardProps = {
   roadmapItems: RoadmapItem[];
   ongoingSeries: OngoingSeries[];
   categories: RoadmapCategory[];
+  fiscalYearStartMonth?: string;
   startMonth: string;
   monthCount: 6 | 9 | 12;
   isDemo?: boolean;
@@ -38,7 +39,7 @@ const roadmapStatuses = [
 
 type RoadmapFilter = { id: string; label: string };
 
-export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, monthCount, isDemo }: RoadmapDashboardProps) {
+export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, isDemo }: RoadmapDashboardProps) {
   const [focusedMonthKey, setFocusedMonthKey] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
   const [isRoadmapFocus, setIsRoadmapFocus] = useState(false);
@@ -52,7 +53,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
   const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
-  const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey());
+  const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey(), fiscalYearStartMonth);
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `/roadmap?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
@@ -175,12 +176,13 @@ function SummaryMetric({ value, label, accentClassName }: { value: string; label
   </div>;
 }
 
-function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], todayKey: string): RoadmapSummaryData {
+function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], todayKey: string, fiscalYearStartMonth: string): RoadmapSummaryData {
+  const summaryItems = roadmapItems.filter((item) => isInFiscalYearSnapshot(item.releaseDate, fiscalYearStartMonth));
   const categoryById = new Map(categories.map((category) => [category.id, category]));
   const audienceCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
   const providerCounts = new Map<string, number>();
 
-  for (const item of roadmapItems) {
+  for (const item of summaryItems) {
     if (item.categoryId) {
       const category = categoryById.get(item.categoryId);
       if (category) {
@@ -200,15 +202,15 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
   const topProvider = Array.from(providerCounts.entries())
     .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
     .map(([name, count]) => ({ name, count }))[0] ?? null;
-  const nextReleaseItem = roadmapItems
+  const nextReleaseItem = summaryItems
     .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate! >= todayKey)
     .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
 
   return {
-    totalTitles: roadmapItems.length,
-    releasedCount: roadmapItems.filter((item) => item.status === "released").length,
-    inProgressCount: roadmapItems.filter((item) => item.status === "in_progress").length,
-    unscheduledCount: roadmapItems.filter((item) => !isExactRoadmapDate(item.releaseDate)).length,
+    totalTitles: summaryItems.length,
+    releasedCount: summaryItems.filter((item) => item.status === "released").length,
+    inProgressCount: summaryItems.filter((item) => item.status === "in_progress").length,
+    unscheduledCount: summaryItems.filter((item) => !isExactRoadmapDate(item.releaseDate)).length,
     topAudiences,
     topProvider,
     nextRelease: nextReleaseItem ? { title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
@@ -217,6 +219,19 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
 
 function isExactRoadmapDate(releaseDate: string | null) {
   return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(releaseDate ?? "");
+}
+
+function isInFiscalYearSnapshot(releaseDate: string | null, fiscalYearStartMonth: string) {
+  if (!isExactRoadmapDate(releaseDate)) return true;
+  const monthKey = releaseDate!.slice(0, 7);
+  const fiscalYearEndMonth = shiftMonthAnchor(fiscalYearStartMonth, 12);
+  return monthKey >= fiscalYearStartMonth && monthKey < fiscalYearEndMonth;
+}
+
+function getFiscalYearStartMonthForMonth(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const fiscalStartYear = month >= 7 ? year : year - 1;
+  return `${fiscalStartYear}-07`;
 }
 
 function getTodayKey(date = new Date()) {

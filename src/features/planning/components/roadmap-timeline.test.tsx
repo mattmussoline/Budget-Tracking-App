@@ -89,13 +89,30 @@ describe("RoadmapDashboard", () => {
     fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
 
     expect(summary).toHaveAttribute("open");
-    expect(within(summary).getAllByText("6 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
+    expect(within(summary).getAllByText("5 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
     expect(within(summary).getByText("2 released")).toBeVisible();
     expect(within(summary).getByText("1 unscheduled")).toBeVisible();
     expect(within(summary).getByText("Top audience")).toBeVisible();
     expect(within(summary).getByText("Kids")).toBeVisible();
     expect(within(summary).getByText("Top provider")).toBeVisible();
     expect(within(summary).getByText("Thomistic")).toBeVisible();
+  });
+
+  it("excludes dated releases outside the fiscal-year window from the at-a-glance summary", () => {
+    const items: RoadmapItem[] = [
+      { id: "kids-before-fy", title: "June Kids Release", provider: "Provider", releaseDate: "2026-06-03", status: "released", notes: null, categoryId: "cat-kids" },
+      { id: "kids-in-fy", title: "August Kids Release", provider: "Provider", releaseDate: "2026-08-05", status: "in_progress", notes: null, categoryId: "cat-kids" },
+      { id: "kids-undated", title: "Undated Kids Release", provider: "Provider", releaseDate: null, status: "planned", notes: null, categoryId: "cat-kids" }
+    ];
+
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={items} ongoingSeries={series} categories={categories} fiscalYearStartMonth="2026-07" startMonth="2026-07" monthCount={12} isDemo />);
+
+    const summary = screen.getByTestId("roadmap-summary");
+    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
+
+    expect(within(summary).getAllByText("2 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
+    expect(summary).toHaveTextContent("Kids 2");
+    expect(within(summary).queryByText("1 released")).not.toBeInTheDocument();
   });
 
   it("uses the next future exact date for Next up", () => {
