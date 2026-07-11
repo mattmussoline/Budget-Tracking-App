@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Pencil } from "lucide-react";
+import { ChevronDown, Minus, Pencil, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import type { DashboardModel } from "../dashboard-model";
 import { getBudgetSourceLabel } from "../budget-source";
@@ -57,18 +57,22 @@ export function MonthBoard({ model, providerColorOverrides }: MonthBoardProps) {
           key={quarter.quarter}
           data-testid={`quarter-${quarter.quarter}`}
           open={quarter.isCurrentQuarter}
-          className={`min-w-0 rounded-lg shadow-none soft-raised p-5 md:p-6 ${quarter.isCurrentQuarter ? "bg-amber-50 outline outline-4 outline-amber-300" : "bg-gray-100"}`}
+          className={`group min-w-0 rounded-lg shadow-none soft-raised p-5 md:p-6 ${quarter.isCurrentQuarter ? "bg-amber-50 outline outline-4 outline-amber-300" : "bg-gray-100"}`}
         >
-          <summary className="mb-5 flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
-            <div>
+          <summary className="mb-5 flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden">
+            <div className="min-w-0">
               {quarter.isCurrentQuarter ? (
                 <p className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Current quarter</p>
               ) : null}
               <h2 className="font-display text-xl font-extrabold tracking-tight">Quarter {quarter.quarter}</h2>
+              <p className="mt-2 w-fit rounded-md bg-white px-4 py-2 text-sm font-extrabold text-muted">
+                {formatCurrency(quarter.months.reduce((total, month) => total + month.totalCents, 0))}
+              </p>
             </div>
-            <p className="rounded-md bg-white px-4 py-2 text-sm font-extrabold text-muted">
-              {formatCurrency(quarter.months.reduce((total, month) => total + month.totalCents, 0))}
-            </p>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-gray-700 shadow-sm">
+              <Plus aria-hidden="true" className="h-5 w-5 group-open:hidden" />
+              <Minus aria-hidden="true" className="hidden h-5 w-5 group-open:block" />
+            </span>
           </summary>
           <div className="grid gap-4 lg:grid-cols-3">
             {quarter.months.map((month) => {
