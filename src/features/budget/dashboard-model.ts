@@ -97,7 +97,7 @@ export function buildDashboardModel({
           licenses.length > 0 ? Math.round((licenseCount / licenses.length) * 100) : 0
       };
     })
-    .sort((a, b) => b.totalCents - a.totalCents);
+    .sort((a, b) => b.licenseCount - a.licenseCount || a.provider.localeCompare(b.provider));
 
   const cadenceTotals = schedules.reduce(
     (totals, schedule) => {

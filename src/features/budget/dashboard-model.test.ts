@@ -88,18 +88,28 @@ describe("buildDashboardModel", () => {
     ]);
   });
 
-  it("groups totals by provider", () => {
+  it("groups totals by provider and sorts by content pieces added", () => {
     const model = buildDashboardModel({
       fiscalYear: 2026,
       fiscalYearStartMonth: 7,
       budgetCents: 3000000,
-      licenses
+      licenses: [
+        ...licenses,
+        {
+          id: "provider-a-series",
+          title: "Provider A Series",
+          provider: "Provider A",
+          installmentCents: 50000,
+          cadence: "yearly",
+          addedFiscalMonth: 2
+        }
+      ]
     });
 
     expect(model.providers).toEqual([
-      { provider: "Provider B", totalCents: 1800000, licenseCount: 1, licenseSharePercent: 33 },
-      { provider: "Provider A", totalCents: 566667, licenseCount: 1, licenseSharePercent: 33 },
-      { provider: "Provider C", totalCents: 60000, licenseCount: 1, licenseSharePercent: 33 }
+      { provider: "Provider A", totalCents: 616667, licenseCount: 2, licenseSharePercent: 50 },
+      { provider: "Provider B", totalCents: 1800000, licenseCount: 1, licenseSharePercent: 25 },
+      { provider: "Provider C", totalCents: 60000, licenseCount: 1, licenseSharePercent: 25 }
     ]);
   });
 
