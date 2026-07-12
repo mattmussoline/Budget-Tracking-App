@@ -64,7 +64,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   const [{ data: roadmapRows, error: roadmapError }, { data: seriesRows, error: seriesError }, { data: categoryRows, error: categoryError }] = await Promise.all([
     admin
       .from("roadmap_items")
-      .select("id,title,provider,release_month,status,budget_source,notes,category_id")
+      .select("id,title,provider,release_month,status,format,budget_source,notes,category_id,clickup_task_id,clickup_task_url,clickup_synced_at")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("release_month", { ascending: true })
       .order("created_at", { ascending: true }),
@@ -95,9 +95,13 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     provider: item.provider,
     releaseDate: item.release_month,
     status: (item.status === "ready" ? "in_progress" : item.status) as RoadmapStatus,
+    format: item.format,
     budgetSource: item.budget_source ?? "misc_licensing",
     notes: item.notes,
-    categoryId: item.category_id
+    categoryId: item.category_id,
+    clickupTaskId: item.clickup_task_id,
+    clickupTaskUrl: item.clickup_task_url,
+    clickupSyncedAt: item.clickup_synced_at
   }));
 
   const ongoingSeries: OngoingSeries[] = (seriesRows ?? []).map((item) => ({

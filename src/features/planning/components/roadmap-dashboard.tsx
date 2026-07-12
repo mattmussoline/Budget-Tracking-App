@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { ChevronLeft, ChevronRight, DollarSign, Maximize2, Minimize2, Plus, X, Trash2 } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Trash2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -10,7 +10,7 @@ import { SoftSelect } from "@/components/ui/soft-select";
 import { cn } from "@/components/ui/soft-surface";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
 import {
-  addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget,
+  addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
@@ -86,7 +86,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-gray-200 p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
           const items = filteredItems.filter((item) => item.releaseDate?.slice(0, 7) === month.key);
-          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</div></article>;
+          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</div></article>;
         })}
       </div>
     </section>
@@ -282,6 +282,39 @@ function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions
   </EditRoadmapModal>;
 }
 
+function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo }: { fiscalYearId: string; monthKey: string; monthLabel: string; items: RoadmapItem[]; isDemo?: boolean }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPushing, setIsPushing] = useState(false);
+  const unpushedCount = items.filter((item) => !item.clickupTaskId).length;
+
+  const handlePushMonth = async () => {
+    if (!unpushedCount) return;
+    setMessage(null);
+    setIsPushing(true);
+
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("monthKey", monthKey);
+
+    try {
+      const result = await sendRoadmapMonthToClickUp(formData);
+      setMessage(result.createdCount ? `Pushed ${result.createdCount} to ClickUp.` : "Everything in this month is already in ClickUp.");
+    } catch {
+      setMessage("Could not push this month to ClickUp.");
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  return <div className="mb-3 grid gap-2">
+    <SoftButton type="button" variant="ghost" className="min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-sky-700 shadow-sm ring-1 ring-sky-100 hover:bg-sky-50 hover:!text-sky-800" disabled={isDemo || isPushing || !unpushedCount} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
+      <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+      {isPushing ? "Pushing..." : unpushedCount ? `Push ${unpushedCount} to ClickUp` : "In ClickUp"}
+    </SoftButton>
+    {message ? <p role="status" className="rounded-md bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800">{message}</p> : null}
+  </div>;
+}
+
 function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultReleaseDate = "", idPrefix, isDemo }: { fiscalYearId: string; categories: RoadmapCategory[]; providerOptions: string[]; item?: RoadmapItem; defaultReleaseDate?: string; idPrefix?: string; isDemo?: boolean }) {
   const action = item ? updateRoadmapItem : addRoadmapItem;
   const fieldPrefix = idPrefix ?? item?.id ?? "new";
@@ -289,6 +322,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
   const [resetCount, setResetCount] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [clickUpUrl, setClickUpUrl] = useState(item?.clickupTaskUrl ?? null);
   const fieldsDisabled = Boolean(isDemo || isSaving);
   const categoryOptions = categories
     .filter((category) => category.isActive || category.id === item?.categoryId)
@@ -342,6 +376,22 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     }
   };
 
+  const handleSendToClickUp = async () => {
+    if (!item || !formRef.current) return;
+    setMessage(null);
+    setIsSaving(true);
+
+    try {
+      const result = await sendRoadmapItemToClickUp(new FormData(formRef.current));
+      setClickUpUrl(result.taskUrl ?? null);
+      setMessage(result.created ? "Pushed to ClickUp Content Upload Calendar." : "Already in ClickUp.");
+    } catch {
+      setMessage("Could not push this roadmap item to ClickUp.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
@@ -350,6 +400,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
     <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
+    <SoftInput id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
@@ -357,6 +408,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
       {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
+      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled || Boolean(clickUpUrl)} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "In ClickUp" : "Push to ClickUp"}</SoftButton> : null}
+      {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
     </div>
   </form>;
 }

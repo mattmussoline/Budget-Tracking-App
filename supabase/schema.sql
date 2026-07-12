@@ -76,9 +76,13 @@ create table if not exists public.roadmap_items (
   provider text,
   release_month text,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
+  format text,
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
+  clickup_task_id text,
+  clickup_task_url text,
+  clickup_synced_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -119,6 +123,7 @@ create index if not exists provider_color_overrides_fiscal_year_id_idx on public
 create index if not exists roadmap_items_fiscal_year_id_idx on public.roadmap_items(fiscal_year_id);
 create index if not exists roadmap_categories_fiscal_year_id_idx on public.roadmap_categories(fiscal_year_id);
 create index if not exists roadmap_items_category_id_idx on public.roadmap_items(category_id);
+create index if not exists roadmap_items_clickup_task_id_idx on public.roadmap_items(clickup_task_id) where clickup_task_id is not null;
 create index if not exists ongoing_series_fiscal_year_id_idx on public.ongoing_series(fiscal_year_id);
 create index if not exists content_review_items_fiscal_year_id_idx on public.content_review_items(fiscal_year_id);
 

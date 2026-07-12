@@ -13,6 +13,8 @@ const actionMocks = vi.hoisted(() => ({
   deleteRoadmapCategory: vi.fn(),
   deleteRoadmapItem: vi.fn(),
   sendRoadmapItemToBudget: vi.fn(),
+  sendRoadmapItemToClickUp: vi.fn(),
+  sendRoadmapMonthToClickUp: vi.fn(),
   updateOngoingSeries: vi.fn(),
   updateRoadmapCategory: vi.fn(),
   updateRoadmapItem: vi.fn()
@@ -30,7 +32,7 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", format: "Documentary", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
@@ -269,6 +271,7 @@ describe("RoadmapDashboard", () => {
     const providerInput = within(dialog).getByLabelText("Provider");
     const releaseDateInput = within(dialog).getByLabelText("Release date");
     const statusSelect = within(dialog).getByLabelText("Status");
+    const formatInput = within(dialog).getByLabelText("Format");
     const categorySelect = within(dialog).getByLabelText("Color category");
     const notesInput = within(dialog).getByLabelText("Notes");
 
@@ -276,6 +279,7 @@ describe("RoadmapDashboard", () => {
     fireEvent.change(providerInput, { target: { value: "Augustine Institute" } });
     fireEvent.change(releaseDateInput, { target: { value: "2027-02-14" } });
     fireEvent.change(statusSelect, { target: { value: "blocked" } });
+    fireEvent.change(formatInput, { target: { value: "Documentary" } });
     fireEvent.change(categorySelect, { target: { value: "cat-adult" } });
     fireEvent.change(notesInput, { target: { value: "Launch notes" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add Item" }));
@@ -287,6 +291,7 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByLabelText("Provider")).toHaveValue("");
     expect(within(dialog).getByLabelText("Release date")).toHaveValue("");
     expect(within(dialog).getByLabelText("Status")).toHaveValue("planned");
+    expect(within(dialog).getByLabelText("Format")).toHaveValue("");
     expect(within(dialog).getByLabelText("Color category")).toHaveValue("");
     expect(within(dialog).getByLabelText("Notes")).toHaveValue("");
   });
@@ -352,6 +357,8 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
 
     expect(within(dialog).getByRole("button", { name: "Push to Dashboard" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Push to ClickUp" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Format")).toHaveValue("Documentary");
     expect(within(dialog).getByTestId("roadmap-form-actions")).toHaveClass("pb-5", "sm:pb-6");
   });
 
@@ -365,6 +372,29 @@ describe("RoadmapDashboard", () => {
 
     await waitFor(() => expect(actionMocks.sendRoadmapItemToBudget).toHaveBeenCalledTimes(1));
     expect(within(dialog).getByText("Pushed to Dashboard with a $0 yearly placeholder. Update the amount on the Dashboard.")).toBeVisible();
+  });
+
+  it("confirms when a roadmap item is pushed to ClickUp", async () => {
+    actionMocks.sendRoadmapItemToClickUp.mockResolvedValue({ created: true, taskUrl: "https://app.clickup.com/t/task-1" });
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Push to ClickUp" }));
+
+    await waitFor(() => expect(actionMocks.sendRoadmapItemToClickUp).toHaveBeenCalledTimes(1));
+    expect(within(dialog).getByText("Pushed to ClickUp Content Upload Calendar.")).toBeVisible();
+    expect(within(dialog).getByRole("link", { name: "Open in ClickUp" })).toHaveAttribute("href", "https://app.clickup.com/t/task-1");
+  });
+
+  it("pushes a whole visible month to ClickUp", async () => {
+    actionMocks.sendRoadmapMonthToClickUp.mockResolvedValue({ createdCount: 1 });
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Push January 2027 to ClickUp" }));
+
+    await waitFor(() => expect(actionMocks.sendRoadmapMonthToClickUp).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("Pushed 1 to ClickUp.")).toBeVisible();
   });
 
   it("keeps an edited roadmap status visible after saving", async () => {

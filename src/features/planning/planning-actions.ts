@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
+import { createContentUploadTask } from "./clickup";
 import { dollarsToOptionalCents } from "./planning-model";
 import type { ContentReviewItem, ReviewStatus } from "./planning-types";
 
@@ -20,6 +21,7 @@ const roadmapItemSchema = z.object({
   provider: z.string().trim().optional(),
   releaseDate: nullableDateSchema,
   status: roadmapStatusSchema,
+  format: z.string().trim().optional(),
   budgetSource: budgetSourceSchema.default("misc_licensing"),
   notes: z.string().trim().optional(),
   categoryId: nullableUuidSchema
@@ -62,6 +64,11 @@ const roadmapPipelineSchema = z.object({
   fiscalYearId: z.string().uuid()
 });
 
+const roadmapMonthPipelineSchema = z.object({
+  monthKey: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  fiscalYearId: z.string().uuid()
+});
+
 const seriesSchema = z.object({
   fiscalYearId: z.string().uuid(),
   series: z.string().trim().min(1),
@@ -92,6 +99,7 @@ export async function addRoadmapItem(formData: FormData) {
     provider: optionalText(parsed.data.provider),
     release_month: optionalText(parsed.data.releaseDate),
     status: parsed.data.status,
+    format: optionalText(parsed.data.format),
     budget_source: parsed.data.budgetSource,
     notes: optionalText(parsed.data.notes),
     category_id: optionalText(parsed.data.categoryId)
@@ -119,6 +127,7 @@ export async function updateRoadmapItem(formData: FormData) {
       provider: optionalText(parsed.data.provider),
       release_month: optionalText(parsed.data.releaseDate),
       status: parsed.data.status,
+      format: optionalText(parsed.data.format),
       budget_source: parsed.data.budgetSource,
       notes: optionalText(parsed.data.notes),
       category_id: optionalText(parsed.data.categoryId)
@@ -259,7 +268,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: review, error: reviewError } = await admin
     .from("content_review_items")
-    .select("id,title,provider,review_status,budget_source,notes,proposed_rate_cents")
+    .select("id,title,provider,format,review_status,budget_source,notes,proposed_rate_cents")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -284,6 +293,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
     provider: optionalText(review.provider),
     release_month: "TBD",
     status: "planned",
+    format: optionalText(review.format),
     budget_source: review.budget_source ?? "misc_licensing",
     notes: noteParts.join(" ")
   });
@@ -329,6 +339,105 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
   }
 
   revalidatePlanning();
+}
+
+export async function sendRoadmapItemToClickUp(formData: FormData) {
+  const parsed = roadmapPipelineSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid roadmap item to send to ClickUp.");
+  }
+
+  const admin = await requirePlanningAdmin();
+  const { data: roadmapItem, error: roadmapError } = await admin
+    .from("roadmap_items")
+    .select("id,title,provider,release_month,format,clickup_task_id,clickup_task_url")
+    .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .single();
+
+  if (roadmapError || !roadmapItem) {
+    throw new Error(roadmapError?.message ?? "Could not find that roadmap item.");
+  }
+
+  if (roadmapItem.clickup_task_id) {
+    return { created: false, taskUrl: roadmapItem.clickup_task_url };
+  }
+
+  const task = await createContentUploadTask({
+    title: roadmapItem.title,
+    provider: optionalText(roadmapItem.provider),
+    releaseDate: optionalText(roadmapItem.release_month),
+    format: optionalText(roadmapItem.format)
+  });
+
+  const { error } = await admin
+    .from("roadmap_items")
+    .update({
+      clickup_task_id: task.taskId,
+      clickup_task_url: task.taskUrl,
+      clickup_synced_at: new Date().toISOString()
+    })
+    .eq("id", roadmapItem.id)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePlanning();
+  return { created: true, taskUrl: task.taskUrl };
+}
+
+export async function sendRoadmapMonthToClickUp(formData: FormData) {
+  const parsed = roadmapMonthPipelineSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid roadmap month to send to ClickUp.");
+  }
+
+  const admin = await requirePlanningAdmin();
+  const { data: roadmapItems, error: roadmapError } = await admin
+    .from("roadmap_items")
+    .select("id,title,provider,release_month,format,clickup_task_id")
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .gte("release_month", `${parsed.data.monthKey}-01`)
+    .lt("release_month", nextMonthKey(parsed.data.monthKey))
+    .is("clickup_task_id", null)
+    .order("release_month", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (roadmapError) {
+    throw new Error(roadmapError.message);
+  }
+
+  let createdCount = 0;
+
+  for (const roadmapItem of roadmapItems ?? []) {
+    const task = await createContentUploadTask({
+      title: roadmapItem.title,
+      provider: optionalText(roadmapItem.provider),
+      releaseDate: optionalText(roadmapItem.release_month),
+      format: optionalText(roadmapItem.format)
+    });
+
+    const { error } = await admin
+      .from("roadmap_items")
+      .update({
+        clickup_task_id: task.taskId,
+        clickup_task_url: task.taskUrl,
+        clickup_synced_at: new Date().toISOString()
+      })
+      .eq("id", roadmapItem.id)
+      .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    createdCount += 1;
+  }
+
+  revalidatePlanning();
+  return { createdCount };
 }
 
 export async function addOngoingSeries(formData: FormData) {
@@ -478,4 +587,10 @@ function revalidatePlanning() {
   revalidatePath("/roadmap");
   revalidatePath("/content-review");
   revalidatePath("/dashboard");
+}
+
+function nextMonthKey(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const next = new Date(Date.UTC(year, month, 1));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-01`;
 }
