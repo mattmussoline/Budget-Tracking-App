@@ -28,7 +28,6 @@ type RoadmapClickUpPayload = {
   title: string;
   provider: string | null;
   releaseDate: string | null;
-  format: string | null;
 };
 
 export async function createContentUploadTask(payload: RoadmapClickUpPayload) {
@@ -91,8 +90,7 @@ async function clickUpFetch<T>({ token, path, init }: { token: string; path: str
 function buildCustomFields(fields: ClickUpCustomField[], payload: RoadmapClickUpPayload): ClickUpCustomFieldValue[] {
   return [
     buildDateField(fields, ["Publish Date"], payload.releaseDate),
-    buildTextField(fields, ["Provider"], payload.provider),
-    buildDropdownField(fields, ["Video Format", "Format"], payload.format)
+    buildTextField(fields, ["Provider"], payload.provider)
   ].filter((field): field is ClickUpCustomFieldValue => Boolean(field));
 }
 
@@ -118,22 +116,6 @@ function buildTextField(fields: ClickUpCustomField[], names: string[], value: st
   };
 }
 
-function buildDropdownField(fields: ClickUpCustomField[], names: string[], value: string | null): ClickUpCustomFieldValue | null {
-  if (!value) return null;
-  const field = findField(fields, names);
-  if (!field) return null;
-
-  const option = field.type_config?.options?.find((candidate) => {
-    const optionName = candidate.name ?? candidate.label;
-    return optionName?.toLowerCase() === value.toLowerCase();
-  });
-
-  return {
-    id: field.id,
-    value: option?.id ?? value
-  };
-}
-
 function findField(fields: ClickUpCustomField[], names: string[]) {
   const normalizedNames = names.map(normalizeName);
   return fields.find((field) => normalizedNames.includes(normalizeName(field.name)));
@@ -152,7 +134,6 @@ function buildDescription(payload: RoadmapClickUpPayload) {
     `Created from the internal licensing roadmap.`,
     "",
     `Provider: ${payload.provider ?? "Not set"}`,
-    `Publish Date: ${payload.releaseDate && isExactDate(payload.releaseDate) ? payload.releaseDate : "Not set"}`,
-    `Format: ${payload.format ?? "Not set"}`
+    `Publish Date: ${payload.releaseDate && isExactDate(payload.releaseDate) ? payload.releaseDate : "Not set"}`
   ].join("\n");
 }

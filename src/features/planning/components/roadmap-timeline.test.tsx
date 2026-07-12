@@ -32,7 +32,7 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", format: "Documentary", notes: null, categoryId: "cat-parish" },
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
@@ -271,7 +271,6 @@ describe("RoadmapDashboard", () => {
     const providerInput = within(dialog).getByLabelText("Provider");
     const releaseDateInput = within(dialog).getByLabelText("Release date");
     const statusSelect = within(dialog).getByLabelText("Status");
-    const formatInput = within(dialog).getByLabelText("Format");
     const categorySelect = within(dialog).getByLabelText("Color category");
     const notesInput = within(dialog).getByLabelText("Notes");
 
@@ -279,7 +278,6 @@ describe("RoadmapDashboard", () => {
     fireEvent.change(providerInput, { target: { value: "Augustine Institute" } });
     fireEvent.change(releaseDateInput, { target: { value: "2027-02-14" } });
     fireEvent.change(statusSelect, { target: { value: "blocked" } });
-    fireEvent.change(formatInput, { target: { value: "Documentary" } });
     fireEvent.change(categorySelect, { target: { value: "cat-adult" } });
     fireEvent.change(notesInput, { target: { value: "Launch notes" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add Item" }));
@@ -291,7 +289,6 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByLabelText("Provider")).toHaveValue("");
     expect(within(dialog).getByLabelText("Release date")).toHaveValue("");
     expect(within(dialog).getByLabelText("Status")).toHaveValue("planned");
-    expect(within(dialog).getByLabelText("Format")).toHaveValue("");
     expect(within(dialog).getByLabelText("Color category")).toHaveValue("");
     expect(within(dialog).getByLabelText("Notes")).toHaveValue("");
   });
@@ -358,7 +355,6 @@ describe("RoadmapDashboard", () => {
 
     expect(within(dialog).getByRole("button", { name: "Push to Dashboard" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Push to ClickUp" })).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Format")).toHaveValue("Documentary");
     expect(within(dialog).getByTestId("roadmap-form-actions")).toHaveClass("pb-5", "sm:pb-6");
   });
 
