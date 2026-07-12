@@ -79,7 +79,7 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
                   const colorSelectId = `provider-color-${provider.provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
                   return (
-                    <tr key={provider.provider} className="align-middle odd:bg-white even:bg-gray-50/80">
+                    <tr key={provider.provider} className="align-middle odd:bg-white even:bg-blue-50/70">
                       <td className="px-5 py-3 md:px-6">
                         <div className="flex min-w-0 items-center gap-3">
                           <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
