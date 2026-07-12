@@ -16,3 +16,11 @@ export function formatCurrency(cents: number) {
     maximumFractionDigits: 2
   }).format(cents / 100);
 }
+
+export function formatCurrencyWholeDollars(cents: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(cents / 100);
+}

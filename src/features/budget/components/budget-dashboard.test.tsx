@@ -173,10 +173,10 @@ describe("BudgetDashboard", () => {
     const otherBudgetsCard = otherBudgetsLabel.closest(".soft-raised");
 
     expect(otherBudgetsCard).toBeInTheDocument();
-    expect(within(otherBudgetsCard as HTMLElement).getByText("$6,000.00")).toBeVisible();
+    expect(within(otherBudgetsCard as HTMLElement).getByText("$6,000")).toBeVisible();
     const committedCard = screen.getByText("Committed").closest(".soft-raised");
     expect(committedCard).toBeInTheDocument();
-    expect(within(committedCard as HTMLElement).getByText("$48,000.00")).toBeVisible();
+    expect(within(committedCard as HTMLElement).getByText("$48,000")).toBeVisible();
   });
 
   it("shows workflow items that need attention", () => {

@@ -1,5 +1,5 @@
 import { CircleDollarSign, PiggyBank, TrendingDown, WalletCards } from "lucide-react";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrencyWholeDollars } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
 
@@ -12,10 +12,10 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
   const barPercent = Math.min(100, percentUsed);
   const health = getBudgetHealth(model.remainingPercent);
   const metrics = [
-    { label: "Budget", value: formatCurrency(model.budgetCents), icon: PiggyBank, className: health.tile },
-    { label: "Committed", value: formatCurrency(model.totalSpentCents), icon: CircleDollarSign, className: health.committed },
-    { label: "Other Budgets", value: formatCurrency(model.otherBudgetSpentCents), icon: WalletCards, className: "bg-blue-100 text-blue-950" },
-    { label: "Remaining", value: formatCurrency(model.remainingCents), icon: TrendingDown, className: health.tile }
+    { label: "Budget", value: formatCurrencyWholeDollars(model.budgetCents), icon: PiggyBank, className: health.tile },
+    { label: "Committed", value: formatCurrencyWholeDollars(model.totalSpentCents), icon: CircleDollarSign, className: health.committed },
+    { label: "Other Budgets", value: formatCurrencyWholeDollars(model.otherBudgetSpentCents), icon: WalletCards, className: "bg-blue-100 text-blue-950" },
+    { label: "Remaining", value: formatCurrencyWholeDollars(model.remainingCents), icon: TrendingDown, className: health.tile }
   ];
 
   return (
