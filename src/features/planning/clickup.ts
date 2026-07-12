@@ -61,6 +61,30 @@ export async function createContentUploadTask(payload: RoadmapClickUpPayload) {
   };
 }
 
+export async function contentUploadTaskExists(taskId: string) {
+  const token = process.env.CLICKUP_API_TOKEN;
+  if (!token) {
+    throw new Error("Add CLICKUP_API_TOKEN to enable ClickUp pushes.");
+  }
+
+  const response = await fetch(`${CLICKUP_API_BASE_URL}/task/${taskId}`, {
+    headers: {
+      Authorization: token,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (response.status === 404) {
+    return false;
+  }
+
+  if (!response.ok) {
+    throw new Error(`ClickUp request failed with ${response.status}.`);
+  }
+
+  return true;
+}
+
 async function getCustomFields({ token, listId }: { token: string; listId: string }) {
   const response = await clickUpFetch<{ fields?: ClickUpCustomField[] }>({
     token,

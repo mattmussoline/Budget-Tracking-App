@@ -286,9 +286,10 @@ function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo 
   const [message, setMessage] = useState<string | null>(null);
   const [isPushing, setIsPushing] = useState(false);
   const unpushedCount = items.filter((item) => !item.clickupTaskId).length;
+  const hasItems = items.length > 0;
 
   const handlePushMonth = async () => {
-    if (!unpushedCount) return;
+    if (!hasItems) return;
     setMessage(null);
     setIsPushing(true);
 
@@ -298,7 +299,13 @@ function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo 
 
     try {
       const result = await sendRoadmapMonthToClickUp(formData);
-      setMessage(result.createdCount ? `Pushed ${result.createdCount} to ClickUp.` : "Everything in this month is already in ClickUp.");
+      if (result.replacedMissingCount) {
+        setMessage(`Recreated ${result.replacedMissingCount} missing ClickUp ${result.replacedMissingCount === 1 ? "task" : "tasks"}.`);
+      } else if (result.createdCount) {
+        setMessage(`Pushed ${result.createdCount} to ClickUp.`);
+      } else {
+        setMessage("Everything in this month is already in ClickUp.");
+      }
     } catch {
       setMessage("Could not push this month to ClickUp.");
     } finally {
@@ -307,9 +314,9 @@ function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo 
   };
 
   return <div className="mb-3 grid gap-2">
-    <SoftButton type="button" variant="ghost" className="min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-sky-700 shadow-sm ring-1 ring-sky-100 hover:bg-sky-50 hover:!text-sky-800" disabled={isDemo || isPushing || !unpushedCount} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
+    <SoftButton type="button" variant="ghost" className="min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-sky-700 shadow-sm ring-1 ring-sky-100 hover:bg-sky-50 hover:!text-sky-800" disabled={isDemo || isPushing || !hasItems} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
       <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-      {isPushing ? "Pushing..." : unpushedCount ? `Push ${unpushedCount} to ClickUp` : "In ClickUp"}
+      {isPushing ? "Checking..." : unpushedCount ? `Push ${unpushedCount} to ClickUp` : "Check ClickUp"}
     </SoftButton>
     {message ? <p role="status" className="rounded-md bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800">{message}</p> : null}
   </div>;
@@ -384,7 +391,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     try {
       const result = await sendRoadmapItemToClickUp(new FormData(formRef.current));
       setClickUpUrl(result.taskUrl ?? null);
-      setMessage(result.created ? "Pushed to ClickUp Content Upload Calendar." : "Already in ClickUp.");
+      setMessage(result.replacedMissingTask ? "Original ClickUp task was missing, so a new one was created." : result.created ? "Pushed to ClickUp Content Upload Calendar." : "Already in ClickUp.");
     } catch {
       setMessage("Could not push this roadmap item to ClickUp.");
     } finally {
@@ -407,7 +414,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
       {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
-      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled || Boolean(clickUpUrl)} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "In ClickUp" : "Push to ClickUp"}</SoftButton> : null}
+      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
       {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
     </div>
   </form>;

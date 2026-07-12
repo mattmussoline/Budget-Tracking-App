@@ -371,7 +371,7 @@ describe("RoadmapDashboard", () => {
   });
 
   it("confirms when a roadmap item is pushed to ClickUp", async () => {
-    actionMocks.sendRoadmapItemToClickUp.mockResolvedValue({ created: true, taskUrl: "https://app.clickup.com/t/task-1" });
+    actionMocks.sendRoadmapItemToClickUp.mockResolvedValue({ created: true, replacedMissingTask: false, taskUrl: "https://app.clickup.com/t/task-1" });
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
@@ -383,14 +383,43 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByRole("link", { name: "Open in ClickUp" })).toHaveAttribute("href", "https://app.clickup.com/t/task-1");
   });
 
+  it("can recreate a missing ClickUp task for an already pushed roadmap item", async () => {
+    actionMocks.sendRoadmapItemToClickUp.mockResolvedValue({ created: true, replacedMissingTask: true, taskUrl: "https://app.clickup.com/t/task-2" });
+    const pushedItems: RoadmapItem[] = [
+      { ...roadmapItems[0], clickupTaskId: "deleted-task", clickupTaskUrl: "https://app.clickup.com/t/deleted-task" }
+    ];
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={pushedItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Check ClickUp" }));
+
+    await waitFor(() => expect(actionMocks.sendRoadmapItemToClickUp).toHaveBeenCalledTimes(1));
+    expect(within(dialog).getByText("Original ClickUp task was missing, so a new one was created.")).toBeVisible();
+    expect(within(dialog).getByRole("link", { name: "Open in ClickUp" })).toHaveAttribute("href", "https://app.clickup.com/t/task-2");
+  });
+
   it("pushes a whole visible month to ClickUp", async () => {
-    actionMocks.sendRoadmapMonthToClickUp.mockResolvedValue({ createdCount: 1 });
+    actionMocks.sendRoadmapMonthToClickUp.mockResolvedValue({ createdCount: 1, existingCount: 0, replacedMissingCount: 0 });
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Push January 2027 to ClickUp" }));
 
     await waitFor(() => expect(actionMocks.sendRoadmapMonthToClickUp).toHaveBeenCalledTimes(1));
     expect(screen.getByText("Pushed 1 to ClickUp.")).toBeVisible();
+  });
+
+  it("can recreate missing ClickUp tasks for a whole month", async () => {
+    actionMocks.sendRoadmapMonthToClickUp.mockResolvedValue({ createdCount: 1, existingCount: 0, replacedMissingCount: 1 });
+    const pushedItems: RoadmapItem[] = [
+      { ...roadmapItems[0], clickupTaskId: "deleted-task", clickupTaskUrl: "https://app.clickup.com/t/deleted-task" }
+    ];
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={pushedItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Push January 2027 to ClickUp" }));
+
+    await waitFor(() => expect(actionMocks.sendRoadmapMonthToClickUp).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("Recreated 1 missing ClickUp task.")).toBeVisible();
   });
 
   it("keeps an edited roadmap status visible after saving", async () => {

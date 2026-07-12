@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
-import { createContentUploadTask } from "./clickup";
+import { contentUploadTaskExists, createContentUploadTask } from "./clickup";
 import { dollarsToOptionalCents } from "./planning-model";
 import type { ContentReviewItem, ReviewStatus } from "./planning-types";
 
@@ -355,8 +355,8 @@ export async function sendRoadmapItemToClickUp(formData: FormData) {
     throw new Error(roadmapError?.message ?? "Could not find that roadmap item.");
   }
 
-  if (roadmapItem.clickup_task_id) {
-    return { created: false, taskUrl: roadmapItem.clickup_task_url };
+  if (roadmapItem.clickup_task_id && await contentUploadTaskExists(roadmapItem.clickup_task_id)) {
+    return { created: false, replacedMissingTask: false, taskUrl: roadmapItem.clickup_task_url };
   }
 
   const task = await createContentUploadTask({
@@ -380,7 +380,7 @@ export async function sendRoadmapItemToClickUp(formData: FormData) {
   }
 
   revalidatePlanning();
-  return { created: true, taskUrl: task.taskUrl };
+  return { created: true, replacedMissingTask: Boolean(roadmapItem.clickup_task_id), taskUrl: task.taskUrl };
 }
 
 export async function sendRoadmapMonthToClickUp(formData: FormData) {
@@ -396,7 +396,6 @@ export async function sendRoadmapMonthToClickUp(formData: FormData) {
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .gte("release_month", `${parsed.data.monthKey}-01`)
     .lt("release_month", nextMonthKey(parsed.data.monthKey))
-    .is("clickup_task_id", null)
     .order("release_month", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -405,8 +404,15 @@ export async function sendRoadmapMonthToClickUp(formData: FormData) {
   }
 
   let createdCount = 0;
+  let existingCount = 0;
+  let replacedMissingCount = 0;
 
   for (const roadmapItem of roadmapItems ?? []) {
+    if (roadmapItem.clickup_task_id && await contentUploadTaskExists(roadmapItem.clickup_task_id)) {
+      existingCount += 1;
+      continue;
+    }
+
     const task = await createContentUploadTask({
       title: roadmapItem.title,
       provider: optionalText(roadmapItem.provider),
@@ -428,10 +434,13 @@ export async function sendRoadmapMonthToClickUp(formData: FormData) {
     }
 
     createdCount += 1;
+    if (roadmapItem.clickup_task_id) {
+      replacedMissingCount += 1;
+    }
   }
 
   revalidatePlanning();
-  return { createdCount };
+  return { createdCount, existingCount, replacedMissingCount };
 }
 
 export async function addOngoingSeries(formData: FormData) {
