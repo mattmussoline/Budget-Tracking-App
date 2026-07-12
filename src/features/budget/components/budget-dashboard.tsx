@@ -120,12 +120,6 @@ export function BudgetDashboard({
                   providerOptions={providerOptions}
                   isDemo={isDemo}
                 />
-                <ProviderSummary
-                  model={model}
-                  fiscalYearId={fiscalYear.id}
-                  providerColorOverrides={providerColorOverrides}
-                  isDemo={isDemo}
-                />
                 <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
                 <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
               </div>
@@ -142,6 +136,12 @@ export function BudgetDashboard({
                 />
               </div>
             </div>
+            <ProviderSummary
+              model={model}
+              fiscalYearId={fiscalYear.id}
+              providerColorOverrides={providerColorOverrides}
+              isDemo={isDemo}
+            />
           </div>
         )}
       </div>
