@@ -19,6 +19,8 @@ const roadmapItemSchema = z.object({
   fiscalYearId: z.string().uuid(),
   title: z.string().trim().min(1),
   provider: z.string().trim().optional(),
+  genre: z.string().trim().optional(),
+  format: z.string().trim().optional(),
   releaseDate: nullableDateSchema,
   status: roadmapStatusSchema,
   budgetSource: budgetSourceSchema.default("misc_licensing"),
@@ -96,6 +98,8 @@ export async function addRoadmapItem(formData: FormData) {
     fiscal_year_id: parsed.data.fiscalYearId,
     title: parsed.data.title,
     provider: optionalText(parsed.data.provider),
+    genre: optionalText(parsed.data.genre),
+    format: optionalText(parsed.data.format),
     release_month: optionalText(parsed.data.releaseDate),
     status: parsed.data.status,
     budget_source: parsed.data.budgetSource,
@@ -123,6 +127,8 @@ export async function updateRoadmapItem(formData: FormData) {
     .update({
       title: parsed.data.title,
       provider: optionalText(parsed.data.provider),
+      genre: optionalText(parsed.data.genre),
+      format: optionalText(parsed.data.format),
       release_month: optionalText(parsed.data.releaseDate),
       status: parsed.data.status,
       budget_source: parsed.data.budgetSource,
@@ -265,7 +271,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: review, error: reviewError } = await admin
     .from("content_review_items")
-    .select("id,title,provider,review_status,budget_source,notes,proposed_rate_cents")
+    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -288,6 +294,8 @@ export async function sendReviewToRoadmap(formData: FormData) {
     fiscal_year_id: parsed.data.fiscalYearId,
     title: review.title,
     provider: optionalText(review.provider),
+    genre: optionalText(review.genre),
+    format: optionalText(review.format),
     release_month: "TBD",
     status: "planned",
     budget_source: review.budget_source ?? "misc_licensing",
@@ -310,7 +318,7 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: roadmapItem, error: roadmapError } = await admin
     .from("roadmap_items")
-    .select("id,title,provider,release_month,status,budget_source,notes")
+    .select("id,title,provider,genre,format,release_month,status,budget_source,notes")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -346,7 +354,7 @@ export async function sendRoadmapItemToClickUp(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: roadmapItem, error: roadmapError } = await admin
     .from("roadmap_items")
-    .select("id,title,provider,release_month,clickup_task_id,clickup_task_url")
+    .select("id,title,provider,genre,format,release_month,clickup_task_id,clickup_task_url")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -362,6 +370,8 @@ export async function sendRoadmapItemToClickUp(formData: FormData) {
   const task = await createContentUploadTask({
     title: roadmapItem.title,
     provider: optionalText(roadmapItem.provider),
+    genre: optionalText(roadmapItem.genre),
+    format: optionalText(roadmapItem.format),
     releaseDate: optionalText(roadmapItem.release_month)
   });
 
@@ -392,7 +402,7 @@ export async function sendRoadmapMonthToClickUp(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: roadmapItems, error: roadmapError } = await admin
     .from("roadmap_items")
-    .select("id,title,provider,release_month,clickup_task_id")
+    .select("id,title,provider,genre,format,release_month,clickup_task_id")
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .gte("release_month", `${parsed.data.monthKey}-01`)
     .lt("release_month", nextMonthKey(parsed.data.monthKey))
@@ -416,6 +426,8 @@ export async function sendRoadmapMonthToClickUp(formData: FormData) {
     const task = await createContentUploadTask({
       title: roadmapItem.title,
       provider: optionalText(roadmapItem.provider),
+      genre: optionalText(roadmapItem.genre),
+      format: optionalText(roadmapItem.format),
       releaseDate: optionalText(roadmapItem.release_month)
     });
 

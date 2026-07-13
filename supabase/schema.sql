@@ -74,6 +74,8 @@ create table if not exists public.roadmap_items (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   title text not null,
   provider text,
+  genre text,
+  format text,
   release_month text,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),

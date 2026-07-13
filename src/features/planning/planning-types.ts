@@ -6,6 +6,8 @@ export type RoadmapItem = {
   id: string;
   title: string;
   provider: string | null;
+  genre?: string | null;
+  format?: string | null;
   releaseDate: string | null;
   status: RoadmapStatus;
   budgetSource?: BudgetSource | null;

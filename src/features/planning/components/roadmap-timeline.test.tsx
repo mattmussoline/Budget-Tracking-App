@@ -32,7 +32,7 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
@@ -331,6 +331,18 @@ describe("RoadmapDashboard", () => {
     fireEvent.keyDown(reopenedDialog, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Edit Roadmap Item" })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it("uses the content review genre and format dropdowns on roadmap items", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+
+    expect(within(dialog).getByLabelText("Genre")).toHaveValue("Scripture");
+    expect(within(dialog).getByLabelText("Genre")).toContainHTML("Christian Formation");
+    expect(within(dialog).getByLabelText("Format")).toHaveValue("Formation Series");
+    expect(within(dialog).getByLabelText("Format")).toContainHTML("Docu-Series");
   });
 
   it("offers planned, in-progress, blocked, and released statuses in the edit form", () => {

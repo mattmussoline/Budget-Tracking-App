@@ -55,7 +55,17 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Genre")).toHaveValue("Scripture");
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
     expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "https://example.com/review");
     expect(screen.getByLabelText("Comparable Content")).toHaveValue("Symbolon");
+  });
+
+  it("makes links in review notes and comparable content clickable", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Watch https://example.com/notes", comparableContent: "Compare https://example.com/compare" }]} isDemo />);
+
+    expect(screen.getAllByRole("link", { name: "Open link" }).map((link) => link.getAttribute("href"))).toEqual([
+      "https://example.com/notes",
+      "https://example.com/compare"
+    ]);
   });
 
   it("uses the roadmap provider picker for review details", () => {

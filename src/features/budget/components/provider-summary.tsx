@@ -52,90 +52,116 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
               <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
             </span>
           </summary>
-          <div className="overflow-x-auto border-t border-gray-200">
-            <table className="min-w-[760px] w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-50 text-left text-[10px] font-extrabold uppercase tracking-wide text-muted">
-                  <th scope="col" className="px-5 py-3 md:px-6">
-                    Provider
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right">
-                    Titles
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right">
-                    Spend
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Color
-                  </th>
-                  <th scope="col" className="px-5 py-3 text-right md:px-6">
-                    Save
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {model.providers.map((provider) => {
-                  const color = providerColorMap[provider.provider];
-                  const colorSelectId = `provider-color-${provider.provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-
-                  return (
-                    <tr key={provider.provider} className="align-middle odd:bg-white even:bg-blue-50/70">
-                      <td className="px-5 py-3 md:px-6">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
-                          <span className="min-w-0 truncate text-sm font-extrabold text-foreground">{provider.provider}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-muted">
-                        {provider.licenseCount}
-                      </td>
-                      <td className="px-4 py-3 text-right font-display text-base font-extrabold text-foreground">
-                        {formatCurrency(provider.totalCents)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <form id={`provider-color-form-${colorSelectId}`} action={updateProviderColor} className="contents">
-                          <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
-                          <input type="hidden" name="provider" value={provider.provider} />
-                        </form>
-                        <label className="sr-only" htmlFor={colorSelectId}>
-                          Color for {provider.provider}
-                        </label>
-                        <select
-                          id={colorSelectId}
-                          form={`provider-color-form-${colorSelectId}`}
-                          name="colorKey"
-                          defaultValue={providerColorOverrides[provider.provider] ?? color.key}
-                          disabled={isDemo}
-                          className={`min-h-9 w-full rounded-md border-0 px-2 text-xs font-extrabold ${color.bg} ${color.text} disabled:opacity-60`}
-                        >
-                          {providerColorOptions.map((option) => (
-                            <option key={option.key} value={option.key}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-5 py-3 text-right md:px-6">
-                        <SoftButton
-                          type="submit"
-                          form={`provider-color-form-${colorSelectId}`}
-                          variant="ghost"
-                          className="min-h-9 rounded-md bg-white px-3 py-2 text-gray-600 ring-1 ring-gray-100 hover:bg-gray-100"
-                          disabled={isDemo}
-                          aria-label={`Save color for ${provider.provider}`}
-                          title="Save color"
-                        >
-                          <Save className="h-3.5 w-3.5" aria-hidden="true" />
-                        </SoftButton>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ProviderSummaryTable
+            fiscalYearId={fiscalYearId}
+            isDemo={isDemo}
+            providerColorMap={providerColorMap}
+            providerColorOverrides={providerColorOverrides}
+            providers={model.providers}
+          />
         </details>
       )}
     </SoftSurface>
+  );
+}
+
+type ProviderSummaryTableProps = {
+  fiscalYearId: string;
+  providerColorMap: ReturnType<typeof getProviderColorMap>;
+  providerColorOverrides: ProviderColorOverrides;
+  providers: DashboardModel["providers"];
+  isDemo?: boolean;
+};
+
+export function ProviderSummaryTable({
+  fiscalYearId,
+  providerColorMap,
+  providerColorOverrides,
+  providers,
+  isDemo
+}: ProviderSummaryTableProps) {
+  return (
+    <div className="overflow-x-auto border-t border-gray-200">
+      <table className="min-w-[760px] w-full border-collapse">
+        <thead>
+          <tr className="bg-gray-50 text-left text-[10px] font-extrabold uppercase tracking-wide text-muted">
+            <th scope="col" className="px-5 py-3 md:px-6">
+              Provider
+            </th>
+            <th scope="col" className="px-4 py-3 text-right">
+              Titles
+            </th>
+            <th scope="col" className="px-4 py-3 text-right">
+              Spend
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Color
+            </th>
+            <th scope="col" className="px-5 py-3 text-right md:px-6">
+              Save
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {providers.map((provider) => {
+            const color = providerColorMap[provider.provider];
+            const colorSelectId = `provider-color-${provider.provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+            return (
+              <tr key={provider.provider} className="align-middle odd:bg-white even:bg-blue-50/70">
+                <td className="px-5 py-3 md:px-6">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
+                    <span className="min-w-0 truncate text-sm font-extrabold text-foreground">{provider.provider}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right text-sm font-bold text-muted">
+                  {provider.licenseCount}
+                </td>
+                <td className="px-4 py-3 text-right font-display text-base font-extrabold text-foreground">
+                  {formatCurrency(provider.totalCents)}
+                </td>
+                <td className="px-4 py-3">
+                  <form id={`provider-color-form-${colorSelectId}`} action={updateProviderColor} className="contents">
+                    <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
+                    <input type="hidden" name="provider" value={provider.provider} />
+                  </form>
+                  <label className="sr-only" htmlFor={colorSelectId}>
+                    Color for {provider.provider}
+                  </label>
+                  <select
+                    id={colorSelectId}
+                    form={`provider-color-form-${colorSelectId}`}
+                    name="colorKey"
+                    defaultValue={providerColorOverrides[provider.provider] ?? color.key}
+                    disabled={isDemo}
+                    className={`min-h-9 w-full rounded-md border-0 px-2 text-xs font-extrabold ${color.bg} ${color.text} disabled:opacity-60`}
+                  >
+                    {providerColorOptions.map((option) => (
+                      <option key={option.key} value={option.key}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-5 py-3 text-right md:px-6">
+                  <SoftButton
+                    type="submit"
+                    form={`provider-color-form-${colorSelectId}`}
+                    variant="ghost"
+                    className="min-h-9 rounded-md bg-white px-3 py-2 text-gray-600 ring-1 ring-gray-100 hover:bg-gray-100"
+                    disabled={isDemo}
+                    aria-label={`Save color for ${provider.provider}`}
+                    title="Save color"
+                  >
+                    <Save className="h-3.5 w-3.5" aria-hidden="true" />
+                  </SoftButton>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

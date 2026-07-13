@@ -27,6 +27,8 @@ type ClickUpCustomFieldValue = {
 type RoadmapClickUpPayload = {
   title: string;
   provider: string | null;
+  genre: string | null;
+  format: string | null;
   releaseDate: string | null;
 };
 
@@ -48,7 +50,7 @@ export async function createContentUploadTask(payload: RoadmapClickUpPayload) {
       body: JSON.stringify({
         name: payload.title,
         status: "new submission",
-        markdown_content: buildDescription(payload),
+        markdown_content: buildContentUploadDescription(payload),
         custom_fields: customFields,
         check_required_custom_fields: false
       })
@@ -153,11 +155,13 @@ function isExactDate(value: string) {
   return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value);
 }
 
-function buildDescription(payload: RoadmapClickUpPayload) {
+export function buildContentUploadDescription(payload: RoadmapClickUpPayload) {
   return [
     `Created from the internal licensing roadmap.`,
     "",
     `Provider: ${payload.provider ?? "Not set"}`,
+    `Genre: ${payload.genre ?? "Not set"}`,
+    `Format: ${payload.format ?? "Not set"}`,
     `Publish Date: ${payload.releaseDate && isExactDate(payload.releaseDate) ? payload.releaseDate : "Not set"}`
   ].join("\n");
 }

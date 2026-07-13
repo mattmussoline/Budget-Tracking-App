@@ -4,7 +4,6 @@ import { FiscalYearSettings } from "./fiscal-year-settings";
 import { FiscalYearManager } from "./fiscal-year-manager";
 import { LicenseManager } from "./license-manager";
 import { MonthBoard } from "./month-board";
-import { ProviderSummary } from "./provider-summary";
 import { SharePanel } from "./share-panel";
 import { SummaryMetrics } from "./summary-metrics";
 import { logout } from "../auth-actions";
@@ -16,6 +15,7 @@ import { getNextFiscalYear } from "../fiscal-year-selection";
 import type { ProviderColorOverrides } from "../provider-colors";
 import { PlanningHeader } from "@/features/planning/components/planning-header";
 import Link from "next/link";
+import type { Route } from "next";
 import type { NeedsAttentionItem } from "../attention-model";
 import { Plus } from "lucide-react";
 
@@ -106,7 +106,12 @@ export function BudgetDashboard({
         ) : (
           <div className="grid min-w-0 gap-8">
             <SummaryMetrics model={model} />
-            <DashboardInsights model={model} providerColorOverrides={providerColorOverrides} />
+            <DashboardInsights
+              fiscalYearId={fiscalYear.id}
+              isDemo={isDemo}
+              model={model}
+              providerColorOverrides={providerColorOverrides}
+            />
             <div className="grid min-w-0 gap-8 lg:grid-cols-2">
               <BudgetSourcesPanel items={budgetSourceSummary} />
               <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
@@ -137,12 +142,6 @@ export function BudgetDashboard({
                 />
               </div>
             </div>
-            <ProviderSummary
-              model={model}
-              fiscalYearId={fiscalYear.id}
-              providerColorOverrides={providerColorOverrides}
-              isDemo={isDemo}
-            />
           </div>
         )}
       </div>
@@ -212,7 +211,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
         <div className="grid gap-3 px-5 pb-5 md:grid-cols-2 md:px-6 md:pb-6 xl:grid-cols-3">
           {items.map((item) => (
             <div key={item.id} className={`grid gap-3 rounded-md border p-4 ${attentionToneClasses[item.tone]}`}>
-              <Link href={isDemo ? `/demo${item.href}` : item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
+              <Link href={isDemo ? (`/demo${item.href}` as Route) : item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
                 <p className="text-sm font-extrabold">{item.title}</p>
                 <p className="mt-1 text-xs font-bold opacity-80">{item.detail}</p>
               </Link>

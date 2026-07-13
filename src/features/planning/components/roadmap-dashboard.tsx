@@ -13,7 +13,7 @@ import {
   addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
-import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
+import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningTone } from "../planning-constants";
 import { buildMonthWindow, formatRoadmapDate, parseMonthAnchor, shiftMonthAnchor } from "../planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
@@ -406,6 +406,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
     <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
     <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-genre`} label="Genre" name="genre" defaultValue={item?.genre ?? ""} options={[{ label: "No genre", value: "" }, ...CONTENT_GENRES]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
+    <SoftSelect id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} options={[{ label: "No format", value: "" }, ...CONTENT_FORMATS]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />

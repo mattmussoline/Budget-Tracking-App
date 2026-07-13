@@ -96,12 +96,12 @@ function renderDashboard(options: { needsAttention?: NeedsAttentionItem[] } = {}
 describe("BudgetDashboard", () => {
   it("does not stretch the edit content panel to match the sidebar height", () => {
     const { container } = renderDashboard();
-    const editContentPanel = Array.from(container.querySelectorAll("div.content-start")).find((element) =>
-      element.querySelector("details.group")
-    );
+    const editContentManager = screen.getByText("Edit Content").closest("details");
+    const editContentPanel = screen.getByText("Edit Content").closest(".content-start");
 
     expect(editContentPanel).toBeInTheDocument();
-    expect(editContentPanel).toContainElement(container.querySelector("details.group"));
+    expect(editContentPanel).toContainElement(container.querySelector("[data-testid='quarter-1']"));
+    expect(editContentPanel).toContainElement(editContentManager);
   });
 
   it("renders dashboard form fields with unique ids", () => {
@@ -160,7 +160,7 @@ describe("BudgetDashboard", () => {
 
     expect(screen.queryByTestId("provider-pie-tooltip")).not.toBeInTheDocument();
 
-    fireEvent.mouseEnter(screen.getByLabelText("Thomistic: 1 content piece, 50%"));
+    fireEvent.mouseEnter(screen.getAllByLabelText("Thomistic: 1 content piece, 50%")[0]);
 
     expect(screen.getByTestId("provider-pie-tooltip")).toHaveTextContent("Thomistic");
     expect(screen.getByTestId("provider-pie-tooltip")).toHaveTextContent("1 content piece");

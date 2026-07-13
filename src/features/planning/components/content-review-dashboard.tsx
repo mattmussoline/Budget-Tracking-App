@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, ExternalLink, Plus, Save, Trash2 } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
@@ -208,7 +208,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
       <SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} />
       <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} />
       <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} />
-      <div className="md:col-span-2"><Field label="Review Link" type="url" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} /></div>
+      <div className="md:col-span-2"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} /></div>
       <TextArea label="Review Notes" value={item.notes ?? ""} onChange={(value) => onChange("notes", value)} disabled={isDemo} />
       <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
     </div>
@@ -225,6 +225,19 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
 
 function Field({ label, value, onChange, disabled, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; type?: string }) {
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+}
+
+function LinkField({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const trimmedValue = value.trim();
+  const canOpen = /^https?:\/\//.test(trimmedValue);
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
+    {label}
+    <div className="flex flex-wrap gap-2">
+      <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 min-w-0 flex-1 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" />
+      {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-50 px-4 text-xs font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100"><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
+    </div>
+  </label>;
 }
 
 function SelectField({ label, value, options, onChange, disabled }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean }) {
@@ -260,5 +273,17 @@ function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus,
 }
 
 function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={5} className="rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal" /></label>;
+  const links = extractLinks(value);
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
+    {label}
+    <textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={5} className="rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal" />
+    {links.length ? <span className="flex flex-wrap gap-2">
+      {links.map((link) => <a key={link} href={link} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md bg-blue-50 px-3 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100"><ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />Open link</a>)}
+    </span> : null}
+  </label>;
+}
+
+function extractLinks(value: string) {
+  return Array.from(new Set(value.match(/https?:\/\/[^\s<>"']+/g) ?? []));
 }

@@ -19,9 +19,10 @@ type ProviderPieChartProps = {
   radius: number;
   strokeWidth: number;
   providerCount: number;
+  centerClassName?: string;
 };
 
-export function ProviderPieChart({ slices, size, center, radius, strokeWidth, providerCount }: ProviderPieChartProps) {
+export function ProviderPieChart({ slices, size, center, radius, strokeWidth, providerCount, centerClassName = "bg-amber-100" }: ProviderPieChartProps) {
   const [activeSlice, setActiveSlice] = useState<ProviderPieSlice | null>(null);
 
   function showSlice(slice: ProviderPieSlice) {
@@ -33,7 +34,7 @@ export function ProviderPieChart({ slices, size, center, radius, strokeWidth, pr
   }
 
   return (
-    <div className="relative h-28 w-28 rounded-full">
+    <div className="relative rounded-full" style={{ height: size, width: size }}>
       <svg aria-label="Provider content pie chart" className="absolute inset-0 h-full w-full" role="img" viewBox={`0 0 ${size} ${size}`}>
         {slices.length === 0 ? (
           <circle cx={center} cy={center} fill="none" r={radius} stroke="#e5e7eb" strokeWidth={strokeWidth} />
@@ -81,8 +82,11 @@ export function ProviderPieChart({ slices, size, center, radius, strokeWidth, pr
           ))
         )}
       </svg>
-      <div className="pointer-events-none absolute inset-5 grid place-items-center rounded-full bg-amber-100 text-center">
-        <span className="font-display text-3xl font-extrabold">{providerCount}</span>
+      <div
+        className={`pointer-events-none absolute grid place-items-center rounded-full text-center ${centerClassName}`}
+        style={{ inset: Math.max(20, Math.round(strokeWidth * 0.62)) }}
+      >
+        <span className="font-display text-3xl font-extrabold md:text-4xl">{providerCount}</span>
       </div>
       {activeSlice ? (
         <div
