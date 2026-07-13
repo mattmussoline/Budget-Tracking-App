@@ -107,23 +107,25 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
-      <section className="rounded-lg bg-gray-100 p-4 md:p-6">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
-          <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
-        </div>
-        <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-          <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
-        </div>
-        <div data-testid="content-review-active-queue" className="grid gap-2">
-          {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
-        </div>
-        <section className="mt-5 rounded-lg bg-cyan-50 p-3 ring-1 ring-cyan-100">
+      <div className="grid gap-5">
+        <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
+            <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
+          </div>
+          <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
+            <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+          </div>
+          <div data-testid="content-review-active-queue" className="grid gap-2">
+            {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
+          </div>
+        </section>
+        <section className="rounded-lg bg-cyan-50 p-4 ring-1 ring-cyan-100 md:p-5">
           <h3 className="font-display text-xl font-extrabold text-cyan-950">On the Radar</h3>
           <p className="mb-3 text-sm text-cyan-900">Target pieces worth tracking, even when the odds are long or the contact path is unclear.</p>
           <ContentReviewGroup title="Radar Targets" count={radarContent.length} testId="content-review-radar-content">{radarContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
         </section>
-        <section className="mt-5 rounded-lg bg-gray-200 p-3">
+        <section className="rounded-lg bg-gray-200 p-3">
           <h3 className="font-display text-xl font-extrabold">Completed Reviews</h3>
           <p className="mb-3 text-sm text-muted">Approved and rejected content stay available without crowding active decisions.</p>
           <div className="grid gap-3">
@@ -131,7 +133,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
             <ContentReviewGroup title="Rejected Content" count={rejectedContent.length} testId="content-review-rejected-content">{rejectedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
           </div>
         </section>
-      </section>
+      </div>
 
       <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
         {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}

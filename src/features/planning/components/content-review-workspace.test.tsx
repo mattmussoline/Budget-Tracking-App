@@ -135,6 +135,7 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
 
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
+    expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
     expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeVisible();
 
