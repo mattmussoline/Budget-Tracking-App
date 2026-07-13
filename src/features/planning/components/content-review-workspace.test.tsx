@@ -44,6 +44,13 @@ const rejectedItem: ContentReviewItem = {
   reviewStatus: "rejected"
 };
 
+const radarItem: ContentReviewItem = {
+  ...item,
+  id: "review-radar",
+  title: "Long Shot Series",
+  reviewStatus: "on_the_radar"
+};
+
 describe("ContentReviewDashboard", () => {
   it("renders the compact decision queue and selected detail editor", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
@@ -111,19 +118,23 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Detail Title")).toHaveValue("");
   });
 
-  it("moves approved and rejected reviews into separate decision spaces", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item, rejectedItem]} isDemo />);
+  it("moves radar, approved, and rejected reviews into separate decision spaces", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
 
     const decisionQueue = screen.getByTestId("content-review-active-queue");
     expect(within(decisionQueue).getByDisplayValue("Catholic Basics")).toBeVisible();
+    expect(within(decisionQueue).queryByDisplayValue("Long Shot Series")).not.toBeInTheDocument();
     expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
     expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
 
+    const radarGroup = screen.getByTestId("content-review-radar-content");
     const approvedGroup = screen.getByTestId("content-review-approved-content");
     const rejectedGroup = screen.getByTestId("content-review-rejected-content");
+    fireEvent.click(within(radarGroup).getByText("Radar Targets"));
     fireEvent.click(within(approvedGroup).getByText("Approved Content"));
     fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
 
+    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
     expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeVisible();
 
@@ -150,6 +161,7 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
 
     expect(screen.getByLabelText("Review Status")).toContainHTML("Not Started");
+    expect(screen.getByLabelText("Review Status")).toContainHTML("On the Radar");
     expect(screen.getByLabelText("Genre")).toContainHTML("Christian Formation");
     expect(screen.getByLabelText("Format")).toContainHTML("Docu-Series");
     expect(screen.getByLabelText("Format")).toContainHTML("Ministry Resource");

@@ -8,6 +8,7 @@ export type PlanningOption<T extends string = string> = {
 
 export const REVIEW_STATUSES = [
   { label: "Not Started", value: "not_started", tone: "slate" },
+  { label: "On the Radar", value: "on_the_radar", tone: "cyan" },
   { label: "In Progress", value: "in_progress", tone: "purple" },
   { label: "Blocked", value: "blocked", tone: "red" },
   { label: "Rejected", value: "rejected", tone: "orange" },

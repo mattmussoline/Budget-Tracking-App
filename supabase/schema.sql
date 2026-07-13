@@ -105,7 +105,7 @@ create table if not exists public.content_review_items (
   provider text,
   genre text,
   format text,
-  review_status text not null default 'not_started' check (review_status in ('not_started', 'in_progress', 'blocked', 'rejected', 'approved')),
+  review_status text not null default 'not_started' check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   proposed_rate_cents bigint check (proposed_rate_cents >= 0),

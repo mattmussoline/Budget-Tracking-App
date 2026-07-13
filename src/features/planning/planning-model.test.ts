@@ -17,6 +17,7 @@ describe("planning taxonomies", () => {
   it("uses the approved review statuses", () => {
     expect(REVIEW_STATUSES.map((item) => item.label)).toEqual([
       "Not Started",
+      "On the Radar",
       "In Progress",
       "Blocked",
       "Rejected",
@@ -96,5 +97,12 @@ describe("planning workspace migration", () => {
 
     expect(sql).toContain("status in ('planned', 'in_progress', 'blocked', 'released')");
     expect(sql).not.toContain("status in ('planned', 'in_progress', 'ready', 'released')");
+  });
+
+  it("allows on-the-radar content review items", () => {
+    const schemaPath = resolve("supabase/schema.sql");
+    const sql = readFileSync(schemaPath, "utf8");
+
+    expect(sql).toContain("review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')");
   });
 });

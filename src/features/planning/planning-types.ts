@@ -33,7 +33,7 @@ export type OngoingSeries = {
   notes: string | null;
 };
 
-export type ReviewStatus = "not_started" | "in_progress" | "blocked" | "rejected" | "approved";
+export type ReviewStatus = "not_started" | "on_the_radar" | "in_progress" | "blocked" | "rejected" | "approved";
 
 export type ContentReviewItem = {
   id: string;

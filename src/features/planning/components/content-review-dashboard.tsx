@@ -100,7 +100,8 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   }
 
   const queue = draft ? [draft, ...records] : records;
-  const activeQueue = queue.filter((item) => !isFinalReviewStatus(item.reviewStatus));
+  const activeQueue = queue.filter((item) => isDecisionQueueStatus(item.reviewStatus));
+  const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
   const approvedContent = queue.filter((item) => item.reviewStatus === "approved");
   const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
 
@@ -117,6 +118,11 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
         <div data-testid="content-review-active-queue" className="grid gap-2">
           {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
         </div>
+        <section className="mt-5 rounded-lg bg-cyan-50 p-3 ring-1 ring-cyan-100">
+          <h3 className="font-display text-xl font-extrabold text-cyan-950">On the Radar</h3>
+          <p className="mb-3 text-sm text-cyan-900">Target pieces worth tracking, even when the odds are long or the contact path is unclear.</p>
+          <ContentReviewGroup title="Radar Targets" count={radarContent.length} testId="content-review-radar-content">{radarContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
+        </section>
         <section className="mt-5 rounded-lg bg-gray-200 p-3">
           <h3 className="font-display text-xl font-extrabold">Completed Reviews</h3>
           <p className="mb-3 text-sm text-muted">Approved and rejected content stay available without crowding active decisions.</p>
@@ -136,6 +142,10 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
 function isFinalReviewStatus(status: ReviewStatus) {
   return status === "approved" || status === "rejected";
+}
+
+function isDecisionQueueStatus(status: ReviewStatus) {
+  return !isFinalReviewStatus(status) && status !== "on_the_radar";
 }
 
 function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
