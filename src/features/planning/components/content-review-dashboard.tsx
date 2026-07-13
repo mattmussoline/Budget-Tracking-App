@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowRight, ExternalLink, Plus, Save, Trash2 } from "lucide-react";
-import { type ReactNode, useState, useTransition } from "react";
+import { ArrowRight, ExternalLink, Plus, Save, Trash2, X } from "lucide-react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
@@ -38,6 +39,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isPending, startTransition] = useTransition();
   const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
+  const [isRadarOpen, setIsRadarOpen] = useState(false);
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
@@ -106,40 +108,137 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
-      <div className="grid gap-5">
-        <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
-            <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
-          </div>
-          <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-            <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
-          </div>
-          <div data-testid="content-review-active-queue" className="grid gap-2">
-            {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
-          </div>
-        </section>
-        <section className="rounded-lg bg-cyan-50 p-4 ring-1 ring-cyan-100 md:p-5">
-          <h3 className="font-display text-xl font-extrabold text-cyan-950">On the Radar</h3>
-          <p className="mb-3 text-sm text-cyan-900">Target pieces worth tracking, even when the odds are long or the contact path is unclear.</p>
-          <ContentReviewGroup title="Radar Targets" count={radarContent.length} testId="content-review-radar-content">{radarContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
-        </section>
-        <section className="rounded-lg bg-gray-200 p-3">
-          <h3 className="font-display text-xl font-extrabold">Completed Reviews</h3>
-          <p className="mb-3 text-sm text-muted">Approved and rejected content stay available without crowding active decisions.</p>
-          <div className="grid gap-3">
-            <ContentReviewGroup title="Approved Content" count={approvedContent.length} testId="content-review-approved-content">{approvedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
-            <ContentReviewGroup title="Rejected Content" count={rejectedContent.length} testId="content-review-rejected-content">{rejectedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
-          </div>
+    <div className="grid gap-5">
+      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" />
+        <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setIsRadarOpen(true)} />
+        <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" />
+        <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" />
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
+        <div className="grid gap-5">
+          <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
+              <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
+            </div>
+            <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
+              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+            </div>
+            <div data-testid="content-review-active-queue" className="grid gap-2">
+              {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
+            </div>
+          </section>
+          <section className="rounded-lg bg-gray-200 p-3">
+            <h3 className="font-display text-xl font-extrabold">Completed Reviews</h3>
+            <p className="mb-3 text-sm text-muted">Approved and rejected content stay available without crowding active decisions.</p>
+            <div className="grid gap-3">
+              <ContentReviewGroup title="Approved Content" count={approvedContent.length} testId="content-review-approved-content">{approvedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
+              <ContentReviewGroup title="Rejected Content" count={rejectedContent.length} testId="content-review-rejected-content">{rejectedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
+            </div>
+          </section>
+        </div>
+
+        <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
+          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
         </section>
       </div>
 
-      <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
-        {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
-      </section>
+      <RadarReviewModal
+        items={radarContent}
+        isOpen={isRadarOpen}
+        selectedId={selectedId}
+        isDemo={isDemo}
+        onClose={() => setIsRadarOpen(false)}
+        onSelect={selectItem}
+        onChange={changeItem}
+      />
     </div>
   );
+}
+
+function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: "neutral" | "radar"; onClick?: () => void }) {
+  const cardClass = cn(
+    "min-h-24 rounded-lg p-4 text-left shadow-sm ring-1 transition",
+    tone === "radar" ? "bg-amber-50 text-amber-950 ring-amber-200" : "bg-white text-foreground ring-gray-200",
+    onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  );
+  const content = <>
+    <span className={cn("text-xs font-extrabold uppercase tracking-wide", tone === "radar" ? "text-amber-800" : "text-muted")}>{label}</span>
+    <span className="mt-2 block font-display text-3xl font-extrabold">{value}</span>
+    <span className={cn("mt-1 block text-xs font-bold", tone === "radar" ? "text-amber-900" : "text-muted")}>{helper}</span>
+  </>;
+
+  if (onClick) {
+    return <button type="button" onClick={onClick} className={cardClass} aria-label={`${label}: ${value}. Open radar targets`}>
+      {content}
+    </button>;
+  }
+
+  return <div className={cardClass}>{content}</div>;
+}
+
+function RadarReviewModal({ items, isOpen, selectedId, isDemo, onClose, onSelect, onChange }: { items: ContentReviewItem[]; isOpen: boolean; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+    else dialog.setAttribute("open", "");
+  }, [isOpen]);
+
+  function closeDialog() {
+    const dialog = dialogRef.current;
+    if (dialog?.open && typeof dialog.close === "function") dialog.close();
+    else dialog?.removeAttribute("open");
+    onClose();
+  }
+
+  function closeFromBackdrop(event: MouseEvent<HTMLDialogElement>) {
+    if (event.target === event.currentTarget) closeDialog();
+  }
+
+  function closeFromEscape(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    closeDialog();
+  }
+
+  if (!isOpen) return null;
+
+  return createPortal(<dialog
+    ref={dialogRef}
+    open={isOpen}
+    style={{ display: "block", visibility: "visible" }}
+    aria-labelledby="radar-review-modal-title"
+    onClick={closeFromBackdrop}
+    onKeyDown={closeFromEscape}
+    onClose={onClose}
+    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+  >
+    <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-amber-200 bg-amber-50 p-5 sm:p-7">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-amber-800">{items.length} Radar Target{items.length === 1 ? "" : "s"}</p>
+          <h2 id="radar-review-modal-title" className="font-display text-3xl font-extrabold text-amber-950">On the Radar</h2>
+          <p className="mt-1 text-sm font-medium text-amber-900">Long shots, weak-contact targets, and pieces worth keeping warm.</p>
+        </div>
+        <button type="button" onClick={closeDialog} aria-label="Close radar targets" className="rounded-md bg-white p-3 text-amber-900 shadow-sm ring-1 ring-amber-200 transition-colors hover:bg-amber-100">
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </header>
+      <div data-testid="content-review-radar-content" className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">No radar targets yet.</p>}
+      </div>
+      <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
+        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
+      </footer>
+    </div>
+  </dialog>, document.body);
 }
 
 function isFinalReviewStatus(status: ReviewStatus) {

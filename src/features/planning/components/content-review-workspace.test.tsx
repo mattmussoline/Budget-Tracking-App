@@ -127,13 +127,17 @@ describe("ContentReviewDashboard", () => {
     expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
     expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
 
-    const radarGroup = screen.getByTestId("content-review-radar-content");
     const approvedGroup = screen.getByTestId("content-review-approved-content");
     const rejectedGroup = screen.getByTestId("content-review-rejected-content");
-    fireEvent.click(within(radarGroup).getByText("Radar Targets"));
     fireEvent.click(within(approvedGroup).getByText("Approved Content"));
     fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
 
+    expect(screen.getByText("Active Decisions")).toBeVisible();
+    expect(screen.getByRole("button", { name: /On the Radar: 1/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /On the Radar: 1/ }));
+
+    const radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    const radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
     expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
