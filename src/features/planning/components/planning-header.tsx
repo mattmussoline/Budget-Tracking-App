@@ -6,10 +6,11 @@ type PlanningHeaderProps = {
   eyebrow: string;
   description: string;
   activeSection: PlanningSection;
+  routePrefix?: "" | "/demo";
   footer?: ReactNode;
 };
 
-export function PlanningHeader({ title, eyebrow, description, activeSection, footer }: PlanningHeaderProps) {
+export function PlanningHeader({ title, eyebrow, description, activeSection, routePrefix = "", footer }: PlanningHeaderProps) {
   return (
     <header className="relative h-80 overflow-hidden rounded-lg bg-blue-500 p-6 text-white md:h-80 md:p-8">
       <div className="absolute right-0 top-0 h-48 w-48 -translate-y-1/2 rounded-full bg-white/10" aria-hidden="true" />
@@ -22,7 +23,7 @@ export function PlanningHeader({ title, eyebrow, description, activeSection, foo
           </div>
           <div className="grid min-w-0 max-w-xl self-end gap-4">
             <p className="text-base font-semibold leading-7 text-blue-50">{description}</p>
-            <PlanningNavigation activeSection={activeSection} />
+            <PlanningNavigation activeSection={activeSection} routePrefix={routePrefix} />
           </div>
         </div>
         <div className="h-20">

@@ -67,6 +67,7 @@ export function BudgetDashboard({
           eyebrow="Internal Licensing"
           description="Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place."
           activeSection="dashboard"
+          routePrefix={isDemo ? "/demo" : ""}
           footer={(fiscalYears.length > 0 || userEmail || isDemo) ? (
             <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/15 pt-4">
               <div className="min-w-0 -mt-5">
@@ -84,7 +85,7 @@ export function BudgetDashboard({
               <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
                 {isDemo ? (
                   <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
-                    Local demo mode. Add Supabase env vars to enable shared editing on Vercel.
+                    Public demo mode. Sample data only; editing is disabled.
                   </p>
                 ) : null}
                 {userEmail ? (
@@ -211,7 +212,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
         <div className="grid gap-3 px-5 pb-5 md:grid-cols-2 md:px-6 md:pb-6 xl:grid-cols-3">
           {items.map((item) => (
             <div key={item.id} className={`grid gap-3 rounded-md border p-4 ${attentionToneClasses[item.tone]}`}>
-              <Link href={item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
+              <Link href={isDemo ? `/demo${item.href}` : item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
                 <p className="text-sm font-extrabold">{item.title}</p>
                 <p className="mt-1 text-xs font-bold opacity-80">{item.detail}</p>
               </Link>

@@ -29,6 +29,7 @@ type RoadmapDashboardProps = {
   fiscalYearStartMonth?: string;
   startMonth: string;
   monthCount: 6 | 9 | 12;
+  routeBasePath?: "/roadmap" | "/demo/roadmap";
   isDemo?: boolean;
 };
 
@@ -39,7 +40,7 @@ const roadmapStatuses = [
 
 type RoadmapFilter = { id: string; label: string };
 
-export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, isDemo }: RoadmapDashboardProps) {
+export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, routeBasePath = "/roadmap", isDemo }: RoadmapDashboardProps) {
   const [focusedMonthKey, setFocusedMonthKey] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
   const [isRoadmapFocus, setIsRoadmapFocus] = useState(false);
@@ -55,7 +56,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey(), fiscalYearStartMonth);
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
-  const href = (start: string, count = monthCount) => `/roadmap?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
+  const href = (start: string, count = monthCount) => `${routeBasePath}?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
 
   return <div className="grid min-w-0 gap-7">

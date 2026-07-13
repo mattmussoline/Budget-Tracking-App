@@ -41,4 +41,14 @@ describe("PlanningNavigation", () => {
     expect(prefetch).toHaveBeenCalledWith("/content-review");
     expect(prefetch).not.toHaveBeenCalledWith("/dashboard");
   });
+
+  it("keeps demo navigation inside the public demo section", () => {
+    render(<PlanningNavigation activeSection="dashboard" routePrefix="/demo" />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/demo/dashboard");
+    expect(screen.getByRole("link", { name: "Roadmap" })).toHaveAttribute("href", "/demo/roadmap");
+    expect(screen.getByRole("link", { name: "Content Review" })).toHaveAttribute("href", "/demo/content-review");
+    expect(prefetch).toHaveBeenCalledWith("/demo/roadmap");
+    expect(prefetch).toHaveBeenCalledWith("/demo/content-review");
+  });
 });

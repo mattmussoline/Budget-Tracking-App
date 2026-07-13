@@ -10,6 +10,7 @@ export type PlanningSection = "dashboard" | "roadmap" | "content-review";
 
 type PlanningNavigationProps = {
   activeSection: PlanningSection;
+  routePrefix?: "" | "/demo";
 };
 
 const planningSections = [
@@ -18,14 +19,14 @@ const planningSections = [
   { href: "/content-review", label: "Content Review", section: "content-review" }
 ] as const;
 
-export function PlanningNavigation({ activeSection }: PlanningNavigationProps) {
+export function PlanningNavigation({ activeSection, routePrefix = "" }: PlanningNavigationProps) {
   const router = useRouter();
 
   useEffect(() => {
     for (const { href, section } of planningSections) {
-      if (section !== activeSection) router.prefetch(href);
+      if (section !== activeSection) router.prefetch(`${routePrefix}${href}`);
     }
-  }, [activeSection, router]);
+  }, [activeSection, routePrefix, router]);
 
   return (
     <nav className="flex flex-wrap gap-2" aria-label="Planning sections">
@@ -35,7 +36,7 @@ export function PlanningNavigation({ activeSection }: PlanningNavigationProps) {
         return (
           <Link
             key={section}
-            href={href}
+            href={`${routePrefix}${href}`}
             prefetch
             aria-current={isActive ? "page" : undefined}
             className={cn(
