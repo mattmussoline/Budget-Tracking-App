@@ -20,6 +20,7 @@ type FiscalYearManagerProps = {
   deleteAction: FiscalYearAction;
   createForm: ReactNode;
   isDemo?: boolean;
+  routePrefix?: "" | "/demo";
 };
 
 export function FiscalYearManager({
@@ -28,7 +29,8 @@ export function FiscalYearManager({
   pinAction,
   deleteAction,
   createForm,
-  isDemo = false
+  isDemo = false,
+  routePrefix = ""
 }: FiscalYearManagerProps) {
   const [menuFiscalYearId, setMenuFiscalYearId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -66,7 +68,7 @@ export function FiscalYearManager({
           return (
             <div key={year.id} className="relative flex items-stretch rounded-md bg-blue-400">
               <Link
-                href={`/dashboard?fy=${year.id}`}
+                href={`${routePrefix}/dashboard?fy=${year.id}`}
                 aria-current={isActive ? "page" : undefined}
                 onContextMenu={(event) => {
                   event.preventDefault();

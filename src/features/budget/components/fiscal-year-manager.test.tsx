@@ -59,6 +59,25 @@ describe("FiscalYearManager", () => {
     expect(screen.getByLabelText("Pinned default")).toBeVisible();
   });
 
+  it("keeps fiscal-year links inside demo mode", () => {
+    render(
+      <FiscalYearManager
+        fiscalYears={fiscalYears}
+        activeFiscalYearId={fiscalYears[0].id}
+        pinAction={noopAction}
+        deleteAction={noopAction}
+        createForm={<div>Create fiscal year form</div>}
+        isDemo
+        routePrefix="/demo"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: /FY26/ })).toHaveAttribute(
+      "href",
+      `/demo/dashboard?fy=${fiscalYears[0].id}`
+    );
+  });
+
   it("opens and closes the add fiscal year form", () => {
     renderManager();
 

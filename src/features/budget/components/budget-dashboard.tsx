@@ -79,6 +79,7 @@ export function BudgetDashboard({
                     deleteAction={deleteFiscalYear}
                     createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
                     isDemo={isDemo}
+                    routePrefix={isDemo ? "/demo" : ""}
                   />
                 ) : null}
               </div>
