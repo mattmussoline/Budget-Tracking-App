@@ -4,7 +4,7 @@ import { PlanningShell } from "@/features/planning/components/planning-shell";
 
 export const metadata = {
   title: "Demo Content Review | Licensing Budget",
-  description: "Public sample review queue with dummy content review data"
+  description: "Public sample review queue with dummy content review data, radar targets, and expandable status cards"
 };
 
 export default function DemoContentReviewPage() {
@@ -17,7 +17,7 @@ export default function DemoContentReviewPage() {
     <PlanningShell
       title="Content Review Demo"
       eyebrow="Public Sample"
-      description="Review fake titles, proposed rates, provider fields, approval states, and the handoff flow without exposing real partners."
+      description="Review fake titles, proposed rates, provider fields, radar targets, approval states, and expandable status cards without exposing real partners."
       activeSection="content-review"
       routePrefix="/demo"
     >

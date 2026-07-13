@@ -12,7 +12,7 @@ type DemoRoadmapPageProps = {
 
 export const metadata = {
   title: "Demo Roadmap | Licensing Budget",
-  description: "Public sample roadmap with dummy content planning data"
+  description: "Public sample roadmap with dummy content planning data, genre and format fields, and dashboard handoff controls"
 };
 
 export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageProps) {
@@ -24,7 +24,7 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
     <PlanningShell
       title="Roadmap Demo"
       eyebrow="Public Sample"
-      description="Explore a fake content roadmap with categories, backlog, ClickUp handoff controls, and ongoing series cadence."
+      description="Explore a fake content roadmap with categories, genre and format fields, Dashboard and ClickUp handoff controls, and ongoing series cadence."
       activeSection="roadmap"
       routePrefix="/demo"
     >
