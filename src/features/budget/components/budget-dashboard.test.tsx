@@ -184,24 +184,37 @@ describe("BudgetDashboard", () => {
 
     const panel = screen.getByTestId("needs-attention-panel");
 
-    expect(panel).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog", { name: "Needs Attention" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Needs Attention" })).toBeVisible();
-    fireEvent.click(within(panel).getByText("Needs Attention"));
-    expect(screen.getByText("Approved Review")).toBeVisible();
-    expect(screen.getByText("Approved review is ready to send to the roadmap.")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Open Approved Review" })).toHaveAttribute("href", "/content-review");
-    expect(screen.getByRole("button", { name: "Mark Approved Review complete" })).toBeVisible();
+    fireEvent.click(within(panel).getByRole("button", { name: "Open Needs Attention" }));
+    const dialog = screen.getByRole("dialog", { name: "Needs Attention" });
+    expect(within(dialog).getByText("Approved Review")).toBeVisible();
+    expect(within(dialog).getByText("Approved review is ready to send to the roadmap.")).toBeVisible();
+    expect(within(dialog).getByRole("link", { name: "Open Approved Review" })).toHaveAttribute("href", "/content-review");
+    expect(within(dialog).getByRole("button", { name: "Mark Approved Review complete" })).toBeVisible();
   });
 
   it("shows budget sources at a glance", () => {
     renderDashboard();
     const panel = screen.getByTestId("budget-sources-panel");
 
-    expect(panel).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog", { name: "Budget Sources" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Budget Sources" })).toBeVisible();
-    fireEvent.click(within(panel).getByText("Budget Sources"));
-    expect(within(panel).getByText("Misc licensing budget")).toBeVisible();
-    expect(within(panel).getByText("Internal production")).toBeVisible();
-    expect(within(panel).getByText("Donor-funded budget")).toBeVisible();
+    fireEvent.click(within(panel).getByRole("button", { name: "Open Budget Sources" }));
+    const dialog = screen.getByRole("dialog", { name: "Budget Sources" });
+    expect(within(dialog).getByText("Misc licensing budget")).toBeVisible();
+    expect(within(dialog).getByText("Internal production")).toBeVisible();
+    expect(within(dialog).getByText("Donor-funded budget")).toBeVisible();
+  });
+
+  it("closes dashboard pop-out modals with Escape", () => {
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Remaining" }));
+    expect(screen.getByRole("dialog", { name: "Remaining" })).toBeVisible();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog", { name: "Remaining" })).not.toBeInTheDocument();
   });
 });

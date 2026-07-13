@@ -1,10 +1,13 @@
-import { ChevronDown, GalleryHorizontalEnd, Gauge, Repeat2 } from "lucide-react";
+import { GalleryHorizontalEnd, Gauge, Repeat2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { SoftSurface } from "@/components/ui/soft-surface";
 import type { DashboardModel } from "../dashboard-model";
 import { getProviderColorMap, type ProviderColorOverrides } from "../provider-colors";
+import { DashboardPopout } from "./dashboard-popout";
 import { ProviderPieChart } from "./provider-pie-chart";
 import { ProviderSummaryTable } from "./provider-summary";
+
+type DashboardRow = [string, string];
 
 export function DashboardInsights({
   model,
@@ -21,20 +24,42 @@ export function DashboardInsights({
     model.providers.map((provider) => provider.provider),
     providerColorOverrides
   );
-  const items = [
+  const items: Array<{
+    label: string;
+    value: string;
+    detail: string;
+    secondaryDetail?: string;
+    icon: typeof GalleryHorizontalEnd;
+    className: string;
+    description: string;
+    modalRows: DashboardRow[];
+  }> = [
     {
       label: "Content pieces",
       value: String(model.insights.licenseCount),
       detail: `${model.insights.quarterlyLicenseCount} quarterly / ${model.insights.yearlyLicenseCount} yearly`,
       icon: GalleryHorizontalEnd,
-      className: "bg-blue-100 text-blue-950"
+      className: "bg-blue-100 text-blue-950",
+      description: "Every content title currently tracked in this fiscal year.",
+      modalRows: [
+        ["Total content pieces", String(model.insights.licenseCount)],
+        ["Quarterly cadence", String(model.insights.quarterlyLicenseCount)],
+        ["Yearly cadence", String(model.insights.yearlyLicenseCount)],
+        ["Active providers", String(model.insights.providerCount)]
+      ]
     },
     {
       label: "Average rate",
       value: formatCurrency(model.insights.averageInstallmentCents),
       detail: "Average installment amount",
       icon: Gauge,
-      className: "bg-emerald-100 text-emerald-950"
+      className: "bg-emerald-100 text-emerald-950",
+      description: "The average payment amount across tracked content.",
+      modalRows: [
+        ["Average installment", formatCurrency(model.insights.averageInstallmentCents)],
+        ["Content pieces", String(model.insights.licenseCount)],
+        ["Committed licensing spend", formatCurrency(model.totalSpentCents)]
+      ]
     },
     {
       label: "Cadence mix",
@@ -42,7 +67,14 @@ export function DashboardInsights({
       detail: `${formatCurrency(model.cadenceTotals.quarterlyCents)} quarterly`,
       secondaryDetail: `${formatCurrency(model.cadenceTotals.yearlyCents)} yearly`,
       icon: Repeat2,
-      className: "bg-teal-100 text-teal-950"
+      className: "bg-teal-100 text-teal-950",
+      description: "How the fiscal year splits between quarterly and yearly payment rhythms.",
+      modalRows: [
+        ["Quarterly content pieces", String(model.insights.quarterlyLicenseCount)],
+        ["Yearly content pieces", String(model.insights.yearlyLicenseCount)],
+        ["Quarterly spend", formatCurrency(model.cadenceTotals.quarterlyCents)],
+        ["Yearly spend", formatCurrency(model.cadenceTotals.yearlyCents)]
+      ]
     }
   ];
   const providerTotal = model.providers.reduce((total, provider) => total + provider.licenseCount, 0);
@@ -117,18 +149,36 @@ export function DashboardInsights({
       </div>
       <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
         {items.map((item) => (
-          <div key={item.label} className={`min-w-0 rounded-lg p-5 ${item.className}`}>
-            <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
-              <item.icon className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">{item.label}</p>
-            <p className="font-display text-3xl font-extrabold tracking-tight">{item.value}</p>
-            <p className="mt-1 text-sm font-bold opacity-75">{item.detail}</p>
-            {"secondaryDetail" in item ? <p className="text-sm font-bold opacity-75">{item.secondaryDetail}</p> : null}
-          </div>
+          <DashboardPopout
+            key={item.label}
+            title={item.label}
+            eyebrow={item.value}
+            description={item.description}
+            toneClassName={item.className}
+            triggerClassName={`min-w-0 p-0 ${item.className}`}
+            trigger={
+              <div className="min-w-0 p-5">
+                <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">{item.label}</p>
+                <p className="font-display text-3xl font-extrabold tracking-tight">{item.value}</p>
+                <p className="mt-1 text-sm font-bold opacity-75">{item.detail}</p>
+                {"secondaryDetail" in item ? <p className="text-sm font-bold opacity-75">{item.secondaryDetail}</p> : null}
+              </div>
+            }
+          >
+            <DashboardRows rows={item.modalRows} />
+          </DashboardPopout>
         ))}
-        <details className="group min-w-0 overflow-hidden rounded-lg bg-amber-100 text-amber-950 open:lg:col-span-4">
-          <summary className="grid min-w-0 cursor-pointer list-none gap-4 p-5 marker:hidden md:grid-cols-[112px_minmax(0,1fr)] lg:group-open:grid-cols-[132px_minmax(0,1fr)]">
+        <DashboardPopout
+          title="Active Providers"
+          eyebrow={providerLabel[0]}
+          description={providerLabel[1]}
+          toneClassName="bg-amber-100 text-amber-950"
+          triggerClassName="min-w-0 p-0 bg-amber-100 text-amber-950"
+          trigger={
+            <div className="grid min-w-0 gap-4 p-5 md:grid-cols-[112px_minmax(0,1fr)]">
             <div className="grid place-items-center">
               <ProviderPieChart
                 center={pieCenter}
@@ -139,7 +189,7 @@ export function DashboardInsights({
                 strokeWidth={pieStrokeWidth}
               />
             </div>
-            <div className="grid min-w-0 content-center gap-3 lg:group-open:grid-cols-[minmax(0,1fr)_minmax(220px,0.6fr)] lg:group-open:items-center">
+            <div className="grid min-w-0 content-center gap-3">
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -147,11 +197,6 @@ export function DashboardInsights({
                     <p className="text-wrap font-display text-xl font-extrabold leading-tight tracking-tight">{providerLabel[0]}</p>
                     <p className="text-sm font-bold opacity-75">{providerLabel[1]}</p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-2 rounded-md bg-white/70 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide">
-                    <span className="group-open:hidden">Expand</span>
-                    <span className="hidden group-open:inline">Collapse</span>
-                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-                  </span>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -174,9 +219,10 @@ export function DashboardInsights({
                 )}
               </div>
             </div>
-          </summary>
-          <div className="border-t border-amber-200 bg-white text-foreground">
-            <div className="grid gap-6 p-5 md:p-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+          </div>
+          }
+        >
+          <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
               <div className="grid content-start justify-items-center gap-4 rounded-lg bg-amber-50 p-5 text-amber-950">
                 <ProviderPieChart
                   center={expandedPieCenter}
@@ -203,9 +249,21 @@ export function DashboardInsights({
                 />
               </div>
             </div>
-          </div>
-        </details>
+        </DashboardPopout>
       </div>
     </SoftSurface>
+  );
+}
+
+function DashboardRows({ rows }: { rows: DashboardRow[] }) {
+  return (
+    <div className="grid gap-3">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <span className="text-sm font-extrabold text-muted">{label}</span>
+          <span className="text-right font-display text-xl font-extrabold text-foreground">{value}</span>
+        </div>
+      ))}
+    </div>
   );
 }
