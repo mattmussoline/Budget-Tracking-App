@@ -140,6 +140,23 @@ describe("ContentReviewDashboard", () => {
     const radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
     expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
+    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Active Decisions: 1/ }));
+    const activeDialog = screen.getByRole("dialog", { name: "Active Decisions" });
+    expect(within(activeDialog).getByDisplayValue("Catholic Basics")).toBeVisible();
+    fireEvent.click(within(activeDialog).getByRole("button", { name: "Close Active Decisions reviews" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Approved: 1/ }));
+    const approvedDialog = screen.getByRole("dialog", { name: "Approved" });
+    expect(within(approvedDialog).getByDisplayValue("Aquinas 101")).toBeVisible();
+    fireEvent.click(within(approvedDialog).getByRole("button", { name: "Close Approved reviews" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Rejected: 1/ }));
+    const rejectedDialog = screen.getByRole("dialog", { name: "Rejected" });
+    expect(within(rejectedDialog).getByDisplayValue("Archive Candidate")).toBeVisible();
+    fireEvent.click(within(rejectedDialog).getByRole("button", { name: "Close Rejected reviews" }));
+
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
     expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeVisible();
 

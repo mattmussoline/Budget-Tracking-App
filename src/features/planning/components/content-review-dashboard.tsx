@@ -39,7 +39,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isPending, startTransition] = useTransition();
   const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
-  const [isRadarOpen, setIsRadarOpen] = useState(false);
+  const [openStatusModal, setOpenStatusModal] = useState<ReviewStatusModalKey | null>(null);
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
@@ -106,14 +106,16 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
   const approvedContent = queue.filter((item) => item.reviewStatus === "approved");
   const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
+  const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
+  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : rejectedContent;
 
   return (
     <div className="grid gap-5">
       <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" />
-        <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setIsRadarOpen(true)} />
-        <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" />
-        <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" />
+        <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
+        <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
+        <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" tone="approved" onClick={() => setOpenStatusModal("approved")} />
+        <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" tone="rejected" onClick={() => setOpenStatusModal("rejected")} />
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
@@ -145,33 +147,45 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
         </section>
       </div>
 
-      <RadarReviewModal
-        items={radarContent}
-        isOpen={isRadarOpen}
+      {modalConfig ? <ReviewStatusModal
+        config={modalConfig}
+        items={modalItems}
         selectedId={selectedId}
         isDemo={isDemo}
-        onClose={() => setIsRadarOpen(false)}
+        onClose={() => setOpenStatusModal(null)}
         onSelect={selectItem}
         onChange={changeItem}
-      />
+      /> : null}
     </div>
   );
 }
 
-function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: "neutral" | "radar"; onClick?: () => void }) {
+type StatusCardTone = "neutral" | "active" | "radar" | "approved" | "rejected";
+type ReviewStatusModalKey = "active" | "radar" | "approved" | "rejected";
+
+const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string }> = {
+  neutral: { card: "bg-white text-foreground ring-gray-200", label: "text-muted", helper: "text-muted" },
+  active: { card: "bg-orange-50 text-orange-950 ring-orange-200", label: "text-orange-800", helper: "text-orange-900" },
+  radar: { card: "bg-amber-50 text-amber-950 ring-amber-200", label: "text-amber-800", helper: "text-amber-900" },
+  approved: { card: "bg-emerald-50 text-emerald-950 ring-emerald-200", label: "text-emerald-800", helper: "text-emerald-900" },
+  rejected: { card: "bg-red-50 text-red-950 ring-red-200", label: "text-red-800", helper: "text-red-900" }
+};
+
+function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
+  const toneClasses = STATUS_CARD_TONES[tone];
   const cardClass = cn(
     "min-h-24 rounded-lg p-4 text-left shadow-sm ring-1 transition",
-    tone === "radar" ? "bg-amber-50 text-amber-950 ring-amber-200" : "bg-white text-foreground ring-gray-200",
+    toneClasses.card,
     onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
   );
   const content = <>
-    <span className={cn("text-xs font-extrabold uppercase tracking-wide", tone === "radar" ? "text-amber-800" : "text-muted")}>{label}</span>
+    <span className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{label}</span>
     <span className="mt-2 block font-display text-3xl font-extrabold">{value}</span>
-    <span className={cn("mt-1 block text-xs font-bold", tone === "radar" ? "text-amber-900" : "text-muted")}>{helper}</span>
+    <span className={cn("mt-1 block text-xs font-bold", toneClasses.helper)}>{helper}</span>
   </>;
 
   if (onClick) {
-    return <button type="button" onClick={onClick} className={cardClass} aria-label={`${label}: ${value}. Open radar targets`}>
+    return <button type="button" onClick={onClick} className={cardClass} aria-label={`${label}: ${value}. Open ${label.toLowerCase()} reviews`}>
       {content}
     </button>;
   }
@@ -179,17 +193,53 @@ function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label
   return <div className={cardClass}>{content}</div>;
 }
 
-function RadarReviewModal({ items, isOpen, selectedId, isDemo, onClose, onSelect, onChange }: { items: ContentReviewItem[]; isOpen: boolean; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
+const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string; eyebrow: string; description: string; empty: string; testId: string; tone: StatusCardTone }> = {
+  active: {
+    title: "Active Decisions",
+    eyebrow: "Active Decision",
+    description: "Current reviews that are ready for a clear yes, no, or next-step decision.",
+    empty: "No active decisions right now.",
+    testId: "content-review-active-modal-content",
+    tone: "active"
+  },
+  radar: {
+    title: "On the Radar",
+    eyebrow: "Radar Target",
+    description: "Long shots, weak-contact targets, and pieces worth keeping warm.",
+    empty: "No radar targets yet.",
+    testId: "content-review-radar-content",
+    tone: "radar"
+  },
+  approved: {
+    title: "Approved",
+    eyebrow: "Approved Review",
+    description: "Content that is cleared and ready for roadmap follow-up.",
+    empty: "No approved reviews yet.",
+    testId: "content-review-approved-modal-content",
+    tone: "approved"
+  },
+  rejected: {
+    title: "Rejected",
+    eyebrow: "Rejected Review",
+    description: "Archived decisions that stay available without crowding active work.",
+    empty: "No rejected reviews yet.",
+    testId: "content-review-rejected-modal-content",
+    tone: "rejected"
+  }
+};
+
+function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const toneClasses = STATUS_CARD_TONES[config.tone];
+  const titleId = `review-status-modal-${config.tone}`;
 
   useEffect(() => {
-    if (!isOpen) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
 
     if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
     else dialog.setAttribute("open", "");
-  }, [isOpen]);
+  }, []);
 
   function closeDialog() {
     const dialog = dialogRef.current;
@@ -208,31 +258,29 @@ function RadarReviewModal({ items, isOpen, selectedId, isDemo, onClose, onSelect
     closeDialog();
   }
 
-  if (!isOpen) return null;
-
   return createPortal(<dialog
     ref={dialogRef}
-    open={isOpen}
+    open
     style={{ display: "block", visibility: "visible" }}
-    aria-labelledby="radar-review-modal-title"
+    aria-labelledby={titleId}
     onClick={closeFromBackdrop}
     onKeyDown={closeFromEscape}
     onClose={onClose}
     className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
   >
     <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-amber-200 bg-amber-50 p-5 sm:p-7">
+      <header className={cn("flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-7", toneClasses.card)}>
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-wide text-amber-800">{items.length} Radar Target{items.length === 1 ? "" : "s"}</p>
-          <h2 id="radar-review-modal-title" className="font-display text-3xl font-extrabold text-amber-950">On the Radar</h2>
-          <p className="mt-1 text-sm font-medium text-amber-900">Long shots, weak-contact targets, and pieces worth keeping warm.</p>
+          <p className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{items.length} {config.eyebrow}{items.length === 1 ? "" : "s"}</p>
+          <h2 id={titleId} className="font-display text-3xl font-extrabold">{config.title}</h2>
+          <p className={cn("mt-1 text-sm font-medium", toneClasses.helper)}>{config.description}</p>
         </div>
-        <button type="button" onClick={closeDialog} aria-label="Close radar targets" className="rounded-md bg-white p-3 text-amber-900 shadow-sm ring-1 ring-amber-200 transition-colors hover:bg-amber-100">
+        <button type="button" onClick={closeDialog} aria-label={`Close ${config.title} reviews`} className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-gray-100">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
-      <div data-testid="content-review-radar-content" className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">No radar targets yet.</p>}
+      <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
       </div>
       <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
         <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
