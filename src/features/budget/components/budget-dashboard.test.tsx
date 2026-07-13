@@ -155,6 +155,18 @@ describe("BudgetDashboard", () => {
     expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
   });
 
+  it("keeps dashboard insight text contained at narrower desktop widths", () => {
+    renderDashboard();
+    const insightsGrid = screen.getByText("Quick signals for how the licensing year is taking shape.").parentElement?.nextElementSibling;
+    const averageRateCard = screen.getByText("Average rate").closest("button");
+    const averageRateValue = within(averageRateCard as HTMLElement).getByText("$9,000.00");
+
+    expect(insightsGrid).toHaveClass("md:grid-cols-2", "xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]");
+    expect(averageRateCard).toHaveClass("min-w-0");
+    expect(averageRateValue).toHaveClass("break-words", "text-2xl", "xl:text-3xl");
+    expect(averageRateValue.parentElement).toHaveClass("overflow-hidden");
+  });
+
   it("shows a visible provider tooltip when a pie slice is hovered", () => {
     renderDashboard();
 

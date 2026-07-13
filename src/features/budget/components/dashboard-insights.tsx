@@ -8,6 +8,8 @@ import { ProviderPieChart } from "./provider-pie-chart";
 import { ProviderSummaryTable } from "./provider-summary";
 
 type DashboardRow = [string, string];
+const insightValueClassName = "break-words font-display text-2xl font-extrabold leading-none tracking-tight xl:text-3xl";
+const insightDetailClassName = "mt-2 text-sm font-bold leading-snug opacity-75";
 
 export function DashboardInsights({
   model,
@@ -147,7 +149,7 @@ export function DashboardInsights({
         <h2 className="font-display text-2xl font-extrabold tracking-tight">Dashboard</h2>
         <p className="text-sm font-medium text-muted">Quick signals for how the licensing year is taking shape.</p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
         {items.map((item) => (
           <DashboardPopout
             key={item.label}
@@ -157,14 +159,14 @@ export function DashboardInsights({
             toneClassName={item.className}
             triggerClassName={`min-w-0 p-0 ${item.className}`}
             trigger={
-              <div className="min-w-0 p-5">
+              <div className="min-w-0 overflow-hidden p-5">
                 <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
                   <item.icon className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">{item.label}</p>
-                <p className="font-display text-3xl font-extrabold tracking-tight">{item.value}</p>
-                <p className="mt-1 text-sm font-bold opacity-75">{item.detail}</p>
-                {"secondaryDetail" in item ? <p className="text-sm font-bold opacity-75">{item.secondaryDetail}</p> : null}
+                <p className="text-xs font-extrabold uppercase leading-tight tracking-wide opacity-75">{item.label}</p>
+                <p className={insightValueClassName}>{item.value}</p>
+                <p className={insightDetailClassName}>{item.detail}</p>
+                {"secondaryDetail" in item ? <p className="text-sm font-bold leading-snug opacity-75">{item.secondaryDetail}</p> : null}
               </div>
             }
           >
