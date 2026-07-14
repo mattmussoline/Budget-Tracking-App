@@ -8,6 +8,7 @@ import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
 import { cn } from "@/components/ui/soft-surface";
+import { DashboardPopout } from "@/features/budget/components/dashboard-popout";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
 import {
   addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
@@ -118,12 +119,19 @@ type RoadmapSummaryData = {
   releasedCount: number;
   inProgressCount: number;
   unscheduledCount: number;
-  topAudiences: Array<{ name: string; count: number; tone: PlanningTone }>;
-  topProvider: { name: string; count: number } | null;
+  audienceRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
+  providerRankings: Array<{ name: string; count: number }>;
+  genreRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
+  formatRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
   nextRelease: { title: string; date: string } | null;
 };
 
 function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
+  const topAudiences = summary.audienceRankings.slice(0, 3);
+  const topProvider = summary.providerRankings[0] ?? null;
+  const topGenre = summary.genreRankings[0] ?? null;
+  const topFormat = summary.formatRankings[0] ?? null;
+
   return <details data-testid="roadmap-summary" className="rounded-lg bg-blue-50 ring-1 ring-blue-100">
     <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 p-5">
       <div>
@@ -147,35 +155,157 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
         </div> : null}
       </div>
       <div className="grid gap-3 md:grid-cols-4">
-        <SummaryMetric value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`} label="Total content" accentClassName="bg-blue-600" />
-        <SummaryMetric value={`${summary.releasedCount} released`} label="Already live" accentClassName="bg-green-500" />
-        <SummaryMetric value={`${summary.inProgressCount} in progress`} label="Being worked on" accentClassName="bg-violet-500" />
-        <SummaryMetric value={`${summary.unscheduledCount} unscheduled`} label="Need a date" accentClassName="bg-amber-400" />
+        <SummaryMetric
+          title="Total Content"
+          value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`}
+          label="Total content"
+          accentClassName="bg-blue-600"
+          description="Every roadmap item in this fiscal-year snapshot."
+        >
+          <SummaryRows rows={[
+            ["Total content", String(summary.totalTitles)],
+            ["Already live", String(summary.releasedCount)],
+            ["Being worked on", String(summary.inProgressCount)],
+            ["Need a date", String(summary.unscheduledCount)]
+          ]} />
+        </SummaryMetric>
+        <SummaryMetric
+          title="Already Live"
+          value={`${summary.releasedCount} released`}
+          label="Already live"
+          accentClassName="bg-green-500"
+          description="Roadmap items marked as released."
+        >
+          <SummaryRows rows={[
+            ["Released", String(summary.releasedCount)],
+            ["Total content", String(summary.totalTitles)]
+          ]} />
+        </SummaryMetric>
+        <SummaryMetric
+          title="Being Worked On"
+          value={`${summary.inProgressCount} in progress`}
+          label="Being worked on"
+          accentClassName="bg-violet-500"
+          description="Roadmap items currently marked in progress."
+        >
+          <SummaryRows rows={[
+            ["In progress", String(summary.inProgressCount)],
+            ["Total content", String(summary.totalTitles)]
+          ]} />
+        </SummaryMetric>
+        <SummaryMetric
+          title="Need A Date"
+          value={`${summary.unscheduledCount} unscheduled`}
+          label="Need a date"
+          accentClassName="bg-amber-400"
+          description="Roadmap items without an exact release date."
+        >
+          <SummaryRows rows={[
+            ["Unscheduled", String(summary.unscheduledCount)],
+            ["Total content", String(summary.totalTitles)]
+          ]} />
+        </SummaryMetric>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-md border border-blue-100 bg-white p-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-blue-700">Top audience</h3>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardPopout
+          title="Top Audiences"
+          eyebrow={`${summary.audienceRankings.length} audience${summary.audienceRankings.length === 1 ? "" : "s"}`}
+          description="Ranking by roadmap item count."
+          toneClassName="bg-blue-100 text-blue-950"
+          triggerClassName="min-w-0 p-0 bg-white"
+          trigger={<div className="min-h-36 rounded-md border border-blue-100 p-4">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-blue-700">Top audiences</h3>
           <div className="mt-3 flex flex-wrap gap-2">
-            {summary.topAudiences.length ? summary.topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
+            {topAudiences.length ? topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
           </div>
-        </div>
-        <div className="rounded-md border border-amber-100 bg-white p-4">
+          </div>}
+        >
+          <RankingList items={summary.audienceRankings} emptyText="No audiences yet." />
+        </DashboardPopout>
+        <DashboardPopout
+          title="Top Providers"
+          eyebrow={`${summary.providerRankings.length} provider${summary.providerRankings.length === 1 ? "" : "s"}`}
+          description="Ranking by roadmap item count."
+          toneClassName="bg-amber-100 text-amber-950"
+          triggerClassName="min-w-0 p-0 bg-white"
+          trigger={<div className="min-h-36 rounded-md border border-amber-100 p-4">
           <h3 className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Top provider</h3>
-          <p className="mt-2 text-lg font-extrabold text-foreground">{summary.topProvider ? summary.topProvider.name : "No provider yet"}</p>
-          <p className="text-xs font-bold text-muted">{summary.topProvider ? `${summary.topProvider.count} ${summary.topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
-        </div>
+          <p className="mt-2 text-lg font-extrabold text-foreground">{topProvider ? topProvider.name : "No provider yet"}</p>
+          <p className="text-xs font-bold text-muted">{topProvider ? `${topProvider.count} ${topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
+          </div>}
+        >
+          <RankingList items={summary.providerRankings} emptyText="No providers yet." />
+        </DashboardPopout>
+        <DashboardPopout
+          title="Top Genres"
+          eyebrow={`${summary.genreRankings.length} genre${summary.genreRankings.length === 1 ? "" : "s"}`}
+          description="Ranking by roadmap item count."
+          toneClassName="bg-orange-100 text-orange-950"
+          triggerClassName="min-w-0 p-0 bg-white"
+          trigger={<div className="min-h-36 rounded-md border border-orange-100 p-4">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-orange-700">Top genre</h3>
+          <p className="mt-2 text-lg font-extrabold text-foreground">{topGenre ? topGenre.name : "No genre yet"}</p>
+          <p className="text-xs font-bold text-muted">{topGenre ? `${topGenre.count} ${topGenre.count === 1 ? "title" : "titles"}` : "Genre stats will show here once added."}</p>
+          </div>}
+        >
+          <RankingList items={summary.genreRankings} emptyText="No genres yet." />
+        </DashboardPopout>
+        <DashboardPopout
+          title="Top Formats"
+          eyebrow={`${summary.formatRankings.length} format${summary.formatRankings.length === 1 ? "" : "s"}`}
+          description="Ranking by roadmap item count."
+          toneClassName="bg-violet-100 text-violet-950"
+          triggerClassName="min-w-0 p-0 bg-white"
+          trigger={<div className="min-h-36 rounded-md border border-violet-100 p-4">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-violet-700">Top format</h3>
+          <p className="mt-2 text-lg font-extrabold text-foreground">{topFormat ? topFormat.name : "No format yet"}</p>
+          <p className="text-xs font-bold text-muted">{topFormat ? `${topFormat.count} ${topFormat.count === 1 ? "title" : "titles"}` : "Format stats will show here once added."}</p>
+          </div>}
+        >
+          <RankingList items={summary.formatRankings} emptyText="No formats yet." />
+        </DashboardPopout>
       </div>
     </div>
   </details>;
 }
 
-function SummaryMetric({ value, label, accentClassName }: { value: string; label: string; accentClassName: string }) {
-  return <div className="overflow-hidden rounded-md bg-white">
+function SummaryMetric({ title, value, label, accentClassName, description, children }: { title: string; value: string; label: string; accentClassName: string; description: string; children: ReactNode }) {
+  return <DashboardPopout
+    title={title}
+    eyebrow={value}
+    description={description}
+    toneClassName="bg-blue-100 text-blue-950"
+    triggerClassName="min-w-0 p-0 bg-white"
+    trigger={<div className="overflow-hidden rounded-md">
     <div className={cn("h-1", accentClassName)} />
     <div className="p-4">
     <p className="text-xl font-extrabold text-foreground">{value}</p>
     <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
     </div>
+  </div>}
+  >
+    {children}
+  </DashboardPopout>;
+}
+
+function SummaryRows({ rows }: { rows: Array<[string, string]> }) {
+  return <div className="overflow-hidden rounded-lg border border-gray-200">
+    {rows.map(([label, value]) => <div key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-gray-200 px-4 py-3 last:border-b-0">
+      <span className="text-sm font-bold text-muted">{label}</span>
+      <span className="text-sm font-extrabold text-foreground">{value}</span>
+    </div>)}
+  </div>;
+}
+
+function RankingList({ items, emptyText }: { items: Array<{ name: string; count: number; tone?: PlanningTone }>; emptyText: string }) {
+  if (!items.length) return <p className="rounded-lg bg-gray-50 p-4 text-sm font-bold text-muted">{emptyText}</p>;
+
+  return <div className="grid gap-2">
+    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
+      <span className="grid h-8 w-8 place-items-center rounded-md bg-gray-100 text-xs font-extrabold text-muted">{index + 1}</span>
+      <span className={cn("min-w-0 truncate text-sm font-extrabold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
+      <span className="text-sm font-extrabold text-muted">{item.count} {item.count === 1 ? "title" : "titles"}</span>
+    </div>)}
   </div>;
 }
 
@@ -184,6 +314,10 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
   const categoryById = new Map(categories.map((category) => [category.id, category]));
   const audienceCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
   const providerCounts = new Map<string, number>();
+  const genreCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
+  const formatCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
+  const genreToneByValue = new Map(CONTENT_GENRES.map((option) => [option.value, option.tone]));
+  const formatToneByValue = new Map(CONTENT_FORMATS.map((option) => [option.value, option.tone]));
 
   for (const item of summaryItems) {
     if (item.categoryId) {
@@ -197,14 +331,29 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
 
     const provider = item.provider?.trim();
     if (provider) providerCounts.set(provider, (providerCounts.get(provider) ?? 0) + 1);
+
+    const genre = item.genre?.trim();
+    if (genre) {
+      const existing = genreCounts.get(genre);
+      genreCounts.set(genre, { name: genre, tone: genreToneByValue.get(genre) ?? "slate", count: (existing?.count ?? 0) + 1 });
+    }
+
+    const format = item.format?.trim();
+    if (format) {
+      const existing = formatCounts.get(format);
+      formatCounts.set(format, { name: format, tone: formatToneByValue.get(format) ?? "slate", count: (existing?.count ?? 0) + 1 });
+    }
   }
 
-  const topAudiences = Array.from(audienceCounts.values())
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 3);
-  const topProvider = Array.from(providerCounts.entries())
+  const audienceRankings = Array.from(audienceCounts.values())
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const providerRankings = Array.from(providerCounts.entries())
     .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
-    .map(([name, count]) => ({ name, count }))[0] ?? null;
+    .map(([name, count]) => ({ name, count }));
+  const genreRankings = Array.from(genreCounts.values())
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const formatRankings = Array.from(formatCounts.values())
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const nextReleaseItem = summaryItems
     .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate! >= todayKey)
     .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
@@ -214,8 +363,10 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
     releasedCount: summaryItems.filter((item) => item.status === "released").length,
     inProgressCount: summaryItems.filter((item) => item.status === "in_progress").length,
     unscheduledCount: summaryItems.filter((item) => !isExactRoadmapDate(item.releaseDate)).length,
-    topAudiences,
-    topProvider,
+    audienceRankings,
+    providerRankings,
+    genreRankings,
+    formatRankings,
     nextRelease: nextReleaseItem ? { title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
   };
 }

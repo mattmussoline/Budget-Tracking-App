@@ -36,7 +36,7 @@ const roadmapItems: RoadmapItem[] = [
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
-  { id: "road-5", title: "Recent Film", provider: null, releaseDate: "2026-12-08", status: "released", notes: null, categoryId: "cat-kids" },
+  { id: "road-5", title: "Recent Film", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2026-12-08", status: "released", notes: null, categoryId: "cat-kids" },
   { id: "road-6", title: "Older Film", provider: null, releaseDate: "2026-12-01", status: "released", notes: null, categoryId: "cat-kids" }
 ];
 
@@ -94,10 +94,28 @@ describe("RoadmapDashboard", () => {
     expect(within(summary).getAllByText("5 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
     expect(within(summary).getByText("2 released")).toBeVisible();
     expect(within(summary).getByText("1 unscheduled")).toBeVisible();
-    expect(within(summary).getByText("Top audience")).toBeVisible();
+    expect(within(summary).getByText("Top audiences")).toBeVisible();
     expect(within(summary).getByText("Kids")).toBeVisible();
     expect(within(summary).getByText("Top provider")).toBeVisible();
     expect(within(summary).getByText("Thomistic")).toBeVisible();
+    expect(within(summary).getByText("Top genre")).toBeVisible();
+    expect(within(summary).getByText("Top format")).toBeVisible();
+    expect(within(summary).getByText("Scripture")).toBeVisible();
+    expect(within(summary).getByText("Formation Series")).toBeVisible();
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Providers" }));
+    expect(within(screen.getByRole("dialog", { name: "Top Providers" })).getByText("Thomistic")).toBeVisible();
+    expect(within(screen.getByRole("dialog", { name: "Top Providers" })).getByText("2 titles")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Top Providers" }));
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Audiences" }));
+    expect(within(screen.getByRole("dialog", { name: "Top Audiences" })).getByText("Kids")).toBeVisible();
+    expect(within(screen.getByRole("dialog", { name: "Top Audiences" })).getByText("2 titles")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Top Audiences" }));
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Genres" }));
+    expect(within(screen.getByRole("dialog", { name: "Top Genres" })).getByText("Scripture")).toBeVisible();
+    expect(within(screen.getByRole("dialog", { name: "Top Genres" })).getByText("2 titles")).toBeVisible();
   });
 
   it("excludes dated releases outside the fiscal-year window from the at-a-glance summary", () => {
