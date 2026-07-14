@@ -123,6 +123,13 @@ describe("RoadmapDashboard", () => {
     expect(within(providersDialog).getByText("Thomistic")).toBeVisible();
     expect(within(providersDialog).getByText("67%")).toBeVisible();
     expect(within(providersDialog).getByText("2 titles")).toBeVisible();
+    expect(screen.queryByTestId("roadmap-pie-tooltip")).not.toBeInTheDocument();
+    fireEvent.mouseEnter(within(providersDialog).getByRole("img", { name: "Thomistic: 2 titles, 67%" }));
+    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("Thomistic");
+    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("2 titles");
+    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("67%");
+    fireEvent.mouseLeave(within(providersDialog).getByRole("img", { name: "Thomistic: 2 titles, 67%" }));
+    expect(screen.queryByTestId("roadmap-pie-tooltip")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close Top Providers" }));
 
     fireEvent.click(within(summary).getByRole("button", { name: "Open Top Audiences" }));

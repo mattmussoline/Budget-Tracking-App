@@ -361,6 +361,7 @@ function RankingList({ items }: { items: Array<{ name: string; count: number; to
 }
 
 function RankingPie({ items }: { items: Array<{ name: string; count: number; tone?: PlanningTone }> }) {
+  const [activeSlice, setActiveSlice] = useState<{ name: string; count: number; percent: number } | null>(null);
   const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
   const size = 176;
   const strokeWidth = 42;
@@ -368,21 +369,57 @@ function RankingPie({ items }: { items: Array<{ name: string; count: number; ton
   const circumference = 2 * Math.PI * radius;
   let runningShare = 0;
 
-  return <div className="grid justify-items-center gap-3 rounded-lg bg-gray-50 p-5 text-center">
+  function showSlice(slice: { name: string; count: number; percent: number }) {
+    setActiveSlice(slice);
+  }
+
+  function hideSlice() {
+    setActiveSlice(null);
+  }
+
+  return <div className="relative grid justify-items-center gap-3 rounded-lg bg-gray-50 p-5 text-center">
     <svg aria-label="Percent breakdown" role="img" viewBox={`0 0 ${size} ${size}`} className="h-44 w-44 -rotate-90">
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
       {items.map((item, index) => {
         const share = item.count / total;
+        const percent = Math.round(share * 100);
         const dashArray = `${share * circumference} ${circumference}`;
         const dashOffset = -(runningShare * circumference);
+        const slice = { name: item.name, count: item.count, percent };
         runningShare += share;
-        return <circle key={item.name} cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={getRankingColor(item, index)} strokeDasharray={dashArray} strokeDashoffset={dashOffset} strokeLinecap="butt" strokeWidth={strokeWidth} />;
+        return <circle
+          key={item.name}
+          aria-label={`${item.name}: ${item.count} ${item.count === 1 ? "title" : "titles"}, ${percent}%`}
+          className="cursor-help outline-none transition-opacity hover:opacity-80 focus:opacity-80"
+          cx={size / 2}
+          cy={size / 2}
+          fill="none"
+          onBlur={hideSlice}
+          onFocus={() => showSlice(slice)}
+          onMouseEnter={() => showSlice(slice)}
+          onMouseLeave={hideSlice}
+          pointerEvents="stroke"
+          r={radius}
+          role="img"
+          stroke={getRankingColor(item, index)}
+          strokeDasharray={dashArray}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="butt"
+          strokeWidth={strokeWidth}
+          tabIndex={0}
+        >
+          <title>{`${item.name}: ${item.count} ${item.count === 1 ? "title" : "titles"}, ${percent}%`}</title>
+        </circle>;
       })}
     </svg>
     <div>
       <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Breakdown</p>
       <p className="font-display text-2xl font-extrabold text-foreground">{total} {total === 1 ? "title" : "titles"}</p>
     </div>
+    {activeSlice ? <div data-testid="roadmap-pie-tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-gray-950 px-3 py-2 text-center text-xs font-extrabold text-white shadow-lg">
+      <p>{activeSlice.name}</p>
+      <p className="font-bold opacity-85">{activeSlice.count} {activeSlice.count === 1 ? "title" : "titles"} · {activeSlice.percent}%</p>
+    </div> : null}
   </div>;
 }
 
