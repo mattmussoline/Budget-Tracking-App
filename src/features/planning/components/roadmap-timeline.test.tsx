@@ -35,7 +35,7 @@ const roadmapItems: RoadmapItem[] = [
   { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
-  { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
+  { id: "road-4", title: "Past Film", provider: "Augustine Institute", genre: "Biography", format: "Documentary", releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
   { id: "road-5", title: "Recent Film", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2026-12-08", status: "released", notes: null, categoryId: "cat-kids" },
   { id: "road-6", title: "Older Film", provider: null, releaseDate: "2026-12-01", status: "released", notes: null, categoryId: "cat-kids" }
 ];
@@ -103,19 +103,49 @@ describe("RoadmapDashboard", () => {
     expect(within(summary).getByText("Scripture")).toBeVisible();
     expect(within(summary).getByText("Formation Series")).toBeVisible();
 
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Already Live" }));
+    expect(within(screen.getByRole("dialog", { name: "Already Live" })).getByText("Recent Film")).toBeVisible();
+    expect(within(screen.getByRole("dialog", { name: "Already Live" })).getByText("Older Film")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Already Live" }));
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Being Worked On" }));
+    expect(within(screen.getByRole("dialog", { name: "Being Worked On" })).getByText("Undated Film")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Being Worked On" }));
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Need A Date" }));
+    expect(within(screen.getByRole("dialog", { name: "Need A Date" })).getByText("Undated Film")).toBeVisible();
+    expect(within(screen.getByRole("dialog", { name: "Need A Date" })).getByText("Unscheduled")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Need A Date" }));
+
     fireEvent.click(within(summary).getByRole("button", { name: "Open Top Providers" }));
-    expect(within(screen.getByRole("dialog", { name: "Top Providers" })).getByText("Thomistic")).toBeVisible();
-    expect(within(screen.getByRole("dialog", { name: "Top Providers" })).getByText("2 titles")).toBeVisible();
+    const providersDialog = screen.getByRole("dialog", { name: "Top Providers" });
+    expect(within(providersDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
+    expect(within(providersDialog).getByText("Thomistic")).toBeVisible();
+    expect(within(providersDialog).getByText("67%")).toBeVisible();
+    expect(within(providersDialog).getByText("2 titles")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close Top Providers" }));
 
     fireEvent.click(within(summary).getByRole("button", { name: "Open Top Audiences" }));
-    expect(within(screen.getByRole("dialog", { name: "Top Audiences" })).getByText("Kids")).toBeVisible();
-    expect(within(screen.getByRole("dialog", { name: "Top Audiences" })).getByText("2 titles")).toBeVisible();
+    const audiencesDialog = screen.getByRole("dialog", { name: "Top Audiences" });
+    expect(within(audiencesDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
+    expect(within(audiencesDialog).getByText("Kids")).toBeVisible();
+    expect(within(audiencesDialog).getByText("50%")).toBeVisible();
+    expect(within(audiencesDialog).getByText("2 titles")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close Top Audiences" }));
 
     fireEvent.click(within(summary).getByRole("button", { name: "Open Top Genres" }));
-    expect(within(screen.getByRole("dialog", { name: "Top Genres" })).getByText("Scripture")).toBeVisible();
-    expect(within(screen.getByRole("dialog", { name: "Top Genres" })).getByText("2 titles")).toBeVisible();
+    const genresDialog = screen.getByRole("dialog", { name: "Top Genres" });
+    expect(within(genresDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
+    expect(within(genresDialog).getByText("Scripture")).toBeVisible();
+    expect(within(genresDialog).getByText("67%")).toBeVisible();
+    expect(within(genresDialog).getByText("2 titles")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close Top Genres" }));
+
+    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Formats" }));
+    const formatsDialog = screen.getByRole("dialog", { name: "Top Formats" });
+    expect(within(formatsDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
+    expect(within(formatsDialog).getByText("Formation Series")).toBeVisible();
+    expect(within(formatsDialog).getByText("67%")).toBeVisible();
   });
 
   it("excludes dated releases outside the fiscal-year window from the at-a-glance summary", () => {

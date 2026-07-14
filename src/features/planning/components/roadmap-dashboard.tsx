@@ -119,11 +119,26 @@ type RoadmapSummaryData = {
   releasedCount: number;
   inProgressCount: number;
   unscheduledCount: number;
+  releasedItems: RoadmapItem[];
+  inProgressItems: RoadmapItem[];
+  unscheduledItems: RoadmapItem[];
   audienceRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
   providerRankings: Array<{ name: string; count: number }>;
   genreRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
   formatRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
   nextRelease: { title: string; date: string } | null;
+};
+
+const RANKING_COLORS = ["#2563eb", "#d97706", "#059669", "#7c3aed", "#0891b2", "#ea580c", "#475569"];
+const TONE_HEX: Record<PlanningTone, string> = {
+  blue: "#2563eb",
+  amber: "#d97706",
+  green: "#059669",
+  purple: "#7c3aed",
+  red: "#dc2626",
+  cyan: "#0891b2",
+  orange: "#ea580c",
+  slate: "#475569"
 };
 
 function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
@@ -176,10 +191,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           accentClassName="bg-green-500"
           description="Roadmap items marked as released."
         >
-          <SummaryRows rows={[
-            ["Released", String(summary.releasedCount)],
-            ["Total content", String(summary.totalTitles)]
-          ]} />
+          <StatusItemList items={summary.releasedItems} emptyText="No released items yet." />
         </SummaryMetric>
         <SummaryMetric
           title="Being Worked On"
@@ -188,10 +200,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           accentClassName="bg-violet-500"
           description="Roadmap items currently marked in progress."
         >
-          <SummaryRows rows={[
-            ["In progress", String(summary.inProgressCount)],
-            ["Total content", String(summary.totalTitles)]
-          ]} />
+          <StatusItemList items={summary.inProgressItems} emptyText="No in-progress items yet." />
         </SummaryMetric>
         <SummaryMetric
           title="Need A Date"
@@ -200,10 +209,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           accentClassName="bg-amber-400"
           description="Roadmap items without an exact release date."
         >
-          <SummaryRows rows={[
-            ["Unscheduled", String(summary.unscheduledCount)],
-            ["Total content", String(summary.totalTitles)]
-          ]} />
+          <StatusItemList items={summary.unscheduledItems} emptyText="Every item has an exact release date." />
         </SummaryMetric>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -220,7 +226,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           </div>
           </div>}
         >
-          <RankingList items={summary.audienceRankings} emptyText="No audiences yet." />
+          <RankingBreakdown items={summary.audienceRankings} emptyText="No audiences yet." />
         </DashboardPopout>
         <DashboardPopout
           title="Top Providers"
@@ -234,7 +240,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           <p className="text-xs font-bold text-muted">{topProvider ? `${topProvider.count} ${topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
           </div>}
         >
-          <RankingList items={summary.providerRankings} emptyText="No providers yet." />
+          <RankingBreakdown items={summary.providerRankings} emptyText="No providers yet." />
         </DashboardPopout>
         <DashboardPopout
           title="Top Genres"
@@ -248,7 +254,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           <p className="text-xs font-bold text-muted">{topGenre ? `${topGenre.count} ${topGenre.count === 1 ? "title" : "titles"}` : "Genre stats will show here once added."}</p>
           </div>}
         >
-          <RankingList items={summary.genreRankings} emptyText="No genres yet." />
+          <RankingBreakdown items={summary.genreRankings} emptyText="No genres yet." />
         </DashboardPopout>
         <DashboardPopout
           title="Top Formats"
@@ -262,7 +268,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           <p className="text-xs font-bold text-muted">{topFormat ? `${topFormat.count} ${topFormat.count === 1 ? "title" : "titles"}` : "Format stats will show here once added."}</p>
           </div>}
         >
-          <RankingList items={summary.formatRankings} emptyText="No formats yet." />
+          <RankingBreakdown items={summary.formatRankings} emptyText="No formats yet." />
         </DashboardPopout>
       </div>
     </div>
@@ -297,16 +303,79 @@ function SummaryRows({ rows }: { rows: Array<[string, string]> }) {
   </div>;
 }
 
-function RankingList({ items, emptyText }: { items: Array<{ name: string; count: number; tone?: PlanningTone }>; emptyText: string }) {
+function StatusItemList({ items, emptyText }: { items: RoadmapItem[]; emptyText: string }) {
   if (!items.length) return <p className="rounded-lg bg-gray-50 p-4 text-sm font-bold text-muted">{emptyText}</p>;
 
   return <div className="grid gap-2">
-    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
+    {items.map((item) => <div key={item.id} className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-extrabold text-foreground">{item.title}</p>
+          <p className="text-sm font-bold text-muted">{item.provider?.trim() || "No provider"}</p>
+        </div>
+        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-extrabold text-muted">{formatRoadmapSummaryDate(item.releaseDate)}</span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {item.genre ? <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-extrabold text-orange-900">{item.genre}</span> : null}
+        {item.format ? <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-extrabold text-violet-800">{item.format}</span> : null}
+      </div>
+    </div>)}
+  </div>;
+}
+
+function RankingBreakdown({ items, emptyText }: { items: Array<{ name: string; count: number; tone?: PlanningTone }>; emptyText: string }) {
+  if (!items.length) return <p className="rounded-lg bg-gray-50 p-4 text-sm font-bold text-muted">{emptyText}</p>;
+
+  return <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <RankingPie items={items} />
+    <RankingList items={items} />
+  </div>;
+}
+
+function RankingList({ items }: { items: Array<{ name: string; count: number; tone?: PlanningTone }> }) {
+  const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
+
+  return <div className="grid content-start gap-2">
+    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
       <span className="grid h-8 w-8 place-items-center rounded-md bg-gray-100 text-xs font-extrabold text-muted">{index + 1}</span>
-      <span className={cn("min-w-0 truncate text-sm font-extrabold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: getRankingColor(item, index) }} />
+        <span className={cn("min-w-0 truncate text-sm font-extrabold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
+      </span>
+      <span className="text-sm font-extrabold text-foreground">{Math.round((item.count / total) * 100)}%</span>
       <span className="text-sm font-extrabold text-muted">{item.count} {item.count === 1 ? "title" : "titles"}</span>
     </div>)}
   </div>;
+}
+
+function RankingPie({ items }: { items: Array<{ name: string; count: number; tone?: PlanningTone }> }) {
+  const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
+  const size = 176;
+  const strokeWidth = 42;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let runningShare = 0;
+
+  return <div className="grid justify-items-center gap-3 rounded-lg bg-gray-50 p-5 text-center">
+    <svg aria-label="Percent breakdown" role="img" viewBox={`0 0 ${size} ${size}`} className="h-44 w-44 -rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
+      {items.map((item, index) => {
+        const share = item.count / total;
+        const dashArray = `${share * circumference} ${circumference}`;
+        const dashOffset = -(runningShare * circumference);
+        runningShare += share;
+        return <circle key={item.name} cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={getRankingColor(item, index)} strokeDasharray={dashArray} strokeDashoffset={dashOffset} strokeLinecap="butt" strokeWidth={strokeWidth} />;
+      })}
+    </svg>
+    <div>
+      <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Breakdown</p>
+      <p className="font-display text-2xl font-extrabold text-foreground">{total} {total === 1 ? "title" : "titles"}</p>
+    </div>
+  </div>;
+}
+
+function getRankingColor(item: { tone?: PlanningTone }, index: number) {
+  return item.tone ? TONE_HEX[item.tone] : RANKING_COLORS[index % RANKING_COLORS.length];
 }
 
 function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], todayKey: string, fiscalYearStartMonth: string): RoadmapSummaryData {
@@ -357,18 +426,38 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
   const nextReleaseItem = summaryItems
     .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate! >= todayKey)
     .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
+  const releasedItems = sortRoadmapSummaryItems(summaryItems.filter((item) => item.status === "released"), "desc");
+  const inProgressItems = sortRoadmapSummaryItems(summaryItems.filter((item) => item.status === "in_progress"), "asc");
+  const unscheduledItems = sortRoadmapSummaryItems(summaryItems.filter((item) => !isExactRoadmapDate(item.releaseDate)), "asc");
 
   return {
     totalTitles: summaryItems.length,
-    releasedCount: summaryItems.filter((item) => item.status === "released").length,
-    inProgressCount: summaryItems.filter((item) => item.status === "in_progress").length,
-    unscheduledCount: summaryItems.filter((item) => !isExactRoadmapDate(item.releaseDate)).length,
+    releasedCount: releasedItems.length,
+    inProgressCount: inProgressItems.length,
+    unscheduledCount: unscheduledItems.length,
+    releasedItems,
+    inProgressItems,
+    unscheduledItems,
     audienceRankings,
     providerRankings,
     genreRankings,
     formatRankings,
     nextRelease: nextReleaseItem ? { title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
   };
+}
+
+function sortRoadmapSummaryItems(items: RoadmapItem[], direction: "asc" | "desc") {
+  return [...items].sort((a, b) => {
+    const dateA = isExactRoadmapDate(a.releaseDate) ? a.releaseDate! : "9999-12-31";
+    const dateB = isExactRoadmapDate(b.releaseDate) ? b.releaseDate! : "9999-12-31";
+    const dateSort = direction === "asc" ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+    return dateSort || a.title.localeCompare(b.title);
+  });
+}
+
+function formatRoadmapSummaryDate(releaseDate: string | null) {
+  if (isExactRoadmapDate(releaseDate)) return formatRoadmapDate(releaseDate!);
+  return releaseDate?.trim() || "Unscheduled";
 }
 
 function isExactRoadmapDate(releaseDate: string | null) {
