@@ -45,6 +45,25 @@ export function formatRoadmapDate(value: string) {
   });
 }
 
+export function isExactRoadmapDate(value: string | null | undefined) {
+  return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(value ?? "");
+}
+
+export function isMonthTbdRoadmapDate(value: string | null | undefined) {
+  return /^\d{4}-(0[1-9]|1[0-2])-TBD$/.test(value ?? "");
+}
+
+export function getRoadmapMonthKey(value: string | null | undefined) {
+  if (isExactRoadmapDate(value) || isMonthTbdRoadmapDate(value)) return value!.slice(0, 7);
+  return null;
+}
+
+export function formatRoadmapDateLabel(value: string | null | undefined) {
+  if (isExactRoadmapDate(value)) return formatRoadmapDate(value!);
+  if (isMonthTbdRoadmapDate(value) || value === "TBD") return "TBD";
+  return value?.trim() || "Unscheduled";
+}
+
 const monthNumbers: Record<string, string> = {
   january: "01", february: "02", march: "03", april: "04", may: "05", june: "06",
   july: "07", august: "08", september: "09", october: "10", november: "11", december: "12"

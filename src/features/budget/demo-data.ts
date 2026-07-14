@@ -145,10 +145,10 @@ export const demoRoadmapItems: RoadmapItem[] = [
     provider: "Harbor Light Media",
     genre: "Prayer",
     format: "Reflection",
-    releaseDate: "TBD",
+    releaseDate: "2026-10-TBD",
     status: "blocked",
     budgetSource: "misc_licensing",
-    notes: "Blocked sample item that helps the Roadmap summary show provider, genre, and format rankings.",
+    notes: "Blocked sample item with a known release month, but no exact date yet.",
     categoryId: "demo-cat-youth"
   },
   {

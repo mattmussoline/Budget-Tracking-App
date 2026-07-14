@@ -7,6 +7,9 @@ import {
   dollarsToOptionalCents,
   formatOptionalCurrency,
   formatRoadmapDate,
+  formatRoadmapDateLabel,
+  getRoadmapMonthKey,
+  isMonthTbdRoadmapDate,
   normalizeMonthRange,
   parseLegacyReleaseMonth,
   parseMonthAnchor,
@@ -45,6 +48,12 @@ describe("planning currency", () => {
 describe("roadmap month windows", () => {
   it("formats an exact roadmap date without timezone drift", () => {
     expect(formatRoadmapDate("2027-01-24")).toBe("January 24, 2027");
+  });
+
+  it("supports month-known TBD roadmap dates", () => {
+    expect(isMonthTbdRoadmapDate("2027-02-TBD")).toBe(true);
+    expect(getRoadmapMonthKey("2027-02-TBD")).toBe("2027-02");
+    expect(formatRoadmapDateLabel("2027-02-TBD")).toBe("TBD");
   });
 
   it("normalizes supported month ranges", () => {

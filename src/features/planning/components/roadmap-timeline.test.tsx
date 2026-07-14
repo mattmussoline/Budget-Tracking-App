@@ -368,10 +368,42 @@ describe("RoadmapDashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
     const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Mark release date TBD" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "No month yet" }));
 
     expect(within(dialog).getByLabelText("Release date value")).toHaveValue("TBD");
     expect(within(dialog).queryByLabelText("Release date")).not.toBeInTheDocument();
+  });
+
+  it("keeps month-known TBD releases in their month instead of the backlog", () => {
+    const tbdItems: RoadmapItem[] = [
+      ...roadmapItems,
+      { id: "road-month-tbd", title: "February TBD Series", provider: "Thomistic", releaseDate: "2027-02-TBD", status: "planned", notes: null, categoryId: "cat-parish" }
+    ];
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={tbdItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    const columns = screen.getAllByTestId("roadmap-month-column");
+    const februaryColumn = columns.find((column) => within(column).queryByRole("heading", { name: "February 2027" }));
+    expect(februaryColumn).toBeTruthy();
+    expect(within(februaryColumn!).getByText("February TBD Series")).toBeVisible();
+    expect(within(screen.getByRole("button", { name: "Edit February TBD Series" })).getByText("TBD")).toHaveClass("bg-red-100", "text-red-700");
+
+    fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
+    expect(within(screen.getByTestId("roadmap-backlog")).queryByText("February TBD Series")).not.toBeInTheDocument();
+  });
+
+  it("can save a TBD release date with a tentative month", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add item to February 2027" }));
+    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Date TBD in this month" }));
+
+    expect(within(dialog).getByLabelText("Release month")).toHaveValue("2027-02");
+    expect(within(dialog).getByLabelText("Release date value")).toHaveValue("2027-02-TBD");
+
+    fireEvent.change(within(dialog).getByLabelText("Release month"), { target: { value: "2027-03" } });
+
+    expect(within(dialog).getByLabelText("Release date value")).toHaveValue("2027-03-TBD");
   });
 
   it("opens and closes a roadmap item editor in a modal dialog", () => {

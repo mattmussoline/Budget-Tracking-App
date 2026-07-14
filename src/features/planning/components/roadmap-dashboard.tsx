@@ -15,7 +15,16 @@ import {
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningOption, type PlanningTone } from "../planning-constants";
-import { buildMonthWindow, formatRoadmapDate, parseMonthAnchor, shiftMonthAnchor } from "../planning-model";
+import {
+  buildMonthWindow,
+  formatRoadmapDate,
+  formatRoadmapDateLabel,
+  getRoadmapMonthKey,
+  isExactRoadmapDate,
+  isMonthTbdRoadmapDate,
+  parseMonthAnchor,
+  shiftMonthAnchor
+} from "../planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
 import { CategoryManagerModal } from "./category-manager-modal";
@@ -51,7 +60,10 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
   const displayedMonths = focusedMonthKey ? months.filter((month) => month.key === focusedMonthKey) : months;
   const visibleKeys = new Set(months.map((month) => month.key));
   const filteredItems = activeFilter ? roadmapItems.filter((item) => item.categoryId === activeFilter.id) : roadmapItems;
-  const backlog = filteredItems.filter((item) => !item.releaseDate || !visibleKeys.has(item.releaseDate.slice(0, 7)));
+  const backlog = filteredItems.filter((item) => {
+    const monthKey = getRoadmapMonthKey(item.releaseDate);
+    return !monthKey || !visibleKeys.has(monthKey);
+  });
   const currentMonthKey = parseMonthAnchor(null);
   const releasedBacklog = sortReleasedItems(backlog.filter((item) => item.status === "released" || isBeforeCurrentMonth(item.releaseDate, currentMonthKey)));
   const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
@@ -89,7 +101,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
     <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-gray-200 md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-3xl font-extrabold">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-blue-100" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-blue-100")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-gray-200 p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
-          const items = filteredItems.filter((item) => item.releaseDate?.slice(0, 7) === month.key);
+          const items = filteredItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key);
           return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} />)}</div></article>;
         })}
       </div>
@@ -456,17 +468,12 @@ function sortRoadmapSummaryItems(items: RoadmapItem[], direction: "asc" | "desc"
 }
 
 function formatRoadmapSummaryDate(releaseDate: string | null) {
-  if (isExactRoadmapDate(releaseDate)) return formatRoadmapDate(releaseDate!);
-  return releaseDate?.trim() || "Unscheduled";
-}
-
-function isExactRoadmapDate(releaseDate: string | null) {
-  return /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(releaseDate ?? "");
+  return formatRoadmapDateLabel(releaseDate);
 }
 
 function isInFiscalYearSnapshot(releaseDate: string | null, fiscalYearStartMonth: string) {
-  if (!isExactRoadmapDate(releaseDate)) return true;
-  const monthKey = releaseDate!.slice(0, 7);
+  const monthKey = getRoadmapMonthKey(releaseDate);
+  if (!monthKey) return true;
   const fiscalYearEndMonth = shiftMonthAnchor(fiscalYearStartMonth, 12);
   return monthKey >= fiscalYearStartMonth && monthKey < fiscalYearEndMonth;
 }
@@ -482,7 +489,8 @@ function getTodayKey(date = new Date()) {
 }
 
 function isBeforeCurrentMonth(releaseDate: string | null, currentMonthKey: string) {
-  return isExactRoadmapDate(releaseDate) && releaseDate!.slice(0, 7) < currentMonthKey;
+  const monthKey = getRoadmapMonthKey(releaseDate);
+  return Boolean(monthKey && monthKey < currentMonthKey);
 }
 
 function BacklogGroup({ title, count, testId, children }: { title: string; count: number; testId: string; children: ReactNode }) {
@@ -502,8 +510,8 @@ function sortReleasedItems(items: RoadmapItem[]) {
 function groupReleasedItemsByMonth(items: RoadmapItem[]) {
   const grouped = new Map<string, RoadmapItem[]>();
   for (const item of items) {
-    if (!item.releaseDate || !/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(item.releaseDate)) continue;
-    const monthKey = item.releaseDate.slice(0, 7);
+    const monthKey = getRoadmapMonthKey(item.releaseDate);
+    if (!monthKey) continue;
     grouped.set(monthKey, [...(grouped.get(monthKey) ?? []), item]);
   }
 
@@ -703,21 +711,52 @@ function RoadmapColoredSelect({ label, options, id, defaultValue = "", ...props 
 }
 
 function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultValue: string; disabled?: boolean }) {
-  const [mode, setMode] = useState(defaultValue === "TBD" ? "tbd" : "date");
+  const defaultMonth = getRoadmapMonthKey(defaultValue) ?? parseMonthAnchor(null);
+  const [mode, setMode] = useState(defaultValue === "TBD" ? "tbd" : isMonthTbdRoadmapDate(defaultValue) ? "month-tbd" : "date");
+  const [monthKey, setMonthKey] = useState(defaultMonth);
 
   if (mode === "tbd") {
     return <div className="grid gap-2">
       <div className="flex min-h-12 items-center justify-between gap-3 rounded-md bg-red-50 px-4">
         <span className="text-xs font-extrabold uppercase tracking-wide text-red-700">Release date: TBD</span>
-        <button type="button" onClick={() => setMode("date")} className="rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700 hover:bg-red-100" disabled={disabled}>Pick date</button>
+        <div className="flex flex-wrap justify-end gap-1">
+          <button type="button" onClick={() => setMode("month-tbd")} className="rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700 hover:bg-red-100" disabled={disabled}>Pick month</button>
+          <button type="button" onClick={() => setMode("date")} className="rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700 hover:bg-red-100" disabled={disabled}>Pick date</button>
+        </div>
       </div>
       <input aria-label="Release date value" className="sr-only" name="releaseDate" value="TBD" readOnly disabled={disabled} />
     </div>;
   }
 
+  if (mode === "month-tbd") {
+    return <div className="grid gap-2">
+      <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={`${id}-month`}>
+        Release month
+        <input
+          id={`${id}-month`}
+          aria-label="Release month"
+          type="month"
+          value={monthKey}
+          onChange={(event) => setMonthKey(event.target.value)}
+          disabled={disabled}
+          className="min-h-12 rounded-md border-0 bg-red-50 px-3 text-sm font-bold normal-case tracking-normal text-red-800 shadow-inner ring-1 ring-red-100"
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700">Date TBD</span>
+        <button type="button" onClick={() => setMode("date")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>Pick exact date</button>
+        <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>No month yet</button>
+      </div>
+      <input aria-label="Release date value" className="sr-only" name="releaseDate" value={`${monthKey}-TBD`} readOnly disabled={disabled} />
+    </div>;
+  }
+
   return <div className="grid gap-2">
-    <SoftInput id={id} type="date" label="Release date" name="releaseDate" defaultValue={defaultValue} disabled={disabled} />
-    <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>Mark release date TBD</button>
+    <SoftInput id={id} type="date" label="Release date" name="releaseDate" defaultValue={isExactRoadmapDate(defaultValue) ? defaultValue : ""} disabled={disabled} />
+    <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => setMode("month-tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>Date TBD in this month</button>
+      <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>No month yet</button>
+    </div>
   </div>;
 }
 

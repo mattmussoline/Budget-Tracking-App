@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Star, X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
-import { formatRoadmapDate } from "../planning-model";
+import { formatRoadmapDateLabel, isMonthTbdRoadmapDate } from "../planning-model";
 import type { RoadmapCategory, RoadmapItem } from "../planning-types";
 
 type EditRoadmapModalProps = {
@@ -68,7 +68,7 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
         </span> : null}
         {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
         {item.provider ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
-        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", item.releaseDate === "TBD" ? "bg-red-100 text-red-700" : "bg-gray-100")}>{item.releaseDate === "TBD" ? "TBD" : formatRoadmapDate(item.releaseDate)}</span> : null}
+        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", (item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate)) ? "bg-red-100 text-red-700" : "bg-gray-100")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
       </div>
     </button>
     {isOpen ? createPortal(<dialog
