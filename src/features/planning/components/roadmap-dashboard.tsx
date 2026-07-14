@@ -650,39 +650,73 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     }
   };
 
-  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="mt-4 grid gap-3 border-t border-gray-200 pt-4 md:grid-cols-2">
+  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="grid gap-5 py-5">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
-    {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
-    <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
-    <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
-    <RoadmapColoredSelect id={`${fieldPrefix}-genre`} label="Genre" name="genre" defaultValue={item?.genre ?? ""} options={genreOptions} disabled={fieldsDisabled} />
-    <RoadmapColoredSelect id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} options={formatOptions} disabled={fieldsDisabled} />
-    <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
-    <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-20 items-start gap-3 rounded-md bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-200 md:col-span-2">
-      <input
-        id={`${fieldPrefix}-individual-marketing`}
-        type="checkbox"
-        name="featuredInIndividualMarketing"
-        defaultChecked={Boolean(item?.featuredInIndividualMarketing)}
-        disabled={fieldsDisabled}
-        className="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 accent-amber-500"
-      />
-      <span>
-        <span className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide"><Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />Individual marketing campaign</span>
-        <span className="mt-1 block text-sm font-bold normal-case tracking-normal text-amber-900">Highlight this roadmap item when it is being leveraged in individual marketing.</span>
-      </span>
-    </label>
-    <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
-    <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap gap-2 md:col-span-2", item && "pb-5 sm:pb-6")}>
-      <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
-      {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
-      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
-      {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
-      {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
+    {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{message}</p> : null}
+
+    <section className="grid gap-3">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2 text-sm font-extrabold uppercase tracking-wide text-muted">
+        Core details
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
+        <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
+        <RoadmapColoredSelect id={`${fieldPrefix}-genre`} label="Genre" name="genre" defaultValue={item?.genre ?? ""} options={genreOptions} disabled={fieldsDisabled} />
+        <RoadmapColoredSelect id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} options={formatOptions} disabled={fieldsDisabled} />
+        <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
+        <div className="self-start">
+          <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
+        </div>
+      </div>
+    </section>
+
+    <section className="grid gap-3">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2 text-sm font-extrabold uppercase tracking-wide text-muted">
+        Planning details
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="self-start">
+          <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
+        </div>
+        <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
+        <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-16 items-start gap-3 rounded-md bg-amber-50 p-3 text-amber-950 ring-1 ring-amber-200 md:col-span-2">
+          <input
+            id={`${fieldPrefix}-individual-marketing`}
+            type="checkbox"
+            name="featuredInIndividualMarketing"
+            defaultChecked={Boolean(item?.featuredInIndividualMarketing)}
+            disabled={fieldsDisabled}
+            className="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 accent-amber-500"
+          />
+          <span>
+            <span className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide"><Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />Individual marketing campaign</span>
+            <span className="mt-1 block text-sm font-bold normal-case tracking-normal text-amber-900">Highlight this roadmap item when it is being leveraged in individual marketing.</span>
+          </span>
+        </label>
+        <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground md:col-span-2" htmlFor={`${fieldPrefix}-notes`}>
+          Notes
+          <textarea
+            id={`${fieldPrefix}-notes`}
+            name="notes"
+            defaultValue={item?.notes ?? ""}
+            disabled={fieldsDisabled}
+            className="min-h-20 w-full resize-y rounded-md border-0 bg-gray-100 px-4 py-3 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-gray-500 focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+          />
+        </label>
+      </div>
+    </section>
+
+    <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4", item && "pb-1")}>
+      <div className="flex flex-wrap gap-2">
+        <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
+        {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
+        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
+        {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
+      </div>
     </div>
   </form>;
 }

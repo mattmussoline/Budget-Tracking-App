@@ -305,7 +305,8 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
     expect(dialog).toHaveAttribute("open");
     expect(within(dialog).getByLabelText("Release date")).toHaveValue("2027-01-01");
-    expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-12", "self-start");
+    expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-12");
+    expect(within(dialog).getByLabelText("Status").closest("div")).toHaveClass("self-start");
     expect(within(dialog).queryByLabelText("Release date option")).not.toBeInTheDocument();
   });
 
@@ -447,7 +448,8 @@ describe("RoadmapDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
 
-    expect(within(dialog).getByLabelText("Status")).toHaveClass("self-start");
+    expect(within(dialog).getByText("Core details")).toBeVisible();
+    expect(within(dialog).getByLabelText("Status").closest("div")).toHaveClass("self-start");
     expect(within(dialog).getByRole("option", { name: "Planned" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "In progress" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "Blocked" })).toBeVisible();
@@ -463,7 +465,7 @@ describe("RoadmapDashboard", () => {
 
     expect(within(dialog).getByRole("button", { name: "Push to Dashboard" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Push to ClickUp" })).toBeInTheDocument();
-    expect(within(dialog).getByTestId("roadmap-form-actions")).toHaveClass("pb-5", "sm:pb-6");
+    expect(within(dialog).getByTestId("roadmap-form-actions")).toHaveClass("justify-between", "border-t", "pt-4");
   });
 
   it("confirms when a roadmap item is pushed to the dashboard", async () => {

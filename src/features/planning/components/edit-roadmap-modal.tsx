@@ -82,13 +82,13 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
         setIsOpen(false);
         triggerRef.current?.focus();
       }}
-      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
     >
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:p-7">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7 sm:py-6">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Roadmap</p>
-            <h2 id={`edit-roadmap-title-${item.id}`} className="font-display text-3xl font-extrabold">Edit Roadmap Item</h2>
+            <h2 id={`edit-roadmap-title-${item.id}`} className="font-display text-2xl font-extrabold sm:text-3xl">Edit Roadmap Item</h2>
           </div>
           <button type="button" onClick={closeDialog} aria-label="Close edit roadmap modal" className="rounded-md bg-gray-100 p-3 text-muted transition-colors hover:bg-gray-200 hover:text-foreground">
             <X className="h-5 w-5" aria-hidden="true" />
