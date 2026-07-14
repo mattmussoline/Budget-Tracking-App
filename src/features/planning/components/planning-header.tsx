@@ -12,9 +12,11 @@ type PlanningHeaderProps = {
 
 export function PlanningHeader({ title, eyebrow, description, activeSection, routePrefix = "", footer }: PlanningHeaderProps) {
   return (
-    <header className="relative h-80 overflow-hidden rounded-lg bg-blue-500 p-6 text-white md:h-80 md:p-8">
-      <div className="absolute right-0 top-0 h-48 w-48 -translate-y-1/2 rounded-full bg-white/10" aria-hidden="true" />
-      <div className="absolute bottom-6 right-28 h-20 w-20 rotate-12 bg-white/10" aria-hidden="true" />
+    <header className="relative h-80 overflow-visible rounded-lg bg-blue-500 p-6 text-white md:h-80 md:p-8">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg" aria-hidden="true">
+        <div className="absolute right-0 top-0 h-48 w-48 -translate-y-1/2 rounded-full bg-white/10" />
+        <div className="absolute bottom-6 right-28 h-20 w-20 rotate-12 bg-white/10" />
+      </div>
       <div className="relative z-10 grid h-full min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-5">
         <div className="grid min-w-0 gap-5 self-end md:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]">
           <div className="min-w-0 self-end">

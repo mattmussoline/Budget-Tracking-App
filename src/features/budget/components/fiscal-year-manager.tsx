@@ -103,7 +103,7 @@ export function FiscalYearManager({
               {isMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full z-30 mt-2 grid min-w-48 gap-1 rounded-lg border border-gray-200 bg-white p-2 text-gray-900 shadow-xl"
+                  className="absolute left-0 top-full z-30 mt-2 grid min-w-56 gap-1 rounded-lg border border-gray-200 bg-white p-2 text-gray-900 shadow-xl"
                 >
                   <form action={pinAction}>
                     <input type="hidden" name="fiscalYearId" value={year.id} />
@@ -111,7 +111,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={year.is_pinned || isDemo}
-                      className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Pin className="h-4 w-4" aria-hidden="true" />
                       {year.is_pinned ? "Pinned as default" : "Pin as default"}
@@ -134,7 +134,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={isDemo}
-                      className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                       Delete budget
