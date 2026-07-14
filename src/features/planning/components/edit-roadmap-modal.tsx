@@ -11,10 +11,11 @@ import type { RoadmapCategory, RoadmapItem } from "../planning-types";
 type EditRoadmapModalProps = {
   item: RoadmapItem;
   category?: RoadmapCategory;
+  isDemo?: boolean;
   children: ReactNode;
 };
 
-export function EditRoadmapModal({ item, category, children }: EditRoadmapModalProps) {
+export function EditRoadmapModal({ item, category, isDemo, children }: EditRoadmapModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -95,7 +96,15 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
           </button>
         </header>
         <div className="min-h-0 overflow-y-auto px-5 sm:px-7">{children}</div>
-        <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-200 p-4 sm:px-7">
+          <button
+            type="submit"
+            form={`edit-${item.id}-form`}
+            disabled={isDemo}
+            className="min-h-12 rounded-md bg-blue-500 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Save Item
+          </button>
           <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
         </footer>
       </div>

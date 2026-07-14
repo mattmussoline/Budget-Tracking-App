@@ -565,7 +565,7 @@ function formatMonthKey(monthKey: string) {
 }
 
 function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions, isDemo }: { item: RoadmapItem; category?: RoadmapCategory; categories: RoadmapCategory[]; fiscalYearId: string; providerOptions: string[]; isDemo?: boolean }) {
-  return <EditRoadmapModal item={item} category={category}>
+  return <EditRoadmapModal item={item} category={category} isDemo={isDemo}>
     <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} item={item} isDemo={isDemo} />
   </EditRoadmapModal>;
 }
@@ -687,7 +687,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     }
   };
 
-  return <form ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="grid gap-5 py-5">
+  return <form id={item ? `edit-${item.id}-form` : undefined} ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="grid gap-5 py-5">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
     {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{message}</p> : null}
@@ -746,7 +746,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
 
     <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4", item && "pb-1")}>
       <div className="flex flex-wrap gap-2">
-        <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
+        {!item ? <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{isSaving ? "Adding..." : "Add Item"}</SoftButton> : null}
         {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       </div>
       <div className="flex flex-wrap gap-2">

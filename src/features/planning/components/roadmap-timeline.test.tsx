@@ -423,10 +423,14 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
     expect(dialog).toHaveAttribute("open");
     expect(within(dialog).getByDisplayValue("Aquinas 101")).toBeVisible();
-    expect(within(dialog).getByRole("button", { name: "Save Item" })).toBeVisible();
+    const saveButton = within(dialog).getByRole("button", { name: "Save Item" });
+    const cancelButton = within(dialog).getByRole("button", { name: "Cancel" });
+    expect(saveButton).toBeVisible();
+    expect(saveButton.closest("footer")).toBe(cancelButton.closest("footer"));
+    expect(saveButton).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Delete" })).toBeVisible();
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(cancelButton);
     expect(screen.queryByRole("dialog", { name: "Edit Roadmap Item" })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
 
