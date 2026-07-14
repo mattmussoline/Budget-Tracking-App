@@ -142,14 +142,27 @@ export const demoRoadmapItems: RoadmapItem[] = [
   {
     id: "demo-roadmap-5",
     title: "Campus Conversations",
-    provider: "Summit Room",
-    genre: "Talk Show",
-    format: "Conversations",
+    provider: "Harbor Light Media",
+    genre: "Prayer",
+    format: "Reflection",
     releaseDate: "TBD",
     status: "blocked",
     budgetSource: "misc_licensing",
-    notes: "Blocked sample item so the Needs Attention panel has something useful to show.",
+    notes: "Blocked sample item that helps the Roadmap summary show provider, genre, and format rankings.",
     categoryId: "demo-cat-youth"
+  },
+  {
+    id: "demo-roadmap-6",
+    title: "Scripture in Seven Minutes",
+    provider: "Lantern House",
+    genre: "Christian Formation",
+    format: "Short Form",
+    featuredInIndividualMarketing: true,
+    releaseDate: "2026-10-06",
+    status: "planned",
+    budgetSource: "donor_funded",
+    notes: "Additional planned title so the public demo shows a richer Roadmap at-a-glance summary.",
+    categoryId: "demo-cat-adult"
   }
 ];
 
