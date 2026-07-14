@@ -32,7 +32,7 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: null, releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
@@ -195,6 +195,22 @@ describe("RoadmapDashboard", () => {
     const dateInput = within(dialog).getByLabelText("Release date", { selector: "#road-1-date" });
     expect(dateInput).toHaveAttribute("type", "date");
     expect(dateInput).toHaveValue("2027-01-24");
+  });
+
+  it("marks individual marketing items as spotlighted and keeps genre and format out of the card", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const card = screen.getByRole("button", { name: "Edit Aquinas 101" });
+    expect(within(card).getByText("Spotlight")).toBeVisible();
+    expect(within(card).queryByText("Scripture")).not.toBeInTheDocument();
+    expect(within(card).queryByText("Formation Series")).not.toBeInTheDocument();
+
+    fireEvent.click(card);
+
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+    expect(within(dialog).getByLabelText(/Individual marketing campaign/)).toBeChecked();
+    expect(within(dialog).getByLabelText("Genre")).toHaveClass("bg-orange-50", "text-orange-900");
+    expect(within(dialog).getByLabelText("Format")).toHaveClass("bg-violet-50", "text-violet-800");
   });
 
   it("renders category management and ongoing series", () => {

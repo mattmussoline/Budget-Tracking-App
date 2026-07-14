@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { CalendarPlus, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Trash2, X } from "lucide-react";
-import { type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
+import { CalendarPlus, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Star, Trash2, X } from "lucide-react";
+import { type FormEvent, type ReactNode, type SelectHTMLAttributes, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -13,7 +13,7 @@ import {
   addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
-import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningTone } from "../planning-constants";
+import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningOption, type PlanningTone } from "../planning-constants";
 import { buildMonthWindow, formatRoadmapDate, parseMonthAnchor, shiftMonthAnchor } from "../planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
@@ -37,6 +37,8 @@ const roadmapStatuses = [
   { label: "Planned", value: "planned" }, { label: "In progress", value: "in_progress" },
   { label: "Blocked", value: "blocked" }, { label: "Released", value: "released" }
 ];
+const genreOptions = [{ label: "No genre", value: "", tone: "slate" }, ...CONTENT_GENRES] satisfies PlanningOption[];
+const formatOptions = [{ label: "No format", value: "", tone: "slate" }, ...CONTENT_FORMATS] satisfies PlanningOption[];
 
 type RoadmapFilter = { id: string; label: string };
 
@@ -406,12 +408,26 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800 md:col-span-2">{message}</p> : null}
     <SoftInput id={`${fieldPrefix}-title`} label="Title" name="title" defaultValue={item?.title} required disabled={fieldsDisabled} />
     <ProviderCombobox key={`provider-${resetCount}`} id={`${fieldPrefix}-provider`} defaultValue={item?.provider ?? ""} options={providerOptions} disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-genre`} label="Genre" name="genre" defaultValue={item?.genre ?? ""} options={[{ label: "No genre", value: "" }, ...CONTENT_GENRES]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
-    <SoftSelect id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} options={[{ label: "No format", value: "" }, ...CONTENT_FORMATS]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
+    <RoadmapColoredSelect id={`${fieldPrefix}-genre`} label="Genre" name="genre" defaultValue={item?.genre ?? ""} options={genreOptions} disabled={fieldsDisabled} />
+    <RoadmapColoredSelect id={`${fieldPrefix}-format`} label="Format" name="format" defaultValue={item?.format ?? ""} options={formatOptions} disabled={fieldsDisabled} />
     <ReleaseDateField key={`date-${resetCount}`} id={`${fieldPrefix}-date`} defaultValue={item?.releaseDate ?? defaultReleaseDate} disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-status`} label="Status" name="status" defaultValue={item?.status ?? "planned"} options={roadmapStatuses} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 self-start px-3 text-sm" disabled={fieldsDisabled} />
     <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
+    <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-20 items-start gap-3 rounded-md bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-200 md:col-span-2">
+      <input
+        id={`${fieldPrefix}-individual-marketing`}
+        type="checkbox"
+        name="featuredInIndividualMarketing"
+        defaultChecked={Boolean(item?.featuredInIndividualMarketing)}
+        disabled={fieldsDisabled}
+        className="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 accent-amber-500"
+      />
+      <span>
+        <span className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide"><Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />Individual marketing campaign</span>
+        <span className="mt-1 block text-sm font-bold normal-case tracking-normal text-amber-900">Highlight this roadmap item when it is being leveraged in individual marketing.</span>
+      </span>
+    </label>
     <SoftInput id={`${fieldPrefix}-notes`} label="Notes" name="notes" defaultValue={item?.notes ?? ""} disabled={fieldsDisabled} />
     <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap gap-2 md:col-span-2", item && "pb-5 sm:pb-6")}>
       <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{item ? isSaving ? "Saving..." : "Save Item" : isSaving ? "Adding..." : "Add Item"}</SoftButton>
@@ -421,6 +437,29 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
     </div>
   </form>;
+}
+
+function RoadmapColoredSelect({ label, options, id, defaultValue = "", ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; options: PlanningOption[] }) {
+  const fieldId = id ?? props.name;
+  const [value, setValue] = useState(String(defaultValue));
+  const selected = options.find((option) => option.value === value);
+  const tone = selected?.tone ?? "slate";
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={fieldId}>
+    {label}
+    <select
+      {...props}
+      id={fieldId}
+      value={value}
+      onChange={(event) => {
+        setValue(event.target.value);
+        props.onChange?.(event);
+      }}
+      className={cn("min-h-12 self-start rounded-md border-0 px-3 text-sm font-bold normal-case tracking-normal shadow-inner ring-1 ring-black/5", TONE_CLASSES[tone].field, props.className)}
+    >
+      {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+    </select>
+  </label>;
 }
 
 function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultValue: string; disabled?: boolean }) {

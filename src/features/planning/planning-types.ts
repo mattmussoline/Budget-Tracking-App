@@ -8,6 +8,7 @@ export type RoadmapItem = {
   provider: string | null;
   genre?: string | null;
   format?: string | null;
+  featuredInIndividualMarketing?: boolean | null;
   releaseDate: string | null;
   status: RoadmapStatus;
   budgetSource?: BudgetSource | null;

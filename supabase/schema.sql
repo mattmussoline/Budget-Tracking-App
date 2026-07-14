@@ -76,6 +76,7 @@ create table if not exists public.roadmap_items (
   provider text,
   genre text,
   format text,
+  featured_in_individual_marketing boolean not null default false,
   release_month text,
   status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),

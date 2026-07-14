@@ -2,7 +2,7 @@
 
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
 import { formatRoadmapDate } from "../planning-model";
@@ -62,6 +62,10 @@ export function EditRoadmapModal({ item, category, children }: EditRoadmapModalP
     >
       <p className="font-extrabold leading-tight">{item.title}</p>
       <div className="mt-2 flex flex-wrap gap-2">
+        {item.featuredInIndividualMarketing ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[9px] font-extrabold uppercase text-amber-900 ring-1 ring-amber-200" title="Individual marketing campaign spotlight">
+          <Star className="h-3 w-3 fill-amber-400 text-amber-500" aria-hidden="true" />
+          Spotlight
+        </span> : null}
         {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
         {item.provider ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
         {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", item.releaseDate === "TBD" ? "bg-red-100 text-red-700" : "bg-gray-100")}>{item.releaseDate === "TBD" ? "TBD" : formatRoadmapDate(item.releaseDate)}</span> : null}
