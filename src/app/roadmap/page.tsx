@@ -4,6 +4,7 @@ import { PlanningShell } from "@/features/planning/components/planning-shell";
 import { RoadmapDashboard } from "@/features/planning/components/roadmap-dashboard";
 import { normalizeMonthRange, parseMonthAnchor } from "@/features/planning/planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
+import { releaseDueScheduledRoadmapItems } from "@/features/planning/roadmap-auto-release";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -60,6 +61,8 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   if (!activeFiscalYear) {
     redirect("/dashboard");
   }
+
+  await releaseDueScheduledRoadmapItems(admin, activeFiscalYear.id);
 
   const [{ data: roadmapRows, error: roadmapError }, { data: seriesRows, error: seriesError }, { data: categoryRows, error: categoryError }] = await Promise.all([
     admin

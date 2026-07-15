@@ -483,7 +483,7 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByLabelText("Format")).toContainHTML("Docu-Series");
   });
 
-  it("offers planned, in-progress, blocked, and released statuses in the edit form", () => {
+  it("offers planned, scheduled, in-progress, blocked, and released statuses in the edit form", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
@@ -492,6 +492,7 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByText("Core details")).toBeVisible();
     expect(within(dialog).getByLabelText("Status").closest("div")).toHaveClass("self-start");
     expect(within(dialog).getByRole("option", { name: "Planned" })).toBeVisible();
+    expect(within(dialog).getByRole("option", { name: "Scheduled" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "In progress" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "Blocked" })).toBeVisible();
     expect(within(dialog).getByRole("option", { name: "Released" })).toBeVisible();
@@ -641,10 +642,11 @@ describe("RoadmapDashboard", () => {
     const colorSelect = within(dialog).getByLabelText("Category color Parish");
     expect(within(dialog).queryByLabelText("Category status Parish")).not.toBeInTheDocument();
     expect(within(dialog).queryByLabelText("Category order Parish")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Save Parish" })).not.toBeInTheDocument();
 
     fireEvent.change(nameInput, { target: { value: "Parish Life" } });
     fireEvent.change(colorSelect, { target: { value: "green" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save Parish" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(actionMocks.updateRoadmapCategory).toHaveBeenCalledTimes(1));
     expect(navigationMocks.refresh).toHaveBeenCalledTimes(1);
@@ -666,7 +668,7 @@ describe("RoadmapDashboard", () => {
     };
 
     fireEvent.dragStart(within(dialog).getByRole("button", { name: "Drag Parish" }), { dataTransfer });
-    fireEvent.drop(within(dialog).getByLabelText("Category name Kids").closest("form")!, { dataTransfer });
+    fireEvent.drop(within(dialog).getByTestId("category-editor-cat-kids"), { dataTransfer });
 
     await waitFor(() => expect(actionMocks.reorderRoadmapCategories).toHaveBeenCalledTimes(1));
     const formData = actionMocks.reorderRoadmapCategories.mock.calls[0][0] as FormData;

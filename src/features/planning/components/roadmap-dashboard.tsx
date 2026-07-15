@@ -25,7 +25,7 @@ import {
   parseMonthAnchor,
   shiftMonthAnchor
 } from "../planning-model";
-import type { OngoingSeries, RoadmapCategory, RoadmapItem } from "../planning-types";
+import { ROADMAP_STATUSES, type OngoingSeries, type RoadmapCategory, type RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
 import { CategoryManagerModal } from "./category-manager-modal";
 import { EditRoadmapModal } from "./edit-roadmap-modal";
@@ -44,9 +44,12 @@ type RoadmapDashboardProps = {
 };
 
 const roadmapStatuses = [
-  { label: "Planned", value: "planned" }, { label: "In progress", value: "in_progress" },
-  { label: "Blocked", value: "blocked" }, { label: "Released", value: "released" }
-];
+  { label: "Planned", value: "planned" },
+  { label: "Scheduled", value: "scheduled" },
+  { label: "In progress", value: "in_progress" },
+  { label: "Blocked", value: "blocked" },
+  { label: "Released", value: "released" }
+] satisfies Array<{ label: string; value: (typeof ROADMAP_STATUSES)[number] }>;
 const genreOptions = [{ label: "No genre", value: "", tone: "slate" }, ...CONTENT_GENRES] satisfies PlanningOption[];
 const formatOptions = [{ label: "No format", value: "", tone: "slate" }, ...CONTENT_FORMATS] satisfies PlanningOption[];
 

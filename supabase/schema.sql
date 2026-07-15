@@ -78,7 +78,7 @@ create table if not exists public.roadmap_items (
   format text,
   featured_in_individual_marketing boolean not null default false,
   release_month text,
-  status text not null default 'planned' check (status in ('planned', 'in_progress', 'blocked', 'released')),
+  status text not null default 'planned' check (status in ('planned', 'scheduled', 'in_progress', 'blocked', 'released')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,

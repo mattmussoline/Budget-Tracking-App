@@ -100,11 +100,11 @@ describe("planning workspace migration", () => {
     expect(sql).toContain("release_month text");
   });
 
-  it("allows blocked roadmap items and no longer allows ready as a new status", () => {
+  it("allows scheduled and blocked roadmap items and no longer allows ready as a new status", () => {
     const schemaPath = resolve("supabase/schema.sql");
     const sql = readFileSync(schemaPath, "utf8");
 
-    expect(sql).toContain("status in ('planned', 'in_progress', 'blocked', 'released')");
+    expect(sql).toContain("status in ('planned', 'scheduled', 'in_progress', 'blocked', 'released')");
     expect(sql).not.toContain("status in ('planned', 'in_progress', 'ready', 'released')");
   });
 

@@ -1,6 +1,8 @@
 import type { BudgetSource } from "@/features/budget/budget-source";
 
-export type RoadmapStatus = "planned" | "in_progress" | "blocked" | "released";
+export const ROADMAP_STATUSES = ["planned", "scheduled", "in_progress", "blocked", "released"] as const;
+
+export type RoadmapStatus = (typeof ROADMAP_STATUSES)[number];
 
 export type RoadmapItem = {
   id: string;

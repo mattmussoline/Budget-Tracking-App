@@ -7,6 +7,7 @@ import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
 import type { ContentReviewItem, ReviewStatus, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
+import { releaseDueScheduledRoadmapItems } from "@/features/planning/roadmap-auto-release";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -61,6 +62,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (!activeFiscalYear) {
     return <BudgetDashboard fiscalYear={null} fiscalYears={[]} model={null} licenses={[]} mode="live" />;
   }
+
+  await releaseDueScheduledRoadmapItems(admin, activeFiscalYear.id);
 
   const [
     { data: licenseRows, error: licensesError },

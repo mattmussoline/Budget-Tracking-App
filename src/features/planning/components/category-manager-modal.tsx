@@ -22,10 +22,19 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   const [orderStatus, setOrderStatus] = useState("");
   const [isOrdering, startOrdering] = useTransition();
+  const [saveStatus, setSaveStatus] = useState("");
+  const [isSaving, startSaving] = useTransition();
 
   useEffect(() => {
     setOrderedCategories(categories);
   }, [categories]);
+
+  const originalCategoriesById = new Map(categories.map((category) => [category.id, category]));
+  const editedCategories = orderedCategories.filter((category) => {
+    const original = originalCategoriesById.get(category.id);
+    return original && (category.name !== original.name || category.colorKey !== original.colorKey);
+  });
+  const hasCategoryEdits = editedCategories.length > 0;
 
   const openDialog = () => {
     const dialog = dialogRef.current;
@@ -83,7 +92,7 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
     saveOrder(nextCategories);
   };
 
-  const startCategoryDrag = (event: DragEvent<HTMLFormElement>, categoryId: string) => {
+  const startCategoryDrag = (event: DragEvent<HTMLDivElement>, categoryId: string) => {
     if (isDemo || isOrdering) {
       event.preventDefault();
       return;
@@ -93,12 +102,48 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
     event.dataTransfer.setData("text/plain", categoryId);
   };
 
-  const dropCategory = (event: DragEvent<HTMLFormElement>, targetId: string) => {
+  const dropCategory = (event: DragEvent<HTMLDivElement>, targetId: string) => {
     event.preventDefault();
     const sourceId = event.dataTransfer.getData("text/plain") || draggedCategoryId;
     setDraggedCategoryId(null);
     if (!sourceId) return;
     moveCategory(sourceId, targetId);
+  };
+
+  const updateCategoryDraft = (categoryId: string, updates: Pick<RoadmapCategory, "name" | "colorKey">) => {
+    setSaveStatus("");
+    setOrderedCategories((currentCategories) =>
+      currentCategories.map((category) =>
+        category.id === categoryId ? { ...category, ...updates } : category
+      )
+    );
+  };
+
+  const saveCategoryEdits = () => {
+    if (isDemo || isSaving || isOrdering || !hasCategoryEdits) return;
+    if (editedCategories.some((category) => !category.name.trim())) {
+      setSaveStatus("Name required");
+      return;
+    }
+    setSaveStatus("Saving");
+    startSaving(async () => {
+      try {
+        await Promise.all(
+          editedCategories.map((category) => {
+            const formData = new FormData();
+            formData.set("fiscalYearId", fiscalYearId);
+            formData.set("categoryId", category.id);
+            formData.set("name", category.name);
+            formData.set("colorKey", category.colorKey);
+            return updateRoadmapCategory(formData);
+          })
+        );
+        setSaveStatus("Saved");
+        router.refresh();
+      } catch {
+        setSaveStatus("Error");
+      }
+    });
   };
 
   return <>
@@ -112,11 +157,11 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
           <button type="button" onClick={closeDialog} aria-label="Close Manage Key modal" className="rounded-md bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700"><X className="h-5 w-5" aria-hidden="true" /></button>
         </header>
         <div className="grid min-h-0 gap-2 overflow-y-auto p-4 sm:p-5">
-          <span aria-live="polite" className="min-h-4 text-xs font-extrabold uppercase text-muted">{orderStatus}</span>
-          {orderedCategories.map((category) => <CategoryEditor key={category.id} fiscalYearId={fiscalYearId} category={category} isDemo={isDemo} isOrdering={isOrdering} draggedCategoryId={draggedCategoryId} onDragStart={startCategoryDrag} onDragEnd={() => setDraggedCategoryId(null)} onDragOver={(event) => event.preventDefault()} onDrop={dropCategory} />)}
+          <span aria-live="polite" className="min-h-4 text-xs font-extrabold uppercase text-muted">{saveStatus || orderStatus}</span>
+          {orderedCategories.map((category) => <CategoryEditor key={category.id} fiscalYearId={fiscalYearId} category={category} isDemo={isDemo} isOrdering={isOrdering || isSaving} draggedCategoryId={draggedCategoryId} onChange={updateCategoryDraft} onDragStart={startCategoryDrag} onDragEnd={() => setDraggedCategoryId(null)} onDragOver={(event) => event.preventDefault()} onDrop={dropCategory} />)}
           <NewCategoryForm fiscalYearId={fiscalYearId} isDemo={isDemo} />
         </div>
-        <footer className="flex shrink-0 justify-end border-t border-gray-200 p-3 sm:px-5"><button type="button" onClick={closeDialog} className="min-h-10 rounded-md bg-blue-600 px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-700">Close</button></footer>
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-200 p-3 sm:px-5"><button type="button" onClick={saveCategoryEdits} disabled={isDemo || isSaving || isOrdering || !hasCategoryEdits} className="min-h-10 rounded-md bg-blue-600 px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500">{isSaving ? "Saving" : "Save"}</button><button type="button" onClick={closeDialog} className="min-h-10 rounded-md bg-blue-600 px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-700">Close</button></footer>
       </div>
     </dialog>
   </>;
@@ -128,6 +173,7 @@ function CategoryEditor({
   isDemo,
   isOrdering,
   draggedCategoryId,
+  onChange,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -138,41 +184,15 @@ function CategoryEditor({
   isDemo?: boolean;
   isOrdering: boolean;
   draggedCategoryId: string | null;
-  onDragStart: (event: DragEvent<HTMLFormElement>, categoryId: string) => void;
+  onChange: (categoryId: string, updates: Pick<RoadmapCategory, "name" | "colorKey">) => void;
+  onDragStart: (event: DragEvent<HTMLDivElement>, categoryId: string) => void;
   onDragEnd: () => void;
-  onDragOver: (event: DragEvent<HTMLFormElement>) => void;
-  onDrop: (event: DragEvent<HTMLFormElement>, categoryId: string) => void;
+  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
+  onDrop: (event: DragEvent<HTMLDivElement>, categoryId: string) => void;
 }) {
   const router = useRouter();
-  const [name, setName] = useState(category.name);
-  const [colorKey, setColorKey] = useState(category.colorKey);
   const [status, setStatus] = useState("");
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setName(category.name);
-    setColorKey(category.colorKey);
-  }, [category.colorKey, category.name]);
-
-  const save = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (isDemo || isPending || !name.trim()) return;
-    const formData = new FormData();
-    formData.set("fiscalYearId", fiscalYearId);
-    formData.set("categoryId", category.id);
-    formData.set("name", name);
-    formData.set("colorKey", colorKey);
-    setStatus("Saving");
-    startTransition(async () => {
-      try {
-        await updateRoadmapCategory(formData);
-        setStatus("Saved");
-        router.refresh();
-      } catch {
-        setStatus("Error");
-      }
-    });
-  };
 
   const remove = () => {
     if (isDemo || isPending || !window.confirm("Delete this key? Roadmap items will remain, but they will lose this key and color.")) return;
@@ -189,14 +209,13 @@ function CategoryEditor({
     });
   };
 
-  return <form draggable={!isDemo && !isOrdering} onDragStart={(event) => onDragStart(event, category.id)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={(event) => onDrop(event, category.id)} onSubmit={save} className={`grid gap-2 rounded-md bg-gray-100 p-3 transition-opacity sm:grid-cols-[auto_minmax(0,1fr)_132px_auto_auto] ${draggedCategoryId === category.id ? "opacity-60" : ""}`}>
+  return <div data-testid={`category-editor-${category.id}`} draggable={!isDemo && !isOrdering} onDragStart={(event) => onDragStart(event, category.id)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={(event) => onDrop(event, category.id)} className={`grid gap-2 rounded-md bg-gray-100 p-3 transition-opacity sm:grid-cols-[auto_minmax(0,1fr)_132px_auto] ${draggedCategoryId === category.id ? "opacity-60" : ""}`}>
     <button type="button" aria-label={`Drag ${category.name}`} className="flex min-h-10 cursor-grab items-center justify-center rounded-md bg-white px-2 text-muted active:cursor-grabbing" tabIndex={-1}><GripVertical className="h-4 w-4" aria-hidden="true" /></button>
-    <input aria-label={`Category name ${category.name}`} value={name} onChange={(event) => setName(event.target.value)} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm" />
-    <select aria-label={`Category color ${category.name}`} value={colorKey} onChange={(event) => setColorKey(event.target.value)} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm">{ROADMAP_COLORS.map((color) => <option key={color.value} value={color.value}>{color.label}</option>)}</select>
-    <SoftButton type="submit" disabled={isDemo || isPending || isOrdering || !name.trim()} aria-label={`Save ${category.name}`}>Save</SoftButton>
+    <input aria-label={`Category name ${category.name}`} value={category.name} onChange={(event) => onChange(category.id, { name: event.target.value, colorKey: category.colorKey })} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm" />
+    <select aria-label={`Category color ${category.name}`} value={category.colorKey} onChange={(event) => onChange(category.id, { name: category.name, colorKey: event.target.value })} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm">{ROADMAP_COLORS.map((color) => <option key={color.value} value={color.value}>{color.label}</option>)}</select>
     <SoftButton type="button" variant="ghost" onClick={remove} disabled={isDemo || isPending || isOrdering} aria-label={`Delete ${category.name}`} className="text-red-700"><Trash2 className="h-4 w-4" />Delete</SoftButton>
-    <span aria-live="polite" className="text-xs font-extrabold uppercase text-muted sm:col-span-5">{status}</span>
-  </form>;
+    <span aria-live="polite" className="text-xs font-extrabold uppercase text-muted sm:col-span-4">{status}</span>
+  </div>;
 }
 
 function NewCategoryForm({ fiscalYearId, isDemo }: { fiscalYearId: string; isDemo?: boolean }) {
