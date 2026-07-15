@@ -21,9 +21,19 @@ const actionMocks = vi.hoisted(() => ({
   updateRoadmapItem: vi.fn()
 }));
 
-vi.mock("../planning-actions", () => actionMocks);
+const navigationMocks = vi.hoisted(() => ({
+  refresh: vi.fn()
+}));
 
-beforeEach(() => vi.clearAllMocks());
+vi.mock("../planning-actions", () => actionMocks);
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: navigationMocks.refresh })
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  navigationMocks.refresh.mockClear();
+});
 afterEach(() => vi.useRealTimers());
 
 const categories: RoadmapCategory[] = [
@@ -637,6 +647,7 @@ describe("RoadmapDashboard", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save Parish" }));
 
     await waitFor(() => expect(actionMocks.updateRoadmapCategory).toHaveBeenCalledTimes(1));
+    expect(navigationMocks.refresh).toHaveBeenCalledTimes(1);
     expect(nameInput).toHaveValue("Parish Life");
     expect(colorSelect).toHaveValue("green");
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type DragEvent, type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useRef, useState, useTransition } from "react";
 import { GripVertical, KeyRound, Plus, Trash2, X } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
@@ -14,6 +15,7 @@ type CategoryManagerModalProps = {
 };
 
 export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: CategoryManagerModalProps) {
+  const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [orderedCategories, setOrderedCategories] = useState(categories);
@@ -62,6 +64,7 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
       try {
         await reorderRoadmapCategories(formData);
         setOrderStatus("Order saved");
+        router.refresh();
       } catch {
         setOrderStatus("Order error");
       }
@@ -140,10 +143,16 @@ function CategoryEditor({
   onDragOver: (event: DragEvent<HTMLFormElement>) => void;
   onDrop: (event: DragEvent<HTMLFormElement>, categoryId: string) => void;
 }) {
+  const router = useRouter();
   const [name, setName] = useState(category.name);
   const [colorKey, setColorKey] = useState(category.colorKey);
   const [status, setStatus] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setName(category.name);
+    setColorKey(category.colorKey);
+  }, [category.colorKey, category.name]);
 
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -158,6 +167,7 @@ function CategoryEditor({
       try {
         await updateRoadmapCategory(formData);
         setStatus("Saved");
+        router.refresh();
       } catch {
         setStatus("Error");
       }
@@ -172,6 +182,7 @@ function CategoryEditor({
     startTransition(async () => {
       try {
         await deleteRoadmapCategory(formData);
+        router.refresh();
       } catch {
         setStatus("Error");
       }
@@ -189,6 +200,7 @@ function CategoryEditor({
 }
 
 function NewCategoryForm({ fiscalYearId, isDemo }: { fiscalYearId: string; isDemo?: boolean }) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [colorKey, setColorKey] = useState("blue");
   const [status, setStatus] = useState("");
@@ -208,6 +220,7 @@ function NewCategoryForm({ fiscalYearId, isDemo }: { fiscalYearId: string; isDem
         setName("");
         setColorKey("blue");
         setStatus("Added");
+        router.refresh();
       } catch {
         setStatus("Error");
       }
