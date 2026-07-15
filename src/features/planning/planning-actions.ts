@@ -559,6 +559,30 @@ export async function updateRoadmapCategory(formData: FormData) {
   revalidatePlanning();
 }
 
+export async function reorderRoadmapCategories(formData: FormData) {
+  const parsed = z.object({
+    fiscalYearId: z.string().uuid(),
+    categoryIds: z.array(z.string().uuid()).min(1)
+  }).safeParse({
+    fiscalYearId: formData.get("fiscalYearId"),
+    categoryIds: formData.getAll("categoryIds")
+  });
+  if (!parsed.success) throw new Error("Choose a valid key order.");
+  const admin = await requirePlanningAdmin();
+  const results = await Promise.all(
+    parsed.data.categoryIds.map((categoryId, sortOrder) =>
+      admin
+        .from("roadmap_categories")
+        .update({ sort_order: sortOrder })
+        .eq("id", categoryId)
+        .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    )
+  );
+  const error = results.find((result) => result.error)?.error;
+  if (error) throw new Error(error.message);
+  revalidatePlanning();
+}
+
 export async function deleteRoadmapCategory(formData: FormData) {
   const parsed = z.object({
     categoryId: z.string().uuid(),

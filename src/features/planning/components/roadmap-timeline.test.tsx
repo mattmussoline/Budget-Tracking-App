@@ -12,6 +12,7 @@ const actionMocks = vi.hoisted(() => ({
   deleteOngoingSeries: vi.fn(),
   deleteRoadmapCategory: vi.fn(),
   deleteRoadmapItem: vi.fn(),
+  reorderRoadmapCategories: vi.fn(),
   sendRoadmapItemToBudget: vi.fn(),
   sendRoadmapItemToClickUp: vi.fn(),
   sendRoadmapMonthToClickUp: vi.fn(),
@@ -638,6 +639,27 @@ describe("RoadmapDashboard", () => {
     await waitFor(() => expect(actionMocks.updateRoadmapCategory).toHaveBeenCalledTimes(1));
     expect(nameInput).toHaveValue("Parish Life");
     expect(colorSelect).toHaveValue("green");
+  });
+
+  it("saves a dragged Manage Key order", async () => {
+    actionMocks.reorderRoadmapCategories.mockResolvedValue(undefined);
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Manage Key" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Manage Key" });
+    const dataTransfer = {
+      effectAllowed: "",
+      getData: vi.fn(() => "cat-parish"),
+      setData: vi.fn()
+    };
+
+    fireEvent.dragStart(within(dialog).getByRole("button", { name: "Drag Parish" }), { dataTransfer });
+    fireEvent.drop(within(dialog).getByLabelText("Category name Kids").closest("form")!, { dataTransfer });
+
+    await waitFor(() => expect(actionMocks.reorderRoadmapCategories).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderRoadmapCategories.mock.calls[0][0] as FormData;
+    expect(formData.getAll("categoryIds")).toEqual(["cat-adult", "cat-kids", "cat-parish"]);
   });
 
   it("warns before deleting a key and preserves cancellation", async () => {
