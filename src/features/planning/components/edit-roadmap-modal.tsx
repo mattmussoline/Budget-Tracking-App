@@ -12,13 +12,17 @@ type EditRoadmapModalProps = {
   item: RoadmapItem;
   category?: RoadmapCategory;
   isDemo?: boolean;
+  isOpen?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
   children: ReactNode;
 };
 
-export function EditRoadmapModal({ item, category, isDemo, children }: EditRoadmapModalProps) {
+export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsOpen, onOpen, onClose, children }: EditRoadmapModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
+  const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
   const tone = (category?.colorKey && category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
 
   useEffect(() => {
@@ -31,7 +35,8 @@ export function EditRoadmapModal({ item, category, isDemo, children }: EditRoadm
   }, [isOpen]);
 
   const openDialog = () => {
-    setIsOpen(true);
+    onOpen?.();
+    if (controlledIsOpen === undefined) setUncontrolledIsOpen(true);
   };
 
   const closeDialog = () => {
@@ -39,7 +44,8 @@ export function EditRoadmapModal({ item, category, isDemo, children }: EditRoadm
     if (dialog?.open && typeof dialog.close === "function") dialog.close();
     else dialog?.removeAttribute("open");
 
-    setIsOpen(false);
+    onClose?.();
+    if (controlledIsOpen === undefined) setUncontrolledIsOpen(false);
     triggerRef.current?.focus();
   };
 
@@ -80,7 +86,8 @@ export function EditRoadmapModal({ item, category, isDemo, children }: EditRoadm
       onClick={closeFromBackdrop}
       onKeyDown={closeFromEscape}
       onClose={() => {
-        setIsOpen(false);
+        onClose?.();
+        if (controlledIsOpen === undefined) setUncontrolledIsOpen(false);
         triggerRef.current?.focus();
       }}
       className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"

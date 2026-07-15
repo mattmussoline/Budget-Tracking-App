@@ -441,6 +441,25 @@ describe("RoadmapDashboard", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("replaces the open roadmap item editor when another item is selected", () => {
+    const sameMonthItems: RoadmapItem[] = [
+      ...roadmapItems,
+      { id: "road-jan-2", title: "Second January Item", provider: "Augustine Institute", releaseDate: "2027-01-28", status: "planned", notes: null, categoryId: "cat-kids" }
+    ];
+
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={sameMonthItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
+    expect(within(screen.getByRole("dialog", { name: "Edit Roadmap Item" })).getByDisplayValue("Aquinas 101")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Second January Item" }));
+
+    const dialogs = screen.getAllByRole("dialog", { name: "Edit Roadmap Item" });
+    expect(dialogs).toHaveLength(1);
+    expect(within(dialogs[0]).getByDisplayValue("Second January Item")).toBeVisible();
+    expect(within(dialogs[0]).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
+  });
+
   it("uses the content review genre and format dropdowns on roadmap items", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
