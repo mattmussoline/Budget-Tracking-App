@@ -50,4 +50,5 @@ export type ContentReviewItem = {
   proposedRateCents: number | null;
   reviewLink: string | null;
   comparableContent: string | null;
+  isCoproductionOpportunity?: boolean | null;
 };

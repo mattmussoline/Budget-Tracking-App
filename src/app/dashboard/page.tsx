@@ -98,7 +98,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .order("created_at", { ascending: true }),
     admin
       .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content")
+      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
@@ -162,7 +162,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     notes: item.notes,
     proposedRateCents: item.proposed_rate_cents,
     reviewLink: item.review_link,
-    comparableContent: item.comparable_content
+    comparableContent: item.comparable_content,
+    isCoproductionOpportunity: item.is_coproduction_opportunity
   }));
 
   const model = buildDashboardModel({

@@ -112,6 +112,7 @@ create table if not exists public.content_review_items (
   proposed_rate_cents bigint check (proposed_rate_cents >= 0),
   review_link text,
   comparable_content text,
+  is_coproduction_opportunity boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

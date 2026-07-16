@@ -100,6 +100,13 @@ describe("planning workspace migration", () => {
     expect(sql).toContain("release_month text");
   });
 
+  it("stores content review co-production opportunities as a durable flag", () => {
+    const schemaPath = resolve("supabase/schema.sql");
+    const sql = readFileSync(schemaPath, "utf8");
+
+    expect(sql).toContain("is_coproduction_opportunity boolean not null default false");
+  });
+
   it("allows scheduled and blocked roadmap items and no longer allows ready as a new status", () => {
     const schemaPath = resolve("supabase/schema.sql");
     const sql = readFileSync(schemaPath, "utf8");

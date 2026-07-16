@@ -197,7 +197,8 @@ export const demoContentReviewItems: ContentReviewItem[] = [
     notes: "Needs a final content review score.",
     proposedRateCents: 125000,
     reviewLink: "https://example.com/review/sacristy-tour",
-    comparableContent: "Similar to a short children's explainer."
+    comparableContent: "Similar to a short children's explainer.",
+    isCoproductionOpportunity: true
   },
   {
     id: "demo-review-3",

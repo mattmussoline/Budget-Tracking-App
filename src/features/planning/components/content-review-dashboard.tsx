@@ -17,6 +17,7 @@ type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewI
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
 const decisionQueueGridClass = "md:grid-cols-[4.5rem_1.3fr_1fr_0.9fr_1fr]";
+const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -29,12 +30,13 @@ const blankDraft = (): ContentReviewItem => ({
   notes: "",
   proposedRateCents: null,
   reviewLink: "",
-  comparableContent: ""
+  comparableContent: "",
+  isCoproductionOpportunity: false
 });
 
 export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = [], isDemo }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
-  const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(() => items.find((item) => isDecisionQueueStatus(item.reviewStatus))?.id ?? items[0]?.id ?? "");
   const [draft, setDraft] = useState<ContentReviewItem | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isPending, startTransition] = useTransition();
@@ -46,7 +48,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     setSelectedId(id);
   }
 
-  function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | null) {
+  function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) {
     setSelectedId(id);
     setSaveState("unsaved");
     if (id === "draft") {
@@ -70,6 +72,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     formData.set("proposedRate", formatOptionalCurrency(item.proposedRateCents));
     formData.set("reviewLink", item.reviewLink ?? "");
     formData.set("comparableContent", item.comparableContent ?? "");
+    formData.set("isCoproductionOpportunity", item.isCoproductionOpportunity ? "true" : "false");
     return formData;
   }
 
@@ -228,7 +231,7 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   }
 };
 
-function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
+function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toneClasses = STATUS_CARD_TONES[config.tone];
   const titleId = `review-status-modal-${config.tone}`;
@@ -297,16 +300,18 @@ function isDecisionQueueStatus(status: ReviewStatus) {
   return !isFinalReviewStatus(status) && status !== "on_the_radar";
 }
 
-function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | null) => void }) {
+function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("grid gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+    <div aria-current={active ? "true" : undefined} className={cn("relative grid gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+      {item.isCoproductionOpportunity ? <span role="img" aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-amber-600 shadow-[0_0_0_3px_rgba(254,243,199,1)]" /> : null}
       <button
         type="button"
         aria-label={`Select ${item.title || "Untitled review"}`}
         onClick={() => onSelect(item.id)}
         className={cn(
           "min-h-10 rounded-md px-3 text-left text-xs font-extrabold uppercase tracking-wide transition",
+          item.isCoproductionOpportunity && "pl-5",
           active ? "bg-blue-600 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
         )}
       >
@@ -330,7 +335,7 @@ function ContentReviewGroup({ title, count, testId, children }: { title: string;
   </details>;
 }
 
-function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | null) => void; onSave: () => void; fiscalYearId: string }) {
+function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | boolean | null) => void; onSave: () => void; fiscalYearId: string }) {
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
   const [isPipelinePending, startPipelineTransition] = useTransition();
 
@@ -350,24 +355,35 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     });
   }
 
-  return <div className="grid gap-5">
+  return <div className="grid gap-4">
     <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
+    {item.isCoproductionOpportunity ? <p className="inline-flex items-center gap-2 text-xs font-extrabold text-amber-700"><span className="h-2 w-2 rounded-full bg-amber-600 shadow-[0_0_0_3px_rgba(254,243,199,1)]" aria-hidden="true" />Potential co-production opportunity</p> : null}
+    <div className="grid gap-1 border-y border-gray-200">
+      <CompactField label="Detail Title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Proposed Rate"><CurrencyField label="Proposed Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Provider">
+        <ProviderCombobox
+          id={`review-provider-${item.id}`}
+          value={item.provider ?? ""}
+          options={providerOptions}
+          disabled={isDemo}
+          onChange={(value) => onChange("provider", value)}
+          hideLabel
+          inputClassName={compactControlClass}
+        />
+      </CompactField>
+      <CompactField label="Status"><ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} compact /></CompactField>
+      <CompactField label="Opportunity"><OpportunityField checked={Boolean(item.isCoproductionOpportunity)} disabled={isDemo} onChange={(value) => onChange("isCoproductionOpportunity", value)} /></CompactField>
+      <CompactField label="Budget"><SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Metadata">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} compact />
+          <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} compact />
+        </div>
+      </CompactField>
+      <CompactField label="Link"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} hideLabel /></CompactField>
+    </div>
     <div className="grid gap-4 md:grid-cols-2">
-      <Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} />
-      <CurrencyField label="Proposed Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} />
-      <ProviderCombobox
-        id={`review-provider-${item.id}`}
-        value={item.provider ?? ""}
-        options={providerOptions}
-        disabled={isDemo}
-        onChange={(value) => onChange("provider", value)}
-        inputClassName="min-h-11 w-full rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"
-      />
-      <ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} />
-      <SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} />
-      <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} />
-      <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} />
-      <div className="md:col-span-2"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} /></div>
       <TextArea label="Review Notes" value={item.notes ?? ""} onChange={(value) => onChange("notes", value)} disabled={isDemo} />
       <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
     </div>
@@ -382,29 +398,63 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
   </div>;
 }
 
-function Field({ label, value, onChange, disabled, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; type?: string }) {
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
+function CompactField({ label, children }: { label: string; children: ReactNode }) {
+  return <div className="grid gap-3 border-t border-gray-100 py-2 first:border-t-0 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center">
+    <span className="text-[11px] font-extrabold uppercase tracking-wide text-muted">{label}</span>
+    <div className="min-w-0">{children}</div>
+  </div>;
 }
 
-function LinkField({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+function Field({ label, value, onChange, disabled, hideLabel, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean; type?: string }) {
+  const input = <input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"} />;
+
+  if (hideLabel) return input;
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{input}</label>;
+}
+
+function LinkField({ label, value, onChange, disabled, hideLabel }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
   const trimmedValue = value.trim();
   const canOpen = /^https?:\/\//.test(trimmedValue);
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
-    {label}
-    <div className="flex flex-wrap gap-2">
-      <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 min-w-0 flex-1 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" />
-      {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-50 px-4 text-xs font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100"><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
-    </div>
+  const field = <div className="flex flex-wrap gap-2">
+    <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={cn("min-w-0 flex-1", hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal")} />
+    {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className={cn("inline-flex items-center justify-center gap-2 rounded-md bg-blue-50 text-xs font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100", hideLabel ? "min-h-9 px-3" : "min-h-11 px-4")}><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
+  </div>;
+
+  if (hideLabel) return field;
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{field}</label>;
+}
+
+function SelectField({ label, value, options, onChange, disabled, hideLabel }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
+  const select = <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>;
+
+  if (hideLabel) return select;
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{select}</label>;
+}
+
+function CurrencyField({ label, value, onChange, disabled, hideLabel }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; hideLabel?: boolean }) {
+  const input = <CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"} />;
+
+  if (hideLabel) return input;
+
+  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{input}</label>;
+}
+
+function OpportunityField({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: (value: boolean) => void }) {
+  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-amber-50 px-3 text-xs font-extrabold text-amber-700 ring-1 ring-amber-100">
+    <input
+      aria-label="Potential co-production opportunity"
+      type="checkbox"
+      checked={checked}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.checked)}
+      className="h-4 w-4 accent-amber-600"
+    />
+    Potential co-production
   </label>;
-}
-
-function SelectField({ label, value, options, onChange, disabled }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean }) {
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal">{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
-}
-
-function CurrencyField({ label, value, onChange, disabled }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean }) {
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}<CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className="min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal" /></label>;
 }
 
 function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus, className }: { ariaLabel: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLInputElement>; onFocus?: React.FocusEventHandler<HTMLInputElement>; className: string }) {
@@ -446,7 +496,7 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       ref={editorRef}
       aria-disabled={disabled}
       aria-label={label}
-      className={cn("min-h-[8.25rem] whitespace-pre-wrap break-words rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300", disabled && "cursor-not-allowed opacity-60")}
+      className={cn("min-h-[7rem] whitespace-pre-wrap break-words rounded-md border-0 bg-gray-50 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300", disabled && "cursor-not-allowed opacity-60")}
       contentEditable={!disabled}
       dangerouslySetInnerHTML={{ __html: htmlValue }}
       onBlur={(event) => setHtmlValue(linkifyText(event.currentTarget.innerText))}

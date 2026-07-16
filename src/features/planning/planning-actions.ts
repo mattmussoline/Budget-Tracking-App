@@ -44,7 +44,8 @@ const reviewItemSchema = z.object({
   notes: z.string().trim().optional(),
   proposedRate: z.string().trim().optional(),
   reviewLink: z.union([z.literal(""), z.string().url()]).optional(),
-  comparableContent: z.string().trim().optional()
+  comparableContent: z.string().trim().optional(),
+  isCoproductionOpportunity: z.preprocess((value) => value === "on" || value === "true", z.boolean()).default(false)
 });
 
 const updateReviewItemSchema = reviewItemSchema.extend({
@@ -186,9 +187,10 @@ export async function addContentReviewItem(formData: FormData) {
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
-      comparable_content: optionalText(parsed.data.comparableContent)
+      comparable_content: optionalText(parsed.data.comparableContent),
+      is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
-    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content")
+    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
     .single();
 
   if (error) {
@@ -208,7 +210,8 @@ export async function addContentReviewItem(formData: FormData) {
     notes: data.notes,
     proposedRateCents: data.proposed_rate_cents,
     reviewLink: data.review_link,
-    comparableContent: data.comparable_content
+    comparableContent: data.comparable_content,
+    isCoproductionOpportunity: data.is_coproduction_opportunity
   } satisfies ContentReviewItem;
 }
 
@@ -232,7 +235,8 @@ export async function updateContentReviewItem(formData: FormData) {
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
-      comparable_content: optionalText(parsed.data.comparableContent)
+      comparable_content: optionalText(parsed.data.comparableContent),
+      is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
@@ -274,7 +278,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: review, error: reviewError } = await admin
     .from("content_review_items")
-    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents")
+    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,is_coproduction_opportunity")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -289,6 +293,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
 
   const noteParts = [
     "Created from content review.",
+    review.is_coproduction_opportunity ? "Potential co-production opportunity." : null,
     review.notes ? `Review notes: ${review.notes}` : null,
     review.proposed_rate_cents ? `Proposed rate: ${formatCents(review.proposed_rate_cents)}` : null
   ].filter(Boolean);

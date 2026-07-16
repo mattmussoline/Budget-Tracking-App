@@ -34,7 +34,8 @@ const activeItem: ContentReviewItem = {
   ...item,
   id: "review-active",
   title: "Catholic Basics",
-  reviewStatus: "in_progress"
+  reviewStatus: "in_progress",
+  isCoproductionOpportunity: true
 };
 
 const rejectedItem: ContentReviewItem = {
@@ -188,6 +189,17 @@ describe("ContentReviewDashboard", () => {
 
     expect(screen.getByRole("button", { name: "Select Catholic Basics" })).toBeVisible();
     expect(screen.getByLabelText("Summary Title").closest("[role='button']")).toBeNull();
+  });
+
+  it("marks co-production opportunities with a small queue signal and compact editor field", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+
+    expect(screen.getAllByLabelText("Potential co-production opportunity")).toHaveLength(2);
+    expect(screen.getAllByText("Potential co-production").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getAllByLabelText("Potential co-production opportunity")[1]);
+
+    expect(screen.getByText("unsaved")).toBeVisible();
   });
 
   it("marks edited review details as unsaved until the user saves", () => {
