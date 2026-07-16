@@ -437,8 +437,8 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
     {label}
     <textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={5} className="rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal" />
-    {links.length ? <span className="flex flex-wrap gap-2">
-      {links.map((link) => <a key={link} href={link} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md bg-blue-50 px-3 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100"><ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />Open link</a>)}
+    {links.length ? <span className="flex flex-wrap gap-x-3 gap-y-1 normal-case tracking-normal">
+      {links.map((link) => <a key={link} href={link} target="_blank" rel="noreferrer" className="break-all text-sm font-bold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700">{link}</a>)}
     </span> : null}
   </label>;
 }

@@ -69,10 +69,8 @@ describe("ContentReviewDashboard", () => {
   it("makes links in review notes and comparable content clickable", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Watch https://example.com/notes", comparableContent: "Compare https://example.com/compare" }]} isDemo />);
 
-    expect(screen.getAllByRole("link", { name: "Open link" }).map((link) => link.getAttribute("href"))).toEqual([
-      "https://example.com/notes",
-      "https://example.com/compare"
-    ]);
+    expect(screen.getByRole("link", { name: "https://example.com/notes" })).toHaveAttribute("href", "https://example.com/notes");
+    expect(screen.getByRole("link", { name: "https://example.com/compare" })).toHaveAttribute("href", "https://example.com/compare");
   });
 
   it("uses the roadmap provider picker for review details", () => {
