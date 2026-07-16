@@ -75,15 +75,13 @@ describe("RoadmapDashboard", () => {
     const backlog = screen.getByTestId("roadmap-backlog");
     const backlogSummary = within(backlog).getByText("Backlog").closest("summary");
 
-    expect(backlog).not.toHaveAttribute("open");
+    expect(backlog).toHaveAttribute("open");
     expect(backlog).toHaveClass("self-start");
     expect(backlogSummary).toHaveClass("py-3");
     expect(backlogSummary).not.toHaveClass("min-h-16");
     expect(within(backlogSummary!).getByText("Expand Backlog section")).toBeInTheDocument();
-    expect(within(backlog).queryByText(/^\d+ items?$/)).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("backlog-other-content")).getByText("In progress")).toBeVisible();
 
-    fireEvent.click(within(backlog).getByText("Backlog"));
-    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
     expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-blue-100"))).toBe(true);
@@ -203,8 +201,6 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     fireEvent.click(screen.getByRole("button", { name: "Filter Adult" }));
-    fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
-    fireEvent.click(within(screen.getByTestId("backlog-other-content")).getByText("In progress"));
 
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.queryByText("Aquinas 101")).not.toBeInTheDocument();
@@ -224,15 +220,12 @@ describe("RoadmapDashboard", () => {
     const otherGroup = screen.getByTestId("backlog-other-content");
     const backlog = screen.getByTestId("roadmap-backlog");
 
-    fireEvent.click(within(backlog).getByText("Backlog"));
-
     expect(releasedGroup).not.toHaveAttribute("open");
-    expect(otherGroup).not.toHaveAttribute("open");
+    expect(otherGroup).toHaveAttribute("open");
 
     expect(backlog.textContent).toMatch(/In progress2.*Already released content3/);
 
     fireEvent.click(within(releasedGroup).getByText("Already released content"));
-    fireEvent.click(within(otherGroup).getByText("In progress"));
 
     const decemberGroup = within(releasedGroup).getByTestId("released-month-2026-12");
     const novemberGroup = within(releasedGroup).getByTestId("released-month-2026-11");

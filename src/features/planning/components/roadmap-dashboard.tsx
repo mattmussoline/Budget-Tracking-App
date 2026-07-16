@@ -113,7 +113,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
 
     {!isRoadmapFocus ? <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <details data-testid="roadmap-backlog" className="self-start rounded-lg bg-gray-100">
+      <details data-testid="roadmap-backlog" className="self-start rounded-lg bg-gray-100" open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
           <div>
             <h2 className="font-display text-lg font-extrabold">Backlog</h2>
@@ -124,7 +124,7 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
             <span className="sr-only">Expand Backlog section</span>
           </span>
         </summary>
-        <div className="grid gap-3 px-4 pb-4">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content">{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div>
+        <div className="grid gap-3 px-4 pb-4">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content" defaultOpen>{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="rounded-md bg-white p-4 font-bold text-muted">No backlog items.</p>}</div>
       </details>
     </div> : null}
   </div>;
@@ -534,8 +534,8 @@ function isBeforeCurrentMonth(releaseDate: string | null, currentMonthKey: strin
   return Boolean(monthKey && monthKey < currentMonthKey);
 }
 
-function BacklogGroup({ title, count, testId, children }: { title: string; count: number; testId: string; children: ReactNode }) {
-  return <details data-testid={testId} className="rounded-md bg-white p-3">
+function BacklogGroup({ title, count, testId, children, defaultOpen = false }: { title: string; count: number; testId: string; children: ReactNode; defaultOpen?: boolean }) {
+  return <details data-testid={testId} className="rounded-md bg-white p-3" open={defaultOpen}>
     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold">
       <span>{title}</span>
       <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
