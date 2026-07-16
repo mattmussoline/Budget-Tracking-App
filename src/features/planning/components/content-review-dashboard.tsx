@@ -71,7 +71,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     formData.set("notes", item.notes ?? "");
     formData.set("proposedRate", formatOptionalCurrency(item.proposedRateCents));
     formData.set("reviewLink", item.reviewLink ?? "");
-    formData.set("comparableContent", item.comparableContent ?? "");
+    formData.set("comparableContent", "");
     formData.set("isCoproductionOpportunity", item.isCoproductionOpportunity ? "true" : "false");
     return formData;
   }
@@ -109,13 +109,15 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
   const approvedContent = queue.filter((item) => item.reviewStatus === "approved");
   const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
+  const coproductionContent = queue.filter((item) => item.isCoproductionOpportunity);
   const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
-  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : rejectedContent;
+  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
 
   return (
     <div className="grid gap-5">
-      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
+        <StatusCard label="Co-productions" value={coproductionContent.length} helper="Potential partner projects" tone="coproduction" onClick={() => setOpenStatusModal("coproduction")} />
         <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
         <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" tone="approved" onClick={() => setOpenStatusModal("approved")} />
         <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" tone="rejected" onClick={() => setOpenStatusModal("rejected")} />
@@ -163,12 +165,13 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   );
 }
 
-type StatusCardTone = "neutral" | "active" | "radar" | "approved" | "rejected";
-type ReviewStatusModalKey = "active" | "radar" | "approved" | "rejected";
+type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "approved" | "rejected";
+type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "approved" | "rejected";
 
 const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string }> = {
   neutral: { card: "bg-white text-foreground ring-gray-200", label: "text-muted", helper: "text-muted" },
   active: { card: "bg-orange-50 text-orange-950 ring-orange-200", label: "text-orange-800", helper: "text-orange-900" },
+  coproduction: { card: "bg-slate-50 text-slate-950 ring-slate-200", label: "text-slate-700", helper: "text-slate-700" },
   radar: { card: "bg-amber-50 text-amber-950 ring-amber-200", label: "text-amber-800", helper: "text-amber-900" },
   approved: { card: "bg-emerald-50 text-emerald-950 ring-emerald-200", label: "text-emerald-800", helper: "text-emerald-900" },
   rejected: { card: "bg-red-50 text-red-950 ring-red-200", label: "text-red-800", helper: "text-red-900" }
@@ -204,6 +207,14 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
     empty: "No active decisions right now.",
     testId: "content-review-active-modal-content",
     tone: "active"
+  },
+  coproduction: {
+    title: "Co-productions",
+    eyebrow: "Potential Co-production",
+    description: "Reviews flagged as possible partner projects rather than standard licensing decisions.",
+    empty: "No potential co-productions yet.",
+    testId: "content-review-coproduction-content",
+    tone: "coproduction"
   },
   radar: {
     title: "On the Radar",
@@ -303,15 +314,14 @@ function isDecisionQueueStatus(status: ReviewStatus) {
 function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("relative grid gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
-      {item.isCoproductionOpportunity ? <span role="img" aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-amber-600 shadow-[0_0_0_3px_rgba(254,243,199,1)]" /> : null}
+    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-slate-700 px-2 py-1 text-[9px] font-extrabold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
       <button
         type="button"
         aria-label={`Select ${item.title || "Untitled review"}`}
         onClick={() => onSelect(item.id)}
         className={cn(
           "min-h-10 rounded-md px-3 text-left text-xs font-extrabold uppercase tracking-wide transition",
-          item.isCoproductionOpportunity && "pl-5",
           active ? "bg-blue-600 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
         )}
       >
@@ -357,7 +367,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
 
   return <div className="grid gap-4">
     <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
-    {item.isCoproductionOpportunity ? <p className="inline-flex items-center gap-2 text-xs font-extrabold text-amber-700"><span className="h-2 w-2 rounded-full bg-amber-600 shadow-[0_0_0_3px_rgba(254,243,199,1)]" aria-hidden="true" />Potential co-production opportunity</p> : null}
+    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 ring-1 ring-slate-200">Potential co-production opportunity</p> : null}
     <div className="grid gap-1 border-y border-gray-200">
       <CompactField label="Detail Title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
       <CompactField label="Proposed Rate"><CurrencyField label="Proposed Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
@@ -384,8 +394,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
       <CompactField label="Link"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} hideLabel /></CompactField>
     </div>
     <div className="grid gap-4 md:grid-cols-2">
-      <TextArea label="Review Notes" value={item.notes ?? ""} onChange={(value) => onChange("notes", value)} disabled={isDemo} />
-      <TextArea label="Comparable Content" value={item.comparableContent ?? ""} onChange={(value) => onChange("comparableContent", value)} disabled={isDemo} />
+      <div className="md:col-span-2"><TextArea label="Notes" value={combineReviewNotes(item)} onChange={(value) => { onChange("notes", value); onChange("comparableContent", ""); }} disabled={isDemo} /></div>
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
@@ -444,14 +453,14 @@ function CurrencyField({ label, value, onChange, disabled, hideLabel }: { label:
 }
 
 function OpportunityField({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: (value: boolean) => void }) {
-  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-amber-50 px-3 text-xs font-extrabold text-amber-700 ring-1 ring-amber-100">
+  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-extrabold text-slate-700 ring-1 ring-slate-200">
     <input
       aria-label="Potential co-production opportunity"
       type="checkbox"
       checked={checked}
       disabled={disabled}
       onChange={(event) => onChange(event.target.checked)}
-      className="h-4 w-4 accent-amber-600"
+      className="h-4 w-4 accent-slate-700"
     />
     Potential co-production
   </label>;
@@ -514,6 +523,12 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       suppressContentEditableWarning
     />
   </label>;
+}
+
+function combineReviewNotes(item: ContentReviewItem) {
+  const notes = item.notes?.trim() ?? "";
+  const comparable = item.comparableContent?.trim() ?? "";
+  return [notes, comparable].filter(Boolean).join(notes && comparable ? "\n\n" : "");
 }
 
 function linkifyText(value: string) {

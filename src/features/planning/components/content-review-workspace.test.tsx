@@ -64,10 +64,11 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
     expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
     expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "https://example.com/review");
-    expect(screen.getByRole("textbox", { name: "Comparable Content" })).toHaveTextContent("Symbolon");
+    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveTextContent("Strong formation fit.");
+    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveTextContent("Symbolon");
   });
 
-  it("makes links in review notes and comparable content clickable", () => {
+  it("makes links in the combined notes field clickable", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Watch https://example.com/notes", comparableContent: "Compare https://example.com/compare" }]} isDemo />);
 
     const notesLink = screen.getByRole("link", { name: "https://example.com/notes" });
@@ -75,14 +76,14 @@ describe("ContentReviewDashboard", () => {
 
     expect(notesLink).toHaveAttribute("href", "https://example.com/notes");
     expect(comparableLink).toHaveAttribute("href", "https://example.com/compare");
-    expect(notesLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Review Notes");
-    expect(comparableLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Comparable Content");
+    expect(notesLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Notes");
+    expect(comparableLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Notes");
   });
 
   it("turns newly typed review-note URLs into links after editing", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Review Notes" });
+    const notesBox = screen.getByRole("textbox", { name: "Notes" });
     notesBox.focus();
     notesBox.innerText = "Watch https://example.com/new-note";
     fireEvent.input(notesBox);
@@ -194,12 +195,24 @@ describe("ContentReviewDashboard", () => {
   it("marks co-production opportunities with a small queue signal and compact editor field", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
+    expect(screen.getByRole("button", { name: /Co-productions: 1/ })).toBeVisible();
     expect(screen.getAllByLabelText("Potential co-production opportunity")).toHaveLength(2);
+    expect(screen.getByText("Co-prod")).toBeVisible();
     expect(screen.getAllByText("Potential co-production").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByLabelText("Potential co-production opportunity")[1]);
 
     expect(screen.getByText("unsaved")).toBeVisible();
+  });
+
+  it("opens a top-level co-productions summary", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Co-productions: 1/ }));
+
+    const dialog = screen.getByRole("dialog", { name: "Co-productions" });
+    expect(within(dialog).getByDisplayValue("Catholic Basics")).toBeVisible();
+    expect(within(dialog).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
   });
 
   it("marks edited review details as unsaved until the user saves", () => {
