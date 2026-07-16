@@ -458,13 +458,7 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       }}
       onInput={(event) => {
         const textValue = event.currentTarget.innerText;
-        const caretOffset = getCaretOffset(event.currentTarget);
-        const linkedHtml = linkifyText(textValue);
-
         onChange(textValue);
-        setHtmlValue(linkedHtml);
-        event.currentTarget.innerHTML = linkedHtml;
-        restoreCaret(event.currentTarget, caretOffset);
       }}
       role="textbox"
       suppressContentEditableWarning
@@ -489,44 +483,4 @@ function escapeHtml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function getCaretOffset(root: HTMLElement) {
-  const selection = window.getSelection();
-  if (!selection?.rangeCount) return root.innerText.length;
-
-  const range = selection.getRangeAt(0);
-  const preCaretRange = range.cloneRange();
-  preCaretRange.selectNodeContents(root);
-  preCaretRange.setEnd(range.endContainer, range.endOffset);
-  return preCaretRange.toString().length;
-}
-
-function restoreCaret(root: HTMLElement, offset: number) {
-  const selection = window.getSelection();
-  if (!selection) return;
-
-  const range = document.createRange();
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let currentOffset = 0;
-  let currentNode = walker.nextNode();
-
-  while (currentNode) {
-    const nextOffset = currentOffset + (currentNode.textContent?.length ?? 0);
-    if (offset <= nextOffset) {
-      range.setStart(currentNode, Math.max(0, offset - currentOffset));
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return;
-    }
-
-    currentOffset = nextOffset;
-    currentNode = walker.nextNode();
-  }
-
-  range.selectNodeContents(root);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
 }

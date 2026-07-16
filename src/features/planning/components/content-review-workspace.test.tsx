@@ -78,12 +78,16 @@ describe("ContentReviewDashboard", () => {
     expect(comparableLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Comparable Content");
   });
 
-  it("turns newly typed review-note URLs into links inside the textbox", () => {
+  it("turns newly typed review-note URLs into links after editing", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
     const notesBox = screen.getByRole("textbox", { name: "Review Notes" });
+    notesBox.focus();
     notesBox.innerText = "Watch https://example.com/new-note";
     fireEvent.input(notesBox);
+    expect(screen.queryByRole("link", { name: "https://example.com/new-note" })).not.toBeInTheDocument();
+
+    fireEvent.blur(notesBox);
 
     const newLink = screen.getByRole("link", { name: "https://example.com/new-note" });
     expect(newLink).toHaveAttribute("href", "https://example.com/new-note");
