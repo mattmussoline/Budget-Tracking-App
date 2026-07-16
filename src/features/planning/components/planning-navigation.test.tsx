@@ -18,7 +18,7 @@ describe("PlanningNavigation", () => {
   it("marks only the current section as the active page", () => {
     render(<PlanningNavigation activeSection="content-review" />);
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Licensing Summary" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "Roadmap" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "Content Review" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Content Review" })).toHaveClass("bg-white", "text-blue-700");
@@ -28,8 +28,8 @@ describe("PlanningNavigation", () => {
     render(<PlanningNavigation activeSection="dashboard" />);
 
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
-      "Dashboard",
       "Roadmap",
+      "Licensing Summary",
       "Content Review"
     ]);
   });
@@ -45,7 +45,7 @@ describe("PlanningNavigation", () => {
   it("keeps demo navigation inside the public demo section", () => {
     render(<PlanningNavigation activeSection="dashboard" routePrefix="/demo" />);
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/demo/dashboard");
+    expect(screen.getByRole("link", { name: "Licensing Summary" })).toHaveAttribute("href", "/demo/dashboard");
     expect(screen.getByRole("link", { name: "Roadmap" })).toHaveAttribute("href", "/demo/roadmap");
     expect(screen.getByRole("link", { name: "Content Review" })).toHaveAttribute("href", "/demo/content-review");
     expect(prefetch).toHaveBeenCalledWith("/demo/roadmap");

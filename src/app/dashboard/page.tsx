@@ -17,6 +17,11 @@ type DashboardPageProps = {
   }>;
 };
 
+export const metadata = {
+  title: "Licensing Summary | Licensing Budget",
+  description: "Summary of fiscal-year licensing spend, provider mix, cadence, budget sources, and attention items"
+};
+
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const paramsPromise = searchParams;
   const admin = createSupabaseAdminClient();

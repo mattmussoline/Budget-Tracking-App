@@ -11,8 +11,8 @@ import {
 } from "@/features/budget/demo-data";
 
 export const metadata = {
-  title: "Demo Dashboard | Licensing Budget",
-  description: "Public sample dashboard with popout metrics, provider mix, attention items, and dummy licensing budget data"
+  title: "Demo Licensing Summary | Licensing Budget",
+  description: "Public sample licensing summary with popout metrics, provider mix, attention items, and dummy licensing budget data"
 };
 
 export default function DemoDashboardPage() {

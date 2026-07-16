@@ -146,7 +146,7 @@ export function DashboardInsights({
   return (
     <SoftSurface className="bg-white p-6 md:p-8">
       <div className="mb-5">
-        <h2 className="font-display text-2xl font-extrabold tracking-tight">Dashboard</h2>
+        <h2 className="font-display text-2xl font-extrabold tracking-tight">Licensing Summary</h2>
         <p className="text-sm font-medium text-muted">Quick signals for how the licensing year is taking shape.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">

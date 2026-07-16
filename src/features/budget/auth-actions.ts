@@ -50,7 +50,7 @@ export async function login(_previousState: string | null, formData: FormData) {
     maxAge: 12 * 60 * 60
   });
 
-  redirect("/dashboard");
+  redirect("/roadmap");
 }
 
 export async function logout() {

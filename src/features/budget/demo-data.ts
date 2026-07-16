@@ -40,7 +40,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "quarterly",
     addedFiscalMonth: 4,
     budgetSource: "internal",
-    notes: "Kids series used to show the dashboard's cadence math."
+    notes: "Kids series used to show the licensing summary's cadence math."
   },
   {
     id: "demo-license-4",
@@ -99,7 +99,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-07-21",
     status: "released",
     budgetSource: "donor_funded",
-    notes: "Released title that demonstrates the Push to Dashboard handoff reminder.",
+    notes: "Released title that demonstrates the Push to Licensing Summary handoff reminder.",
     categoryId: "demo-cat-adult"
   },
   {

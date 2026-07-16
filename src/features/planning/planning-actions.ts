@@ -315,7 +315,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
 export async function sendRoadmapItemToBudget(formData: FormData) {
   const parsed = roadmapPipelineSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error("Choose a valid roadmap item to add to the dashboard.");
+    throw new Error("Choose a valid roadmap item to add to the licensing summary.");
   }
 
   const admin = await requirePlanningAdmin();

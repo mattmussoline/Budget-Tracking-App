@@ -14,8 +14,8 @@ type PlanningNavigationProps = {
 };
 
 const planningSections = [
-  { href: "/dashboard", label: "Dashboard", section: "dashboard" },
   { href: "/roadmap", label: "Roadmap", section: "roadmap" },
+  { href: "/dashboard", label: "Licensing Summary", section: "dashboard" },
   { href: "/content-review", label: "Content Review", section: "content-review" }
 ] as const;
 

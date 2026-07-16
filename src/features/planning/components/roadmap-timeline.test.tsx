@@ -492,27 +492,27 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).queryByRole("option", { name: "Ready" })).not.toBeInTheDocument();
   });
 
-  it("lets roadmap items move forward to the dashboard", () => {
+  it("lets roadmap items move forward to the licensing summary", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
 
-    expect(within(dialog).getByRole("button", { name: "Push to Dashboard" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Push to Licensing Summary" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Push to ClickUp" })).toBeInTheDocument();
     expect(within(dialog).getByTestId("roadmap-form-actions")).toHaveClass("justify-between", "border-t", "pt-4");
   });
 
-  it("confirms when a roadmap item is pushed to the dashboard", async () => {
+  it("confirms when a roadmap item is pushed to the licensing summary", async () => {
     actionMocks.sendRoadmapItemToBudget.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Push to Dashboard" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Push to Licensing Summary" }));
 
     await waitFor(() => expect(actionMocks.sendRoadmapItemToBudget).toHaveBeenCalledTimes(1));
-    expect(within(dialog).getByText("Pushed to Dashboard with a $0 yearly placeholder. Update the amount on the Dashboard.")).toBeVisible();
+    expect(within(dialog).getByText("Pushed to Licensing Summary with a $0 yearly placeholder. Update the amount on the Licensing Summary.")).toBeVisible();
   });
 
   it("confirms when a roadmap item is pushed to ClickUp", async () => {

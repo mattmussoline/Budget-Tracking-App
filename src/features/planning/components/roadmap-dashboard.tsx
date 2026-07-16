@@ -667,7 +667,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
 
     try {
       await sendRoadmapItemToBudget(new FormData(formRef.current));
-      setMessage("Pushed to Dashboard with a $0 yearly placeholder. Update the amount on the Dashboard.");
+      setMessage("Pushed to Licensing Summary with a $0 yearly placeholder. Update the amount on the Licensing Summary.");
     } catch {
       setMessage("Could not add this roadmap item to the budget.");
     } finally {
@@ -754,7 +754,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
         {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Dashboard</SoftButton> : null}
+        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Licensing Summary</SoftButton> : null}
         {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
         {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
       </div>
