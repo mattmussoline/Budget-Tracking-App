@@ -432,17 +432,101 @@ function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus,
 }
 
 function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  const links = extractLinks(value);
+  const [htmlValue, setHtmlValue] = useState(() => linkifyText(value));
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (document.activeElement === editorRef.current) return;
+    setHtmlValue(linkifyText(value));
+  }, [value]);
 
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
     {label}
-    <textarea aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={5} className="rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal" />
-    {links.length ? <span className="flex flex-wrap gap-x-3 gap-y-1 normal-case tracking-normal">
-      {links.map((link) => <a key={link} href={link} target="_blank" rel="noreferrer" className="break-all text-sm font-bold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700">{link}</a>)}
-    </span> : null}
+    <div
+      ref={editorRef}
+      aria-disabled={disabled}
+      aria-label={label}
+      className={cn("min-h-[8.25rem] whitespace-pre-wrap break-words rounded-md border-0 bg-gray-100 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300", disabled && "cursor-not-allowed opacity-60")}
+      contentEditable={!disabled}
+      dangerouslySetInnerHTML={{ __html: htmlValue }}
+      onBlur={(event) => setHtmlValue(linkifyText(event.currentTarget.innerText))}
+      onClick={(event) => {
+        const link = (event.target as HTMLElement).closest("a");
+        if (!link) return;
+        event.preventDefault();
+        window.open(link.href, "_blank", "noopener,noreferrer");
+      }}
+      onInput={(event) => {
+        const textValue = event.currentTarget.innerText;
+        const caretOffset = getCaretOffset(event.currentTarget);
+        const linkedHtml = linkifyText(textValue);
+
+        onChange(textValue);
+        setHtmlValue(linkedHtml);
+        event.currentTarget.innerHTML = linkedHtml;
+        restoreCaret(event.currentTarget, caretOffset);
+      }}
+      role="textbox"
+      suppressContentEditableWarning
+    />
   </label>;
 }
 
-function extractLinks(value: string) {
-  return Array.from(new Set(value.match(/https?:\/\/[^\s<>"']+/g) ?? []));
+function linkifyText(value: string) {
+  const parts = value.split(/(https?:\/\/[^\s<>"']+)/g);
+
+  return parts.map((part) => {
+    const escapedPart = escapeHtml(part);
+    if (!/^https?:\/\//.test(part)) return escapedPart;
+    return `<a href="${escapedPart}" target="_blank" rel="noreferrer" class="break-all text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700">${escapedPart}</a>`;
+  }).join("");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getCaretOffset(root: HTMLElement) {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount) return root.innerText.length;
+
+  const range = selection.getRangeAt(0);
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(root);
+  preCaretRange.setEnd(range.endContainer, range.endOffset);
+  return preCaretRange.toString().length;
+}
+
+function restoreCaret(root: HTMLElement, offset: number) {
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const range = document.createRange();
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let currentOffset = 0;
+  let currentNode = walker.nextNode();
+
+  while (currentNode) {
+    const nextOffset = currentOffset + (currentNode.textContent?.length ?? 0);
+    if (offset <= nextOffset) {
+      range.setStart(currentNode, Math.max(0, offset - currentOffset));
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return;
+    }
+
+    currentOffset = nextOffset;
+    currentNode = walker.nextNode();
+  }
+
+  range.selectNodeContents(root);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
 }

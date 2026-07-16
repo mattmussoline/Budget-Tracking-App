@@ -63,14 +63,31 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
     expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
     expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "https://example.com/review");
-    expect(screen.getByLabelText("Comparable Content")).toHaveValue("Symbolon");
+    expect(screen.getByRole("textbox", { name: "Comparable Content" })).toHaveTextContent("Symbolon");
   });
 
   it("makes links in review notes and comparable content clickable", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Watch https://example.com/notes", comparableContent: "Compare https://example.com/compare" }]} isDemo />);
 
-    expect(screen.getByRole("link", { name: "https://example.com/notes" })).toHaveAttribute("href", "https://example.com/notes");
-    expect(screen.getByRole("link", { name: "https://example.com/compare" })).toHaveAttribute("href", "https://example.com/compare");
+    const notesLink = screen.getByRole("link", { name: "https://example.com/notes" });
+    const comparableLink = screen.getByRole("link", { name: "https://example.com/compare" });
+
+    expect(notesLink).toHaveAttribute("href", "https://example.com/notes");
+    expect(comparableLink).toHaveAttribute("href", "https://example.com/compare");
+    expect(notesLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Review Notes");
+    expect(comparableLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Comparable Content");
+  });
+
+  it("turns newly typed review-note URLs into links inside the textbox", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const notesBox = screen.getByRole("textbox", { name: "Review Notes" });
+    notesBox.innerText = "Watch https://example.com/new-note";
+    fireEvent.input(notesBox);
+
+    const newLink = screen.getByRole("link", { name: "https://example.com/new-note" });
+    expect(newLink).toHaveAttribute("href", "https://example.com/new-note");
+    expect(newLink.closest("[role='textbox']")).toBe(notesBox);
   });
 
   it("uses the roadmap provider picker for review details", () => {
