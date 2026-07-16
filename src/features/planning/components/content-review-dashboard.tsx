@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ExternalLink, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, ExternalLink, Handshake, Plus, Radar, Save, Trash2, X, XCircle } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
@@ -115,7 +115,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
   return (
     <div className="grid gap-5">
-      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
         <StatusCard label="Co-productions" value={coproductionContent.length} helper="Potential partner projects" tone="coproduction" onClick={() => setOpenStatusModal("coproduction")} />
         <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
@@ -168,26 +168,33 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "approved" | "rejected";
 type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "approved" | "rejected";
 
-const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string }> = {
-  neutral: { card: "bg-white text-foreground ring-gray-200", label: "text-muted", helper: "text-muted" },
-  active: { card: "bg-orange-50 text-orange-950 ring-orange-200", label: "text-orange-800", helper: "text-orange-900" },
-  coproduction: { card: "bg-slate-50 text-slate-950 ring-slate-200", label: "text-slate-700", helper: "text-slate-700" },
-  radar: { card: "bg-amber-50 text-amber-950 ring-amber-200", label: "text-amber-800", helper: "text-amber-900" },
-  approved: { card: "bg-emerald-50 text-emerald-950 ring-emerald-200", label: "text-emerald-800", helper: "text-emerald-900" },
-  rejected: { card: "bg-red-50 text-red-950 ring-red-200", label: "text-red-800", helper: "text-red-900" }
+const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string; icon: string; rail: string; value: string; Icon: typeof CheckCircle2 }> = {
+  neutral: { card: "bg-white text-foreground ring-gray-200", label: "text-muted", helper: "text-muted", icon: "bg-gray-100 text-muted", rail: "bg-gray-300", value: "text-foreground", Icon: CheckCircle2 },
+  active: { card: "bg-orange-50 text-orange-950 ring-orange-200", label: "text-orange-800", helper: "text-orange-900", icon: "bg-orange-100 text-orange-800", rail: "bg-orange-500", value: "text-orange-950", Icon: ArrowRight },
+  coproduction: { card: "bg-sky-50 text-slate-950 ring-sky-200", label: "text-sky-800", helper: "text-slate-700", icon: "bg-white text-sky-800 ring-1 ring-sky-200", rail: "bg-sky-500", value: "text-slate-950", Icon: Handshake },
+  radar: { card: "bg-amber-50 text-amber-950 ring-amber-200", label: "text-amber-800", helper: "text-amber-900", icon: "bg-amber-100 text-amber-800", rail: "bg-amber-400", value: "text-amber-950", Icon: Radar },
+  approved: { card: "bg-emerald-50 text-emerald-950 ring-emerald-200", label: "text-emerald-800", helper: "text-emerald-900", icon: "bg-emerald-100 text-emerald-800", rail: "bg-emerald-500", value: "text-emerald-950", Icon: CheckCircle2 },
+  rejected: { card: "bg-rose-50 text-rose-950 ring-rose-200", label: "text-rose-800", helper: "text-rose-900", icon: "bg-white text-rose-800 ring-1 ring-rose-200", rail: "bg-rose-400", value: "text-rose-950", Icon: XCircle }
 };
 
 function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
   const toneClasses = STATUS_CARD_TONES[tone];
+  const Icon = toneClasses.Icon;
   const cardClass = cn(
-    "min-h-24 rounded-lg p-4 text-left shadow-sm ring-1 transition",
+    "group relative min-h-28 overflow-hidden rounded-lg p-4 text-left shadow-sm ring-1 transition",
     toneClasses.card,
     onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
   );
   const content = <>
-    <span className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{label}</span>
-    <span className="mt-2 block font-display text-3xl font-extrabold">{value}</span>
-    <span className={cn("mt-1 block text-xs font-bold", toneClasses.helper)}>{helper}</span>
+    <span aria-hidden="true" className={cn("absolute inset-x-0 bottom-0 h-1", toneClasses.rail)} />
+    <span className="flex items-start justify-between gap-3">
+      <span className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{label}</span>
+      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md transition group-hover:scale-105", toneClasses.icon)}>
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+    </span>
+    <span className={cn("mt-1 block font-display text-3xl font-extrabold", toneClasses.value)}>{value}</span>
+    <span className={cn("mt-1 block max-w-56 text-xs font-bold leading-snug", toneClasses.helper)}>{helper}</span>
   </>;
 
   if (onClick) {
