@@ -84,10 +84,12 @@ describe("buildNeedsAttentionItems", () => {
     expect(items.map((item) => item.title)).toEqual([
       "Approved Review",
       "Released Roadmap",
+      "Released Roadmap",
       "Unscheduled Roadmap",
       "Blocked Review",
       "Blocked Roadmap"
     ]);
+    expect(items.map((item) => item.detail)).toContain("Released roadmap item needs a Formed link.");
   });
 
   it("flags low remaining budget", () => {
@@ -118,7 +120,8 @@ describe("buildNeedsAttentionItems", () => {
           releaseDate: "2027-03-01",
           status: "released",
           notes: null,
-          categoryId: null
+          categoryId: null,
+          formedUrl: "https://watch.formed.org/already-budgeted"
         }
       ],
       remainingBudgetCents: 900000
@@ -146,5 +149,63 @@ describe("buildNeedsAttentionItems", () => {
     });
 
     expect(items).toEqual([]);
+  });
+
+  it("does not flag released roadmap items that already have Formed links", () => {
+    const items = buildNeedsAttentionItems({
+      licenses,
+      reviewItems: [],
+      roadmapItems: [
+        {
+          id: "road-formed",
+          title: "Released With Link",
+          provider: "Augustine Institute",
+          releaseDate: "2027-05-01",
+          status: "released",
+          notes: null,
+          categoryId: null,
+          formedUrl: "https://watch.formed.org/released-with-link"
+        }
+      ],
+      remainingBudgetCents: 900000
+    });
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        id: "roadmap-released-road-formed",
+        detail: "Released roadmap item is not in the budget yet."
+      })
+    ]);
+  });
+
+  it("flags suggested Formed links as confirmation work", () => {
+    const items = buildNeedsAttentionItems({
+      licenses,
+      reviewItems: [],
+      roadmapItems: [
+        {
+          id: "road-candidate",
+          title: "Released With Candidate",
+          provider: "Augustine Institute",
+          releaseDate: "2027-06-01",
+          status: "released",
+          notes: null,
+          categoryId: null,
+          formedUrlCandidate: "https://watch.formed.org/released-with-candidate"
+        }
+      ],
+      remainingBudgetCents: 900000
+    });
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        id: "roadmap-released-road-candidate",
+        detail: "Released roadmap item is not in the budget yet."
+      }),
+      expect.objectContaining({
+        id: "roadmap-formed-link-road-candidate",
+        detail: "Released roadmap item has a suggested Formed link to confirm."
+      })
+    ]);
   });
 });

@@ -4,7 +4,7 @@ import { PlanningShell } from "@/features/planning/components/planning-shell";
 import { RoadmapDashboard } from "@/features/planning/components/roadmap-dashboard";
 import { normalizeMonthRange, parseMonthAnchor } from "@/features/planning/planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
-import { releaseDueScheduledRoadmapItems } from "@/features/planning/roadmap-auto-release";
+import { releaseDueScheduledRoadmapItems, syncReleasedRoadmapFormedLinks } from "@/features/planning/roadmap-auto-release";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -63,11 +63,12 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   }
 
   await releaseDueScheduledRoadmapItems(admin, activeFiscalYear.id);
+  await syncReleasedRoadmapFormedLinks(admin, activeFiscalYear.id);
 
   const [{ data: roadmapRows, error: roadmapError }, { data: seriesRows, error: seriesError }, { data: categoryRows, error: categoryError }] = await Promise.all([
     admin
       .from("roadmap_items")
-      .select("id,title,provider,genre,format,featured_in_individual_marketing,release_month,status,budget_source,notes,category_id,clickup_task_id,clickup_task_url,clickup_synced_at")
+      .select("id,title,provider,genre,format,featured_in_individual_marketing,release_month,status,budget_source,notes,category_id,clickup_task_id,clickup_task_url,clickup_synced_at,formed_url,formed_url_candidate")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("release_month", { ascending: true })
       .order("created_at", { ascending: true }),
@@ -106,7 +107,9 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     categoryId: item.category_id,
     clickupTaskId: item.clickup_task_id,
     clickupTaskUrl: item.clickup_task_url,
-    clickupSyncedAt: item.clickup_synced_at
+    clickupSyncedAt: item.clickup_synced_at,
+    formedUrl: item.formed_url,
+    formedUrlCandidate: item.formed_url_candidate
   }));
 
   const ongoingSeries: OngoingSeries[] = (seriesRows ?? []).map((item) => ({

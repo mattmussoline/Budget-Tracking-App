@@ -56,6 +56,18 @@ export function buildNeedsAttentionItems({
   }
 
   for (const roadmap of roadmapItems) {
+    if (roadmap.status === "released" && !roadmap.formedUrl) {
+      items.push({
+        id: `roadmap-formed-link-${roadmap.id}`,
+        title: roadmap.title,
+        detail: roadmap.formedUrlCandidate ? "Released roadmap item has a suggested Formed link to confirm." : "Released roadmap item needs a Formed link.",
+        tone: "amber",
+        href: "/roadmap"
+      });
+    }
+  }
+
+  for (const roadmap of roadmapItems) {
     if (!roadmap.releaseDate || roadmap.releaseDate === "TBD") {
       items.push({
         id: `roadmap-unscheduled-${roadmap.id}`,

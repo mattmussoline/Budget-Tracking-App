@@ -7,7 +7,7 @@ import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
 import type { ContentReviewItem, ReviewStatus, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
-import { releaseDueScheduledRoadmapItems } from "@/features/planning/roadmap-auto-release";
+import { releaseDueScheduledRoadmapItems, syncReleasedRoadmapFormedLinks } from "@/features/planning/roadmap-auto-release";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -69,6 +69,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   await releaseDueScheduledRoadmapItems(admin, activeFiscalYear.id);
+  await syncReleasedRoadmapFormedLinks(admin, activeFiscalYear.id);
 
   const [
     { data: licenseRows, error: licensesError },
@@ -93,7 +94,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .order("email", { ascending: true }),
     admin
       .from("roadmap_items")
-      .select("id,title,provider,release_month,status,budget_source,notes,category_id")
+      .select("id,title,provider,release_month,status,budget_source,notes,category_id,formed_url,formed_url_candidate")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
@@ -149,7 +150,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     status: item.status as RoadmapStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
     notes: item.notes,
-    categoryId: item.category_id
+    categoryId: item.category_id,
+    formedUrl: item.formed_url,
+    formedUrlCandidate: item.formed_url_candidate
   }));
   const reviewItems: ContentReviewItem[] = (reviewRows ?? []).map((item) => ({
     id: item.id,

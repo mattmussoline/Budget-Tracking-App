@@ -19,6 +19,8 @@ export type RoadmapItem = {
   clickupTaskId?: string | null;
   clickupTaskUrl?: string | null;
   clickupSyncedAt?: string | null;
+  formedUrl?: string | null;
+  formedUrlCandidate?: string | null;
 };
 
 export type RoadmapCategory = {

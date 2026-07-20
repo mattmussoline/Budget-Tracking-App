@@ -1,10 +1,13 @@
 .next
+.open-next
+.wrangler
 node_modules
 playwright-report
 test-results
 .env
 .env.local
 .env.*.local
+.dev.vars
 *.tsbuildinfo
 .vercel
 .DS_Store

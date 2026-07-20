@@ -85,6 +85,8 @@ create table if not exists public.roadmap_items (
   clickup_task_id text,
   clickup_task_url text,
   clickup_synced_at timestamptz,
+  formed_url text,
+  formed_url_candidate text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -127,6 +129,7 @@ create index if not exists roadmap_items_fiscal_year_id_idx on public.roadmap_it
 create index if not exists roadmap_categories_fiscal_year_id_idx on public.roadmap_categories(fiscal_year_id);
 create index if not exists roadmap_items_category_id_idx on public.roadmap_items(category_id);
 create index if not exists roadmap_items_clickup_task_id_idx on public.roadmap_items(clickup_task_id) where clickup_task_id is not null;
+create index if not exists roadmap_items_formed_url_idx on public.roadmap_items(formed_url) where formed_url is not null;
 create index if not exists ongoing_series_fiscal_year_id_idx on public.ongoing_series(fiscal_year_id);
 create index if not exists content_review_items_fiscal_year_id_idx on public.content_review_items(fiscal_year_id);
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { CalendarPlus, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Star, Trash2, X } from "lucide-react";
+import { CalendarPlus, Check, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Star, Trash2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, type SelectHTMLAttributes, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -622,6 +622,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [clickUpUrl, setClickUpUrl] = useState(item?.clickupTaskUrl ?? null);
+  const [formedUrl, setFormedUrl] = useState(item?.formedUrl ?? "");
+  const [formedUrlCandidate, setFormedUrlCandidate] = useState(item?.formedUrlCandidate ?? "");
   const fieldsDisabled = Boolean(isDemo || isSaving);
   const categoryOptions = categories
     .filter((category) => category.isActive || category.id === item?.categoryId)
@@ -637,6 +639,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       await addRoadmapItem(new FormData(event.currentTarget));
       formRef.current?.reset();
       setResetCount((count) => count + 1);
+      setFormedUrl("");
+      setFormedUrlCandidate("");
       setMessage("Roadmap item added.");
     } finally {
       setIsSaving(false);
@@ -721,6 +725,20 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
           <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
         </div>
         <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
+        <div className="grid gap-2 md:col-span-2">
+          <SoftInput id={`${fieldPrefix}-formed-url`} label="Formed link" name="formedUrl" type="url" placeholder="https://watch.formed.org/..." value={formedUrl} onChange={(event) => setFormedUrl(event.target.value)} disabled={fieldsDisabled} />
+          <input type="hidden" name="formedUrlCandidate" value={formedUrlCandidate} />
+          {formedUrl ? <a href={formedUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-md bg-green-50 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-green-800 ring-1 ring-green-100 transition hover:bg-green-100"><ExternalLink className="h-4 w-4" aria-hidden="true" />Open on Formed</a> : null}
+          {!formedUrl && formedUrlCandidate ? (
+            <div className="grid gap-2 rounded-md bg-amber-50 p-3 text-amber-950 ring-1 ring-amber-200">
+              <p className="text-xs font-extrabold uppercase tracking-wide">Suggested Formed link</p>
+              <a href={formedUrlCandidate} target="_blank" rel="noreferrer" className="min-w-0 break-all text-sm font-bold underline decoration-amber-400 underline-offset-4">{formedUrlCandidate}</a>
+              <SoftButton type="button" variant="ghost" className="w-fit bg-white text-amber-900 ring-1 ring-amber-200" disabled={fieldsDisabled} onClick={() => { setFormedUrl(formedUrlCandidate); setFormedUrlCandidate(""); }}>
+                <Check className="h-4 w-4" />Use suggested link
+              </SoftButton>
+            </div>
+          ) : null}
+        </div>
         <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-16 items-start gap-3 rounded-md bg-amber-50 p-3 text-amber-950 ring-1 ring-amber-200 md:col-span-2">
           <input
             id={`${fieldPrefix}-individual-marketing`}

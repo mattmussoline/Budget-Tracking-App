@@ -43,7 +43,7 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish" },
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish", formedUrl: "https://watch.formed.org/aquinas-101" },
   { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
   { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
   { id: "road-4", title: "Past Film", provider: "Augustine Institute", genre: "Biography", format: "Documentary", releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
@@ -427,6 +427,8 @@ describe("RoadmapDashboard", () => {
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
     expect(dialog).toHaveAttribute("open");
     expect(within(dialog).getByDisplayValue("Aquinas 101")).toBeVisible();
+    expect(within(dialog).getByLabelText("Formed link")).toHaveValue("https://watch.formed.org/aquinas-101");
+    expect(within(dialog).getByRole("link", { name: "Open on Formed" })).toHaveAttribute("href", "https://watch.formed.org/aquinas-101");
     const saveButton = within(dialog).getByRole("button", { name: "Save Item" });
     const cancelButton = within(dialog).getByRole("button", { name: "Cancel" });
     expect(saveButton).toBeVisible();
@@ -474,6 +476,24 @@ describe("RoadmapDashboard", () => {
     expect(within(dialog).getByLabelText("Genre")).toContainHTML("Christian Formation");
     expect(within(dialog).getByLabelText("Format")).toHaveValue("Formation Series");
     expect(within(dialog).getByLabelText("Format")).toContainHTML("Docu-Series");
+  });
+
+  it("lets suggested Formed links move into the confirmed Formed link field", () => {
+    const candidateItems: RoadmapItem[] = [
+      ...roadmapItems,
+      { id: "road-candidate", title: "Candidate Film", provider: "Augustine Institute", releaseDate: "2027-01-28", status: "released", notes: null, categoryId: "cat-kids", formedUrlCandidate: "https://watch.formed.org/candidate-film" }
+    ];
+
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={candidateItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Candidate Film" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
+
+    expect(within(dialog).getByRole("link", { name: "https://watch.formed.org/candidate-film" })).toHaveAttribute("href", "https://watch.formed.org/candidate-film");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Use suggested link" }));
+
+    expect(within(dialog).getByLabelText("Formed link")).toHaveValue("https://watch.formed.org/candidate-film");
+    expect(within(dialog).queryByRole("button", { name: "Use suggested link" })).not.toBeInTheDocument();
   });
 
   it("offers planned, scheduled, in-progress, blocked, and released statuses in the edit form", () => {

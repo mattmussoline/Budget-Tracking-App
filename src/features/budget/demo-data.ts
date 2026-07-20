@@ -100,7 +100,8 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "released",
     budgetSource: "donor_funded",
     notes: "Released title that demonstrates the Push to Licensing Summary handoff reminder.",
-    categoryId: "demo-cat-adult"
+    categoryId: "demo-cat-adult",
+    formedUrl: "https://watch.formed.org/pilgrim-road"
   },
   {
     id: "demo-roadmap-2",

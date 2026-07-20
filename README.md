@@ -57,7 +57,35 @@ APP_PASSWORD=...
 
 The app only accepts users whose email ends in `@augustineinstitute.org` or `@augustine.edu` and appears in `public.app_access_invites`. `APP_PASSWORD` must stay server-side only.
 
-## Vercel Deployment
+## Canonical Deployment
+
+The canonical live site is now Cloudflare Workers:
+
+```text
+https://app.formedlicensing.workers.dev
+```
+
+Deploy with Cloudflare after tests and local browser verification pass:
+
+```bash
+npm run cf:build
+npm run cf:deploy
+```
+
+Cloudflare Workers needs these variables/secrets:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+APP_PASSWORD
+CLICKUP_API_TOKEN
+CLICKUP_CONTENT_UPLOAD_LIST_ID
+```
+
+If `APP_PASSWORD` or another server-side secret changes, update the matching Cloudflare Worker secret and redeploy.
+
+## Legacy Vercel Deployment
 
 1. Create or link a Vercel project for this repository.
 2. Add these Vercel environment variables for Production and Preview:
@@ -71,6 +99,40 @@ APP_PASSWORD
 
 3. Deploy with Vercel after tests and local browser verification pass.
 4. If `APP_PASSWORD` changes in Vercel, redeploy so the server picks up the new value.
+
+## Cloudflare Workers
+
+This app runs on Cloudflare Workers through the OpenNext adapter.
+
+1. Add these Cloudflare Workers variables/secrets:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+APP_PASSWORD
+CLICKUP_API_TOKEN
+CLICKUP_CONTENT_UPLOAD_LIST_ID
+```
+
+2. Build and preview in the Cloudflare runtime:
+
+```bash
+npm run cf:build
+npm run cf:preview
+```
+
+3. Deploy the Worker:
+
+```bash
+npm run cf:deploy
+```
+
+The free canonical URL is:
+
+```text
+https://app.formedlicensing.workers.dev
+```
 
 ## Verification
 

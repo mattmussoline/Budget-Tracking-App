@@ -26,6 +26,8 @@ const roadmapItemSchema = z.object({
   status: roadmapStatusSchema,
   budgetSource: budgetSourceSchema.default("misc_licensing"),
   notes: z.string().trim().optional(),
+  formedUrl: z.union([z.literal(""), z.string().url()]).optional(),
+  formedUrlCandidate: z.union([z.literal(""), z.string().url()]).optional(),
   categoryId: nullableUuidSchema
 });
 
@@ -107,6 +109,8 @@ export async function addRoadmapItem(formData: FormData) {
     status: parsed.data.status,
     budget_source: parsed.data.budgetSource,
     notes: optionalText(parsed.data.notes),
+    formed_url: optionalText(parsed.data.formedUrl),
+    formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
     category_id: optionalText(parsed.data.categoryId)
   });
 
@@ -137,6 +141,8 @@ export async function updateRoadmapItem(formData: FormData) {
       status: parsed.data.status,
       budget_source: parsed.data.budgetSource,
       notes: optionalText(parsed.data.notes),
+      formed_url: optionalText(parsed.data.formedUrl),
+      formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
       category_id: optionalText(parsed.data.categoryId)
     })
     .eq("id", parsed.data.itemId)
