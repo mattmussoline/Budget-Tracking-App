@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, CheckCircle2, ExternalLink, Handshake, Plus, Radar, Save, Trash2, X, XCircle } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState, useTransition } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
@@ -498,12 +498,13 @@ function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus,
 }
 
 function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  const [htmlValue, setHtmlValue] = useState(() => linkifyText(value));
   const editorRef = useRef<HTMLDivElement>(null);
+  const isEditingRef = useRef(false);
 
-  useEffect(() => {
-    if (document.activeElement === editorRef.current) return;
-    setHtmlValue(linkifyText(value));
+  useLayoutEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || isEditingRef.current) return;
+    editor.innerHTML = linkifyText(value);
   }, [value]);
 
   return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
@@ -514,8 +515,10 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       aria-label={label}
       className={cn("min-h-[7rem] whitespace-pre-wrap break-words rounded-md border-0 bg-gray-50 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300", disabled && "cursor-not-allowed opacity-60")}
       contentEditable={!disabled}
-      dangerouslySetInnerHTML={{ __html: htmlValue }}
-      onBlur={(event) => setHtmlValue(linkifyText(event.currentTarget.innerText))}
+      onBlur={(event) => {
+        isEditingRef.current = false;
+        event.currentTarget.innerHTML = linkifyText(event.currentTarget.textContent ?? "");
+      }}
       onClick={(event) => {
         const link = (event.target as HTMLElement).closest("a");
         if (!link) return;
@@ -523,8 +526,12 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
         window.open(link.href, "_blank", "noopener,noreferrer");
       }}
       onInput={(event) => {
-        const textValue = event.currentTarget.innerText;
+        isEditingRef.current = true;
+        const textValue = event.currentTarget.textContent ?? "";
         onChange(textValue);
+      }}
+      onFocus={() => {
+        isEditingRef.current = true;
       }}
       role="textbox"
       suppressContentEditableWarning

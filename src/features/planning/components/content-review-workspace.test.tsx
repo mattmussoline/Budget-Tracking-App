@@ -85,7 +85,7 @@ describe("ContentReviewDashboard", () => {
 
     const notesBox = screen.getByRole("textbox", { name: "Notes" });
     notesBox.focus();
-    notesBox.innerText = "Watch https://example.com/new-note";
+    notesBox.textContent = "Watch https://example.com/new-note";
     fireEvent.input(notesBox);
     expect(screen.queryByRole("link", { name: "https://example.com/new-note" })).not.toBeInTheDocument();
 
@@ -94,6 +94,18 @@ describe("ContentReviewDashboard", () => {
     const newLink = screen.getByRole("link", { name: "https://example.com/new-note" });
     expect(newLink).toHaveAttribute("href", "https://example.com/new-note");
     expect(newLink.closest("[role='textbox']")).toBe(notesBox);
+  });
+
+  it("keeps newly typed review notes visible while editing", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const notesBox = screen.getByRole("textbox", { name: "Notes" });
+    notesBox.focus();
+    notesBox.textContent = "Fresh decision queue notes";
+    fireEvent.input(notesBox);
+
+    expect(notesBox).toHaveTextContent("Fresh decision queue notes");
+    expect(notesBox).not.toHaveTextContent("Strong formation fit.");
   });
 
   it("uses the roadmap provider picker for review details", () => {
