@@ -126,6 +126,25 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
       <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
         <div className="grid gap-5">
           <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
+            {radarContent.length > 0 ? (
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-cyan-50 p-3 shadow-[0_8px_18px_rgba(245,158,11,0.12)] sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-amber-100 text-amber-800">
+                    <Radar className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <p className="text-sm font-extrabold leading-snug text-amber-900">
+                    {radarContent.length} On the Radar {radarContent.length === 1 ? "piece is" : "pieces are"} waiting for follow-up. Open the list and decide who gets a next touch.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenStatusModal("radar")}
+                  className="shrink-0 rounded-md bg-amber-400 px-3 py-2 text-sm font-extrabold text-gray-950 transition hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  View Items
+                </button>
+              </div>
+            ) : null}
             <div className="mb-4 flex items-start justify-between gap-4">
               <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
               <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>

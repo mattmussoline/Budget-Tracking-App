@@ -165,12 +165,19 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(within(approvedGroup).getByText("Approved Content"));
     fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
 
+    expect(screen.getByText("1 On the Radar piece is waiting for follow-up. Open the list and decide who gets a next touch.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "View Items" }));
+    let radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    let radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
+    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
+    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
+
     expect(screen.getByText("Active Decisions")).toBeVisible();
     expect(screen.getByRole("button", { name: /On the Radar: 1/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /On the Radar: 1/ }));
 
-    const radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
-    const radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
+    radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
     expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
     fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
