@@ -166,7 +166,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
               <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
             </div>
             <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Rate</span><span>Provider</span>
+              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Yearly Rate</span><span>Provider</span>
             </div>
             <div data-testid="content-review-active-queue" className="grid gap-2">
               {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
