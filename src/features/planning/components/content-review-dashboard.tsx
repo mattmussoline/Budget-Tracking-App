@@ -18,6 +18,7 @@ type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
 const decisionQueueGridClass = "md:grid-cols-[4.5rem_1.3fr_1fr_0.9fr_1fr]";
 const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
+const editableBlockTags = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "DD", "DIV", "DL", "DT", "FIGCAPTION", "FIGURE", "FOOTER", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "LI", "MAIN", "NAV", "OL", "P", "PRE", "SECTION", "UL"]);
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -42,10 +43,18 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const [isPending, startTransition] = useTransition();
   const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
   const [openStatusModal, setOpenStatusModal] = useState<ReviewStatusModalKey | null>(null);
+  const editorSectionRef = useRef<HTMLElement>(null);
+  const shouldFocusEditorRef = useRef(false);
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
     setSelectedId(id);
+  }
+
+  function selectItemFromModal(id: string) {
+    shouldFocusEditorRef.current = true;
+    selectItem(id);
+    setOpenStatusModal(null);
   }
 
   function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) {
@@ -113,6 +122,13 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
   const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
 
+  useEffect(() => {
+    if (!shouldFocusEditorRef.current || openStatusModal) return;
+    shouldFocusEditorRef.current = false;
+    editorSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    editorSectionRef.current?.focus({ preventScroll: true });
+  }, [openStatusModal, selectedId]);
+
   return (
     <div className="grid gap-5">
       <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -166,7 +182,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
           </section>
         </div>
 
-        <section className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] md:p-7">
+        <section ref={editorSectionRef} tabIndex={-1} className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] outline-none focus:ring-2 focus:ring-blue-300 md:p-7">
           {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
         </section>
       </div>
@@ -178,6 +194,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
         isDemo={isDemo}
         onClose={() => setOpenStatusModal(null)}
         onSelect={selectItem}
+        onOpenDetail={selectItemFromModal}
         onChange={changeItem}
       /> : null}
     </div>
@@ -268,7 +285,7 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   }
 };
 
-function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
+function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onOpenDetail, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onOpenDetail: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toneClasses = STATUS_CARD_TONES[config.tone];
   const titleId = `review-status-modal-${config.tone}`;
@@ -320,7 +337,7 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelec
         </button>
       </header>
       <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
       </div>
       <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
         <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
@@ -337,7 +354,7 @@ function isDecisionQueueStatus(status: ReviewStatus) {
   return !isFinalReviewStatus(status) && status !== "on_the_radar";
 }
 
-function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
+function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onOpenDetail?: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
     <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
@@ -345,7 +362,7 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onChange }: { item: 
       <button
         type="button"
         aria-label={`Select ${item.title || "Untitled review"}`}
-        onClick={() => onSelect(item.id)}
+        onClick={() => (onOpenDetail ?? onSelect)(item.id)}
         className={cn(
           "min-h-10 rounded-md px-3 text-left text-xs font-extrabold uppercase tracking-wide transition",
           active ? "bg-blue-600 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
@@ -536,7 +553,7 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       contentEditable={!disabled}
       onBlur={(event) => {
         isEditingRef.current = false;
-        event.currentTarget.innerHTML = linkifyText(event.currentTarget.textContent ?? "");
+        event.currentTarget.innerHTML = linkifyText(getEditablePlainText(event.currentTarget));
       }}
       onClick={(event) => {
         const link = (event.target as HTMLElement).closest("a");
@@ -546,16 +563,33 @@ function TextArea({ label, value, onChange, disabled }: { label: string; value: 
       }}
       onInput={(event) => {
         isEditingRef.current = true;
-        const textValue = event.currentTarget.textContent ?? "";
+        const textValue = getEditablePlainText(event.currentTarget);
         onChange(textValue);
       }}
       onFocus={() => {
         isEditingRef.current = true;
       }}
       role="textbox"
+      aria-multiline="true"
       suppressContentEditableWarning
     />
   </label>;
+}
+
+function getEditablePlainText(editor: HTMLElement) {
+  return typeof editor.innerText === "string" ? editor.innerText.replace(/\u00a0/g, " ") : getEditableTextFallback(editor, editor).replace(/\u00a0/g, " ");
+}
+
+function getEditableTextFallback(node: Node, root: HTMLElement): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+  if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+  const element = node as HTMLElement;
+  if (element.tagName === "BR") return "\n";
+
+  const text = Array.from(element.childNodes).map((child) => getEditableTextFallback(child, root)).join("");
+  if (element !== root && editableBlockTags.has(element.tagName) && text && !text.endsWith("\n")) return `${text}\n`;
+  return text;
 }
 
 function combineReviewNotes(item: ContentReviewItem) {
@@ -568,7 +602,7 @@ function linkifyText(value: string) {
   const parts = value.split(/(https?:\/\/[^\s<>"']+)/g);
 
   return parts.map((part) => {
-    const escapedPart = escapeHtml(part);
+    const escapedPart = escapeHtml(part).replace(/\n/g, "<br>");
     if (!/^https?:\/\//.test(part)) return escapedPart;
     return `<a href="${escapedPart}" target="_blank" rel="noreferrer" class="break-all text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700">${escapedPart}</a>`;
   }).join("");

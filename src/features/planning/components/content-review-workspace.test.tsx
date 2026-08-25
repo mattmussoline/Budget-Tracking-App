@@ -108,6 +108,28 @@ describe("ContentReviewDashboard", () => {
     expect(notesBox).not.toHaveTextContent("Strong formation fit.");
   });
 
+  it("preserves visual paragraph breaks from the notes editor when saving", async () => {
+    actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const notesBox = screen.getByRole("textbox", { name: "Notes" });
+    Object.defineProperty(notesBox, "innerText", {
+      configurable: true,
+      value: "First note\nSecond note\n\nWatch https://example.com/spacing"
+    });
+
+    notesBox.focus();
+    fireEvent.input(notesBox);
+    fireEvent.blur(notesBox);
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.updateContentReviewItem.mock.calls[0][0] as FormData;
+    expect(formData.get("notes")).toBe("First note\nSecond note\n\nWatch https://example.com/spacing");
+    expect(notesBox.innerHTML.replace(/\s+/g, "")).toContain("Firstnote<br>Secondnote<br><br>Watch");
+    expect(screen.getByRole("link", { name: "https://example.com/spacing" })).toHaveAttribute("href", "https://example.com/spacing");
+  });
+
   it("uses the roadmap provider picker for review details", () => {
     render(
       <ContentReviewDashboard
@@ -180,6 +202,12 @@ describe("ContentReviewDashboard", () => {
     radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
     expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
+    fireEvent.click(within(radarDialog).getByRole("button", { name: "Select Long Shot Series" }));
+    expect(screen.queryByRole("dialog", { name: "On the Radar" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Detail Title")).toHaveValue("Long Shot Series");
+
+    fireEvent.click(screen.getByRole("button", { name: /On the Radar: 1/ }));
+    radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
     fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
 
     fireEvent.click(screen.getByRole("button", { name: /Active Decisions: 1/ }));
