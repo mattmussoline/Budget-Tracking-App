@@ -8,6 +8,7 @@ import { budgetSourceOptions } from "@/features/budget/budget-source";
 import { contentUploadTaskExists, createContentUploadTask } from "./clickup";
 import { dollarsToOptionalCents } from "./planning-model";
 import { ROADMAP_STATUSES, type ContentReviewItem, type ReviewStatus } from "./planning-types";
+import { isEmptyNotesHtml, notesHtmlToPlainText, sanitizeNotesHtml } from "./rich-text";
 
 const roadmapStatusSchema = z.enum(ROADMAP_STATUSES);
 const reviewStatusSchema = z.enum(["not_started", "on_the_radar", "in_progress", "blocked", "rejected", "approved"]);
@@ -43,7 +44,11 @@ const reviewItemSchema = z.object({
   format: z.string().trim().optional(),
   reviewStatus: reviewStatusSchema,
   budgetSource: budgetSourceSchema.default("misc_licensing"),
-  notes: z.string().trim().optional(),
+  notes: z.string().trim().optional().transform((value) => {
+    if (!value) return value;
+    const sanitized = sanitizeNotesHtml(value);
+    return isEmptyNotesHtml(sanitized) ? "" : sanitized;
+  }),
   proposedRate: z.string().trim().optional(),
   reviewLink: z.union([z.literal(""), z.string().url()]).optional(),
   comparableContent: z.string().trim().optional(),
@@ -300,7 +305,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
   const noteParts = [
     "Created from content review.",
     review.is_coproduction_opportunity ? "Potential co-production opportunity." : null,
-    review.notes ? `Review notes: ${review.notes}` : null,
+    review.notes ? `Review notes: ${notesHtmlToPlainText(review.notes).replace(/\n+/g, " ")}` : null,
     review.proposed_rate_cents ? `Proposed rate: ${formatCents(review.proposed_rate_cents)}` : null
   ].filter(Boolean);
 

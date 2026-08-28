@@ -108,26 +108,63 @@ describe("ContentReviewDashboard", () => {
     expect(notesBox).not.toHaveTextContent("Strong formation fit.");
   });
 
-  it("preserves visual paragraph breaks from the notes editor when saving", async () => {
+  it("saves paragraph breaks and rich formatting from the notes editor", async () => {
     actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
     const notesBox = screen.getByRole("textbox", { name: "Notes" });
-    Object.defineProperty(notesBox, "innerText", {
-      configurable: true,
-      value: "First note\nSecond note\n\nWatch https://example.com/spacing"
-    });
-
     notesBox.focus();
+    notesBox.innerHTML = "<p>First note</p><p><strong>Second</strong> note</p><ul><li>Watch https://example.com/spacing</li></ul>";
     fireEvent.input(notesBox);
     fireEvent.blur(notesBox);
     fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
 
     await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.updateContentReviewItem.mock.calls[0][0] as FormData;
-    expect(formData.get("notes")).toBe("First note\nSecond note\n\nWatch https://example.com/spacing");
-    expect(notesBox.innerHTML.replace(/\s+/g, "")).toContain("Firstnote<br>Secondnote<br><br>Watch");
+    const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
+    expect(saved).toContain("<p>First note</p>");
+    expect(saved).toContain("<strong>Second</strong> note");
+    expect(saved).toContain("<ul><li>");
     expect(screen.getByRole("link", { name: "https://example.com/spacing" })).toHaveAttribute("href", "https://example.com/spacing");
+  });
+
+  it("renders legacy plain-text notes as paragraphs", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Line one\n\nLine two", comparableContent: null }]} />);
+
+    const notesBox = screen.getByRole("textbox", { name: "Notes" });
+
+    expect(notesBox.innerHTML).toBe("<p>Line one</p><p>Line two</p>");
+  });
+
+  it("strips unsafe markup that arrives in the notes editor", async () => {
+    actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const notesBox = screen.getByRole("textbox", { name: "Notes" });
+    notesBox.focus();
+    notesBox.innerHTML = '<p onclick="steal()">Keep this</p><img src="x" onerror="steal()"><a href="javascript:steal()">bad link</a>';
+    fireEvent.input(notesBox);
+    fireEvent.blur(notesBox);
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
+    const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
+    expect(saved).toContain("<p>Keep this</p>");
+    expect(saved).not.toContain("onclick");
+    expect(saved).not.toContain("onerror");
+    expect(saved).not.toContain("javascript:");
+    expect(saved).not.toContain("<img");
+  });
+
+  it("offers formatting controls for the notes editor", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const toolbar = screen.getByRole("group", { name: "Notes formatting" });
+
+    expect(within(toolbar).getByRole("button", { name: "Bold (Cmd+B)" })).toBeVisible();
+    expect(within(toolbar).getByRole("button", { name: "Italic (Cmd+I)" })).toBeVisible();
+    expect(within(toolbar).getByRole("button", { name: "Underline (Cmd+U)" })).toBeVisible();
+    expect(within(toolbar).getByRole("button", { name: "Bulleted list" })).toBeVisible();
+    expect(within(toolbar).getByRole("button", { name: "Numbered list" })).toBeVisible();
   });
 
   it("uses the roadmap provider picker for review details", () => {
@@ -160,7 +197,7 @@ describe("ContentReviewDashboard", () => {
     expect(header?.children[0]).toHaveAttribute("aria-hidden", "true");
     expect(header?.children[1]).toHaveTextContent("Title");
     expect(header?.children[2]).toHaveTextContent("Review Status");
-    expect(header?.children[3]).toHaveTextContent("Proposed Rate");
+    expect(header?.children[3]).toHaveTextContent("Proposed Yearly Rate");
     expect(header?.children[4]).toHaveTextContent("Provider");
   });
 
@@ -173,41 +210,40 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByLabelText("Detail Title")).toHaveValue("");
   });
 
-  it("moves radar, approved, and rejected reviews into separate decision spaces", () => {
+  it("groups every review by status inside one decision queue", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
 
     const decisionQueue = screen.getByTestId("content-review-active-queue");
-    expect(within(decisionQueue).getByDisplayValue("Catholic Basics")).toBeVisible();
-    expect(within(decisionQueue).queryByDisplayValue("Long Shot Series")).not.toBeInTheDocument();
-    expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
-    expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
+    const inProgressGroup = within(decisionQueue).getByTestId("content-review-group-in-progress");
+    const radarGroup = within(decisionQueue).getByTestId("content-review-group-on-the-radar");
+    const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
+    const rejectedGroup = within(decisionQueue).getByTestId("content-review-rejected-content");
 
-    const approvedGroup = screen.getByTestId("content-review-approved-content");
-    const rejectedGroup = screen.getByTestId("content-review-rejected-content");
-    fireEvent.click(within(approvedGroup).getByText("Approved Content"));
-    fireEvent.click(within(rejectedGroup).getByText("Rejected Content"));
+    expect(within(inProgressGroup).getByDisplayValue("Catholic Basics")).toBeVisible();
+    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
+    expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeInTheDocument();
+    expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeInTheDocument();
+
+    // Active statuses start expanded; the two final statuses stay collapsed until opened.
+    expect(inProgressGroup).toHaveAttribute("open");
+    expect(radarGroup).toHaveAttribute("open");
+    expect(approvedGroup).not.toHaveAttribute("open");
+    expect(rejectedGroup).not.toHaveAttribute("open");
+
+    expect(inProgressGroup.querySelector("summary")).toHaveTextContent("In Progress");
+    expect(approvedGroup.querySelector("summary")).toHaveTextContent("Approved");
+
+    fireEvent.click(within(rejectedGroup).getByRole("button", { name: "Select Archive Candidate" }));
+    expect(screen.getByLabelText("Detail Title")).toHaveValue("Archive Candidate");
+  });
+
+  it("keeps the status summary cards and modals working alongside the grouped queue", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
 
     expect(screen.getByText("1 On the Radar piece is waiting for follow-up. Open the list and decide who gets a next touch.")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "View Items" }));
-    let radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
-    let radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
-    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
-    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
-
-    expect(screen.getByText("Active Decisions")).toBeVisible();
-    expect(screen.getByRole("button", { name: /On the Radar: 1/ })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /On the Radar: 1/ }));
-
-    radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
-    radarGroup = within(radarDialog).getByTestId("content-review-radar-content");
-    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
-    expect(screen.getByTestId("content-review-decision-queue-block")).not.toContainElement(radarGroup);
-    fireEvent.click(within(radarDialog).getByRole("button", { name: "Select Long Shot Series" }));
-    expect(screen.queryByRole("dialog", { name: "On the Radar" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Detail Title")).toHaveValue("Long Shot Series");
-
-    fireEvent.click(screen.getByRole("button", { name: /On the Radar: 1/ }));
-    radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    const radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    expect(within(within(radarDialog).getByTestId("content-review-radar-content")).getByDisplayValue("Long Shot Series")).toBeVisible();
     fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
 
     fireEvent.click(screen.getByRole("button", { name: /Active Decisions: 1/ }));
@@ -223,13 +259,73 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Rejected: 1/ }));
     const rejectedDialog = screen.getByRole("dialog", { name: "Rejected" });
     expect(within(rejectedDialog).getByDisplayValue("Archive Candidate")).toBeVisible();
-    fireEvent.click(within(rejectedDialog).getByRole("button", { name: "Close Rejected reviews" }));
+  });
 
+  it("filters the decision queue by title", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
+
+    expect(screen.getByText("4 reviews")).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "long shot" } });
+
+    const decisionQueue = screen.getByTestId("content-review-active-queue");
+    expect(within(decisionQueue).getByDisplayValue("Long Shot Series")).toBeVisible();
+    expect(within(decisionQueue).queryByDisplayValue("Catholic Basics")).not.toBeInTheDocument();
+    expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
+    expect(screen.getByText("Showing 1 of 4")).toBeVisible();
+    // Statuses with no match drop out of the list entirely while a filter is on.
+    expect(within(decisionQueue).queryByTestId("content-review-group-in-progress")).not.toBeInTheDocument();
+  });
+
+  it("filters the decision queue by review status", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
+
+    fireEvent.change(screen.getByLabelText("Filter by review status"), { target: { value: "approved" } });
+
+    const decisionQueue = screen.getByTestId("content-review-active-queue");
+    const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
-    expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeVisible();
+    // Filtering opens the matching group even when it is a normally collapsed final status.
+    expect(approvedGroup).toHaveAttribute("open");
+    expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(within(rejectedGroup).getByRole("button", { name: "Select Archive Candidate" }));
-    expect(screen.getByLabelText("Detail Title")).toHaveValue("Archive Candidate");
+  it("filters the decision queue by provider", () => {
+    const otherProvider: ContentReviewItem = { ...activeItem, id: "review-other", title: "Other Provider Series", provider: "Word on Fire" };
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, otherProvider]} isDemo />);
+
+    const providerFilter = screen.getByLabelText("Filter by provider");
+    expect(within(providerFilter).getByRole("option", { name: "Thomistic Institute" })).toBeInTheDocument();
+    expect(within(providerFilter).getByRole("option", { name: "Word on Fire" })).toBeInTheDocument();
+
+    fireEvent.change(providerFilter, { target: { value: "Word on Fire" } });
+
+    const decisionQueue = screen.getByTestId("content-review-active-queue");
+    expect(within(decisionQueue).getByDisplayValue("Other Provider Series")).toBeVisible();
+    expect(within(decisionQueue).queryByDisplayValue("Catholic Basics")).not.toBeInTheDocument();
+  });
+
+  it("reports and clears a filter that matches nothing", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} isDemo />);
+
+    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "nothing matches this" } });
+
+    expect(screen.getByTestId("content-review-no-matches")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+
+    expect(screen.queryByTestId("content-review-no-matches")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("content-review-active-queue")).getByDisplayValue("Catholic Basics")).toBeVisible();
+  });
+
+  it("keeps an unsaved draft visible even when it does not match the filters", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+
+    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "catholic" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Content" }));
+
+    const notStartedGroup = within(screen.getByTestId("content-review-active-queue")).getByTestId("content-review-group-not-started");
+    expect(within(notStartedGroup).getByLabelText("Summary Title")).toHaveValue("");
   });
 
   it("uses explicit row selection instead of making the editable row itself a button", () => {

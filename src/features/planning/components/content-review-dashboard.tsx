@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, ExternalLink, Handshake, Plus, Radar, Save, Trash2, X, XCircle } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { ArrowRight, CheckCircle2, ExternalLink, Handshake, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
@@ -10,15 +10,31 @@ import { addContentReviewItem, deleteContentReviewItem, sendReviewToRoadmap, upd
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
 import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ReviewStatus } from "../planning-types";
+import { isLikelyNotesHtml, plainTextToNotesHtml } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
 import { ProviderCombobox } from "./provider-combobox";
+import { RichTextNotes } from "./rich-text-notes";
 
 type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; providerOptions?: string[]; isDemo?: boolean };
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
+type QueueFilters = { search: string; status: ReviewStatus | "all"; provider: string };
+
+const emptyQueueFilters: QueueFilters = { search: "", status: "all", provider: "all" };
+
+// Approved and rejected keep their original test ids so the completed-review selectors stay stable.
+const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "approved", "rejected"];
+
+const QUEUE_GROUP_TEST_IDS: Record<ReviewStatus, string> = {
+  not_started: "content-review-group-not-started",
+  on_the_radar: "content-review-group-on-the-radar",
+  in_progress: "content-review-group-in-progress",
+  blocked: "content-review-group-blocked",
+  approved: "content-review-approved-content",
+  rejected: "content-review-rejected-content"
+};
 
 const decisionQueueGridClass = "md:grid-cols-[4.5rem_1.3fr_1fr_0.9fr_1fr]";
 const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
-const editableBlockTags = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "DD", "DIV", "DL", "DT", "FIGCAPTION", "FIGURE", "FOOTER", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "LI", "MAIN", "NAV", "OL", "P", "PRE", "SECTION", "UL"]);
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -45,6 +61,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const [openStatusModal, setOpenStatusModal] = useState<ReviewStatusModalKey | null>(null);
   const editorSectionRef = useRef<HTMLElement>(null);
   const shouldFocusEditorRef = useRef(false);
+  const [filters, setFilters] = useState<QueueFilters>(emptyQueueFilters);
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
@@ -114,6 +131,16 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   }
 
   const queue = draft ? [draft, ...records] : records;
+  const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
+  const filteredQueue = queue.filter((item) => matchesQueueFilters(item, filters));
+  const groupedQueue = QUEUE_GROUP_ORDER.map((value) => {
+    const status = REVIEW_STATUSES.find((option) => option.value === value) ?? REVIEW_STATUSES[0];
+    return { status, items: filteredQueue.filter((item) => item.reviewStatus === value) };
+  });
+  const providerFilterOptions = useMemo(
+    () => Array.from(new Set([...records.map((item) => (item.provider ?? "").trim()), ...providerOptions.map((option) => option.trim())].filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [records, providerOptions]
+  );
   const activeQueue = queue.filter((item) => isDecisionQueueStatus(item.reviewStatus));
   const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
   const approvedContent = queue.filter((item) => item.reviewStatus === "approved");
@@ -165,19 +192,35 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
               <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
               <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
             </div>
+            <QueueFilterBar
+              filters={filters}
+              providerOptions={providerFilterOptions}
+              matchCount={filteredQueue.length}
+              totalCount={queue.length}
+              isFiltering={isFiltering}
+              onChange={setFilters}
+              onClear={() => setFilters(emptyQueueFilters)}
+            />
             <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
               <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Yearly Rate</span><span>Provider</span>
             </div>
             <div data-testid="content-review-active-queue" className="grid gap-2">
-              {activeQueue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : activeQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
-            </div>
-          </section>
-          <section className="rounded-lg bg-gray-200 p-3">
-            <h3 className="font-display text-xl font-extrabold">Completed Reviews</h3>
-            <p className="mb-3 text-sm text-muted">Approved and rejected content stay available without crowding active decisions.</p>
-            <div className="grid gap-3">
-              <ContentReviewGroup title="Approved Content" count={approvedContent.length} testId="content-review-approved-content">{approvedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
-              <ContentReviewGroup title="Rejected Content" count={rejectedContent.length} testId="content-review-rejected-content">{rejectedContent.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}</ContentReviewGroup>
+              {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : null}
+              {queue.length > 0 && filteredQueue.length === 0 ? <p data-testid="content-review-no-matches" className="rounded-lg bg-white p-5 font-bold text-muted">No reviews match these filters.</p> : null}
+              {groupedQueue.map(({ status, items: groupItems }) => {
+                if (isFiltering && groupItems.length === 0) return null;
+                if (queue.length === 0) return null;
+                return <ContentReviewGroup
+                  key={status.value}
+                  title={status.label}
+                  count={groupItems.length}
+                  tone={status.tone}
+                  testId={QUEUE_GROUP_TEST_IDS[status.value]}
+                  open={isFiltering || (groupItems.length > 0 && !isFinalReviewStatus(status.value))}
+                >
+                  {groupItems.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
+                </ContentReviewGroup>;
+              })}
             </div>
           </section>
         </div>
@@ -346,6 +389,63 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelec
   </dialog>, document.body);
 }
 
+function matchesQueueFilters(item: ContentReviewItem, filters: QueueFilters) {
+  // An unsaved draft always stays visible so it cannot disappear mid-edit behind a filter.
+  if (item.id === "draft") return true;
+
+  const search = filters.search.trim().toLowerCase();
+  if (search && !(item.title ?? "").toLowerCase().includes(search)) return false;
+  if (filters.status !== "all" && item.reviewStatus !== filters.status) return false;
+  if (filters.provider !== "all" && (item.provider ?? "").trim() !== filters.provider) return false;
+  return true;
+}
+
+const filterControlClass = "min-h-10 w-full rounded-md border-0 bg-white px-3 text-sm font-bold text-foreground shadow-sm ring-1 ring-gray-200 outline-none focus:ring-2 focus:ring-blue-400";
+
+function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFiltering, onChange, onClear }: { filters: QueueFilters; providerOptions: string[]; matchCount: number; totalCount: number; isFiltering: boolean; onChange: (filters: QueueFilters) => void; onClear: () => void }) {
+  return <div data-testid="content-review-queue-filters" className="mb-4 grid gap-2 rounded-lg bg-white/70 p-3 ring-1 ring-gray-200">
+    <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <input
+          aria-label="Filter by title"
+          type="search"
+          placeholder="Search titles"
+          value={filters.search}
+          onChange={(event) => onChange({ ...filters, search: event.target.value })}
+          className={cn(filterControlClass, "pl-9 font-medium normal-case tracking-normal")}
+        />
+      </div>
+      <select
+        aria-label="Filter by review status"
+        value={filters.status}
+        onChange={(event) => onChange({ ...filters, status: event.target.value as QueueFilters["status"] })}
+        className={filterControlClass}
+      >
+        <option value="all">All statuses</option>
+        {REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <select
+        aria-label="Filter by provider"
+        value={filters.provider}
+        onChange={(event) => onChange({ ...filters, provider: event.target.value })}
+        className={filterControlClass}
+      >
+        <option value="all">All providers</option>
+        {providerOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </div>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">
+        {isFiltering ? `Showing ${matchCount} of ${totalCount}` : `${totalCount} ${totalCount === 1 ? "review" : "reviews"}`}
+      </p>
+      {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-gray-100 px-3 text-xs font-extrabold uppercase tracking-wide text-muted transition hover:bg-gray-200 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <X className="h-3.5 w-3.5" aria-hidden="true" />Clear filters
+      </button> : null}
+    </div>
+  </div>;
+}
+
 function isFinalReviewStatus(status: ReviewStatus) {
   return status === "approved" || status === "rejected";
 }
@@ -378,13 +478,14 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChan
   );
 }
 
-function ContentReviewGroup({ title, count, testId, children }: { title: string; count: number; testId: string; children: ReactNode }) {
-  return <details data-testid={testId} className="rounded-md bg-white p-3">
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold">
+function ContentReviewGroup({ title, count, testId, tone, open, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; children: ReactNode }) {
+  // No horizontal padding on the content so rows stay aligned with the column labels above the list.
+  return <details data-testid={testId} open={open} className={cn("rounded-md bg-white py-2", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-extrabold">
       <span>{title}</span>
       <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
     </summary>
-    <div className="mt-3 grid gap-2">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+    <div className="mt-2 grid gap-2">{count ? children : <p className="mx-3 rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
   </details>;
 }
 
@@ -437,7 +538,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
       <CompactField label="Link"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} hideLabel /></CompactField>
     </div>
     <div className="grid gap-4 md:grid-cols-2">
-      <div className="md:col-span-2"><TextArea label="Notes" value={combineReviewNotes(item)} onChange={(value) => { onChange("notes", value); onChange("comparableContent", ""); }} disabled={isDemo} /></div>
+      <div className="md:col-span-2"><RichTextNotes label="Notes" value={combineReviewNotes(item)} onChange={(value) => { onChange("notes", value); onChange("comparableContent", ""); }} disabled={isDemo} /></div>
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
@@ -533,86 +634,14 @@ function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus,
   />;
 }
 
-function TextArea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const isEditingRef = useRef(false);
-
-  useLayoutEffect(() => {
-    const editor = editorRef.current;
-    if (!editor || isEditingRef.current) return;
-    editor.innerHTML = linkifyText(value);
-  }, [value]);
-
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
-    {label}
-    <div
-      ref={editorRef}
-      aria-disabled={disabled}
-      aria-label={label}
-      className={cn("min-h-[7rem] whitespace-pre-wrap break-words rounded-md border-0 bg-gray-50 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300", disabled && "cursor-not-allowed opacity-60")}
-      contentEditable={!disabled}
-      onBlur={(event) => {
-        isEditingRef.current = false;
-        event.currentTarget.innerHTML = linkifyText(getEditablePlainText(event.currentTarget));
-      }}
-      onClick={(event) => {
-        const link = (event.target as HTMLElement).closest("a");
-        if (!link) return;
-        event.preventDefault();
-        window.open(link.href, "_blank", "noopener,noreferrer");
-      }}
-      onInput={(event) => {
-        isEditingRef.current = true;
-        const textValue = getEditablePlainText(event.currentTarget);
-        onChange(textValue);
-      }}
-      onFocus={() => {
-        isEditingRef.current = true;
-      }}
-      role="textbox"
-      aria-multiline="true"
-      suppressContentEditableWarning
-    />
-  </label>;
-}
-
-function getEditablePlainText(editor: HTMLElement) {
-  return typeof editor.innerText === "string" ? editor.innerText.replace(/\u00a0/g, " ") : getEditableTextFallback(editor, editor).replace(/\u00a0/g, " ");
-}
-
-function getEditableTextFallback(node: Node, root: HTMLElement): string {
-  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
-  if (node.nodeType !== Node.ELEMENT_NODE) return "";
-
-  const element = node as HTMLElement;
-  if (element.tagName === "BR") return "\n";
-
-  const text = Array.from(element.childNodes).map((child) => getEditableTextFallback(child, root)).join("");
-  if (element !== root && editableBlockTags.has(element.tagName) && text && !text.endsWith("\n")) return `${text}\n`;
-  return text;
-}
-
+/**
+ * Notes and the legacy Comparable Content column share one visible editor. Notes may still be
+ * plain text from before rich text landed, so both halves are normalised to markup here.
+ */
 function combineReviewNotes(item: ContentReviewItem) {
   const notes = item.notes?.trim() ?? "";
   const comparable = item.comparableContent?.trim() ?? "";
-  return [notes, comparable].filter(Boolean).join(notes && comparable ? "\n\n" : "");
-}
-
-function linkifyText(value: string) {
-  const parts = value.split(/(https?:\/\/[^\s<>"']+)/g);
-
-  return parts.map((part) => {
-    const escapedPart = escapeHtml(part).replace(/\n/g, "<br>");
-    if (!/^https?:\/\//.test(part)) return escapedPart;
-    return `<a href="${escapedPart}" target="_blank" rel="noreferrer" class="break-all text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700">${escapedPart}</a>`;
-  }).join("");
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  const notesHtml = notes && !isLikelyNotesHtml(notes) ? plainTextToNotesHtml(notes) : notes;
+  const comparableHtml = comparable ? plainTextToNotesHtml(comparable) : "";
+  return [notesHtml, comparableHtml].filter(Boolean).join("");
 }
