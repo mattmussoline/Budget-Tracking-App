@@ -197,7 +197,7 @@ describe("ContentReviewDashboard", () => {
     expect(header?.children[0]).toHaveAttribute("aria-hidden", "true");
     expect(header?.children[1]).toHaveTextContent("Title");
     expect(header?.children[2]).toHaveTextContent("Review Status");
-    expect(header?.children[3]).toHaveTextContent("Proposed Yearly Rate");
+    expect(header?.children[3]).toHaveTextContent("Yearly Rate");
     expect(header?.children[4]).toHaveTextContent("Provider");
   });
 

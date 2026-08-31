@@ -202,9 +202,9 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
               onClear={() => setFilters(emptyQueueFilters)}
             />
             <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Proposed Yearly Rate</span><span>Provider</span>
+              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Yearly Rate</span><span>Provider</span>
             </div>
-            <div data-testid="content-review-active-queue" className="grid gap-2">
+            <div data-testid="content-review-active-queue" className="grid gap-4">
               {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : null}
               {queue.length > 0 && filteredQueue.length === 0 ? <p data-testid="content-review-no-matches" className="rounded-lg bg-white p-5 font-bold text-muted">No reviews match these filters.</p> : null}
               {groupedQueue.map(({ status, items: groupItems }) => {
@@ -457,7 +457,7 @@ function isDecisionQueueStatus(status: ReviewStatus) {
 function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onOpenDetail?: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 bg-white p-3 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 bg-white p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
       {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-slate-700 px-2 py-1 text-[9px] font-extrabold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
       <button
         type="button"
@@ -480,12 +480,12 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChan
 
 function ContentReviewGroup({ title, count, testId, tone, open, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; children: ReactNode }) {
   // No horizontal padding on the content so rows stay aligned with the column labels above the list.
-  return <details data-testid={testId} open={open} className={cn("rounded-md bg-white py-2", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-extrabold">
+  return <details data-testid={testId} open={open} className={cn("rounded-md bg-white py-3", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 pb-1 text-sm font-extrabold">
       <span>{title}</span>
       <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
     </summary>
-    <div className="mt-2 grid gap-2">{count ? children : <p className="mx-3 rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+    <div className="mt-2 grid gap-3">{count ? children : <p className="mx-3 rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
   </details>;
 }
 
