@@ -216,7 +216,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
                   count={groupItems.length}
                   tone={status.tone}
                   testId={QUEUE_GROUP_TEST_IDS[status.value]}
-                  open={isFiltering || (groupItems.length > 0 && !isFinalReviewStatus(status.value))}
+                  open={isFiltering}
                 >
                   {groupItems.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
                 </ContentReviewGroup>;
@@ -479,9 +479,13 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChan
 }
 
 function ContentReviewGroup({ title, count, testId, tone, open, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; children: ReactNode }) {
-  return <details data-testid={testId} open={open} className={cn("rounded-md border border-gray-200 bg-white py-3 shadow-sm", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 pb-1 text-sm font-extrabold">
-      <span>{title}</span>
+  return <details data-testid={testId} open={open} className={cn("group rounded-md border border-gray-200 bg-white py-3 shadow-sm", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
+    <summary className="flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
+      <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-black leading-none text-muted">
+        <span className="group-open:hidden">+</span>
+        <span className="hidden group-open:inline">−</span>
+      </span>
+      <span className="flex-1">{title}</span>
       <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
     </summary>
     <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>

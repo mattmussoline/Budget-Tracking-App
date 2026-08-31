@@ -219,14 +219,14 @@ describe("ContentReviewDashboard", () => {
     const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
     const rejectedGroup = within(decisionQueue).getByTestId("content-review-rejected-content");
 
-    expect(within(inProgressGroup).getByDisplayValue("Catholic Basics")).toBeVisible();
-    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeVisible();
+    expect(within(inProgressGroup).getByDisplayValue("Catholic Basics")).toBeInTheDocument();
+    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeInTheDocument();
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeInTheDocument();
     expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeInTheDocument();
 
-    // Active statuses start expanded; the two final statuses stay collapsed until opened.
-    expect(inProgressGroup).toHaveAttribute("open");
-    expect(radarGroup).toHaveAttribute("open");
+    // Every status group starts collapsed until opened.
+    expect(inProgressGroup).not.toHaveAttribute("open");
+    expect(radarGroup).not.toHaveAttribute("open");
     expect(approvedGroup).not.toHaveAttribute("open");
     expect(rejectedGroup).not.toHaveAttribute("open");
 
@@ -315,7 +315,7 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
 
     expect(screen.queryByTestId("content-review-no-matches")).not.toBeInTheDocument();
-    expect(within(screen.getByTestId("content-review-active-queue")).getByDisplayValue("Catholic Basics")).toBeVisible();
+    expect(within(screen.getByTestId("content-review-active-queue")).getByDisplayValue("Catholic Basics")).toBeInTheDocument();
   });
 
   it("keeps an unsaved draft visible even when it does not match the filters", () => {
@@ -331,12 +331,16 @@ describe("ContentReviewDashboard", () => {
   it("uses explicit row selection instead of making the editable row itself a button", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
+    fireEvent.click(screen.getByTestId("content-review-group-in-progress").querySelector("summary")!);
+
     expect(screen.getByRole("button", { name: "Select Catholic Basics" })).toBeVisible();
     expect(screen.getByLabelText("Summary Title").closest("[role='button']")).toBeNull();
   });
 
   it("marks co-production opportunities with a small queue signal and compact editor field", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+
+    fireEvent.click(screen.getByTestId("content-review-group-in-progress").querySelector("summary")!);
 
     expect(screen.getByRole("button", { name: /Co-productions: 1/ })).toBeVisible();
     expect(screen.getAllByLabelText("Potential co-production opportunity")).toHaveLength(2);
