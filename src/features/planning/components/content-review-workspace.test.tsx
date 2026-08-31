@@ -59,7 +59,7 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByRole("heading", { name: "Decision Queue" })).toBeVisible();
     expect(screen.getByLabelText("Detail Title")).toHaveValue("Aquinas 101");
     expect(screen.getByLabelText("Review Status")).toHaveValue("approved");
-    expect(screen.getByLabelText("Proposed Rate")).toHaveValue("$12,000.00");
+    expect(screen.getByLabelText("Proposed Yearly Rate")).toHaveValue("$12,000.00");
     expect(screen.getByLabelText("Genre")).toHaveValue("Scripture");
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
     expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
@@ -379,7 +379,7 @@ describe("ContentReviewDashboard", () => {
   it("lets users type a multi-digit proposed rate before formatting it", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
-    const proposedRate = screen.getByLabelText("Summary Proposed Rate");
+    const proposedRate = screen.getByLabelText("Summary Proposed Yearly Rate");
     fireEvent.focus(proposedRate);
     fireEvent.change(proposedRate, { target: { value: "1" } });
     fireEvent.change(proposedRate, { target: { value: "12" } });
