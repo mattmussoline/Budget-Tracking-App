@@ -457,7 +457,7 @@ function isDecisionQueueStatus(status: ReviewStatus) {
 function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onOpenDetail?: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 bg-white p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-white p-4 shadow-sm transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
       {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-slate-700 px-2 py-1 text-[9px] font-extrabold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
       <button
         type="button"
@@ -479,13 +479,12 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChan
 }
 
 function ContentReviewGroup({ title, count, testId, tone, open, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; children: ReactNode }) {
-  // No horizontal padding on the content so rows stay aligned with the column labels above the list.
-  return <details data-testid={testId} open={open} className={cn("rounded-md bg-white py-3", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
+  return <details data-testid={testId} open={open} className={cn("rounded-md bg-gray-100 py-3", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 pb-1 text-sm font-extrabold">
       <span>{title}</span>
       <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
     </summary>
-    <div className="mt-2 grid gap-3">{count ? children : <p className="mx-3 rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+    <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-white p-3 text-sm font-bold text-muted">No items.</p>}</div>
   </details>;
 }
 
