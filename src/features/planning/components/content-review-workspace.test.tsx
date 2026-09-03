@@ -679,6 +679,31 @@ describe("ContentReviewDashboard", () => {
     expect(screen.queryByRole("button", { name: "Add Review 5 to the Focus Five" })).not.toBeInTheDocument();
   });
 
+  it("keeps the pin and priority entry usable while a column sort is active", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    const many = Array.from({ length: 7 }, (_, index) => ({
+      ...item,
+      id: `review-${index + 1}`,
+      title: `Review ${index + 1}`,
+      reviewStatus: "not_started" as const,
+      priorityRank: index + 1
+    }));
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+
+    // Sorting is how you find the title you want to promote, so it must not
+    // switch off the controls that set the Focus Five.
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+
+    expect(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" })).toBeEnabled();
+    expect(screen.getByLabelText("Priority for Review 1")).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds").slice(0, 5)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-7"]);
+  });
+
   it("pins a queue review into the Focus Five", async () => {
     actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
     const many = Array.from({ length: 7 }, (_, index) => ({
@@ -711,6 +736,62 @@ describe("ContentReviewDashboard", () => {
     await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
     const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
     expect(formData.getAll("itemIds")).toEqual(["review-alpha", "review-beta", "review-zebra"]);
+  });
+
+  it("adds a named review to the Focus Five even when all five slots are full", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    const many = Array.from({ length: 8 }, (_, index) => ({
+      ...item,
+      id: `review-${index + 1}`,
+      title: `Review ${index + 1}`,
+      reviewStatus: "not_started" as const,
+      priorityRank: index + 1
+    }));
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+
+    const focus = screen.getByTestId("content-review-focus-five");
+    expect(within(focus).getByText("5 of 5")).toBeVisible();
+
+    fireEvent.click(within(focus).getByRole("button", { name: /^Add review$/ }));
+    const picker = screen.getByTestId("content-review-focus-picker");
+
+    // Only reviews outside the five are offered.
+    expect(within(picker).queryByRole("button", { name: "Add Review 2 to the Focus Five" })).not.toBeInTheDocument();
+    expect(within(picker).getByRole("button", { name: "Add Review 6 to the Focus Five" })).toBeVisible();
+
+    fireEvent.change(within(picker).getByLabelText("Search reviews to add"), { target: { value: "Review 8" } });
+    expect(within(picker).queryByRole("button", { name: "Add Review 6 to the Focus Five" })).not.toBeInTheDocument();
+    fireEvent.click(within(picker).getByRole("button", { name: "Add Review 8 to the Focus Five" }));
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    // Review 8 takes the fifth slot and the previous fifth drops back to the queue.
+    expect(formData.getAll("itemIds").slice(0, 6)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-8", "review-5"]);
+    expect(screen.queryByTestId("content-review-focus-picker")).not.toBeInTheDocument();
+  });
+
+  it("disables adding only when every review is already in the Focus Five", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const focus = screen.getByTestId("content-review-focus-five");
+    expect(within(focus).getByText("3 of 5")).toBeVisible();
+    // Three reviews, three filled slots, nothing left in the queue to promote.
+    expect(within(focus).getByRole("button", { name: /^Add review$/ })).toBeDisabled();
+    expect(within(focus).getByRole("button", { name: "Add a review to Focus Five slot 4" })).toBeDisabled();
+  });
+
+  it("keeps the Focus Five editable while the queue below is sorted", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Provider" }));
+
+    const focus = screen.getByTestId("content-review-focus-five");
+    expect(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" })).toBeEnabled();
+    expect(within(focus).getByTestId("content-review-focus-row-review-zebra")).toHaveAttribute("draggable", "true");
+
+    fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
   });
 
   it("reorders within the Focus Five by dragging", async () => {

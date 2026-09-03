@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, GripVertical, ListChecks, X } from "lucide-react";
+import { ArrowRight, GripVertical, ListChecks, Plus, X } from "lucide-react";
 import { type DragEvent } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import { FOCUS_LIMIT } from "../content-review-queue";
@@ -14,6 +14,8 @@ type ContentReviewFocusFiveProps = {
   canReorder: boolean;
   draggedItemId: string | null;
   updateCountById: Map<string, number>;
+  canAdd: boolean;
+  onAdd: () => void;
   onSelect: (id: string) => void;
   onRelease: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, id: string) => void;
@@ -27,7 +29,7 @@ type ContentReviewFocusFiveProps = {
  * seventy-row queue. Membership is just the top of the queue order, so pinning,
  * dragging, and typing a number all move a review in and out of it.
  */
-export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedItemId, updateCountById, onSelect, onRelease, onDragStart, onDragEnd, onDrop }: ContentReviewFocusFiveProps) {
+export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedItemId, updateCountById, canAdd, onAdd, onSelect, onRelease, onDragStart, onDragEnd, onDrop }: ContentReviewFocusFiveProps) {
   const emptySlots = Math.max(0, FOCUS_LIMIT - items.length);
 
   return <section data-testid="content-review-focus-five" aria-labelledby="focus-five-heading" className="rounded-lg bg-gradient-to-br from-amber-50 to-white p-4 ring-1 ring-amber-200 md:p-6">
@@ -38,14 +40,35 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
         </span>
         <div>
           <h2 id="focus-five-heading" className="font-display text-2xl font-extrabold">Focus Five</h2>
-          <p className="text-sm text-muted">The five reviews you are working on next. Pin one from the queue to bring it up here.</p>
+          <p className="text-sm text-muted">The five reviews you are working on next. Add one by name, pin one from the queue, or drag to reorder.</p>
         </div>
       </div>
-      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-amber-900">{items.length} of {FOCUS_LIMIT}</span>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-amber-900">{items.length} of {FOCUS_LIMIT}</span>
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={!canAdd}
+          title={items.length >= FOCUS_LIMIT ? "Adds a review and drops the last one back to the queue" : undefined}
+          className="inline-flex min-h-9 items-center gap-1 rounded-md bg-gray-900 px-3 text-xs font-extrabold uppercase tracking-wide text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />Add review
+        </button>
+      </div>
     </div>
 
     {items.length === 0 ? (
-      <p className="rounded-lg bg-white p-5 font-bold text-muted">Nothing pinned yet. Use the pin on a queue row to start your five.</p>
+      <div className="grid gap-3 rounded-lg bg-white p-5">
+        <p className="font-bold text-muted">Nothing here yet. Add the reviews you want to work on next.</p>
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={!canAdd}
+          className="inline-flex min-h-10 w-fit items-center gap-1 rounded-md bg-gray-900 px-4 text-xs font-extrabold uppercase tracking-wide text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />Add review
+        </button>
+      </div>
     ) : (
       <ol className="grid gap-2">
         {items.map((item, index) => {
@@ -99,9 +122,18 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
           </li>;
         })}
         {Array.from({ length: emptySlots }, (_, index) => (
-          <li key={`empty-${index}`} className="flex items-center gap-3 rounded-lg border border-dashed border-amber-300 p-3 text-sm font-bold text-muted">
-            <span aria-hidden="true" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-100 font-display text-sm font-extrabold text-amber-700">{items.length + index + 1}</span>
-            Open slot — pin a review from the queue.
+          <li key={`empty-${index}`}>
+            <button
+              type="button"
+              onClick={onAdd}
+              disabled={!canAdd}
+              aria-label={`Add a review to Focus Five slot ${items.length + index + 1}`}
+              className="flex w-full items-center gap-3 rounded-lg border border-dashed border-amber-300 p-3 text-left text-sm font-bold text-muted transition hover:border-amber-400 hover:bg-amber-50/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-default disabled:hover:border-amber-300 disabled:hover:bg-transparent disabled:hover:text-muted"
+            >
+              <span aria-hidden="true" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-100 font-display text-sm font-extrabold text-amber-700">{items.length + index + 1}</span>
+              Open slot — add a review.
+              <Plus className="ml-auto h-4 w-4 shrink-0" aria-hidden="true" />
+            </button>
           </li>
         ))}
       </ol>

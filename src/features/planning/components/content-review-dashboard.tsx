@@ -43,6 +43,7 @@ import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate
 import { isLikelyNotesHtml, plainTextToNotesHtml } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
 import { ContentReviewFocusFive } from "./content-review-focus-five";
+import { ContentReviewFocusPicker } from "./content-review-focus-picker";
 import { ContentReviewRecapPanel } from "./content-review-recap-panel";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
@@ -104,6 +105,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const [statusOrder, setStatusOrder] = useState<ReviewStatus[]>(() => resolveGroupOrder(groupOrder));
   const [updateLog, setUpdateLog] = useState<ContentReviewUpdate[]>(updates);
   const [isRecapOpen, setIsRecapOpen] = useState(false);
+  const [isFocusPickerOpen, setIsFocusPickerOpen] = useState(false);
   const [dragKind, setDragKind] = useState<DragKind | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [draggedStatus, setDraggedStatus] = useState<ReviewStatus | null>(null);
@@ -204,7 +206,12 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const queue = draft ? [draft, ...records] : records;
   const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
   const filteredQueue = queue.filter((item) => matchesQueueFilters(item, filters));
-  const canReorder = !isDemo && sort === null && !isOrdering;
+  // Dragging a row is relative to its neighbours, so it only makes sense in the
+  // manual order. Pinning and typing a priority are absolute — they name a slot
+  // outright — so they stay available while a column sort is on, which is
+  // exactly when you are hunting for the title you want to promote.
+  const canDrag = !isDemo && sort === null && !isOrdering;
+  const canSetPriority = !isDemo && !isOrdering;
   const priorityByIdMap = useMemo(() => new Map(records.map((item, index) => [item.id, index + 1])), [records]);
   const groupedQueue = groupQueueItems(filteredQueue, statusOrder);
   const flatQueue = sortQueueItems(filteredQueue, sort);
@@ -221,6 +228,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
   const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
   const focusFive = focusFiveItems(records);
+  const focusCandidates = records.slice(FOCUS_LIMIT);
   const updateCountById = useMemo(() => {
     const counts = new Map<string, number>();
     for (const update of updateLog) counts.set(update.itemId, (counts.get(update.itemId) ?? 0) + 1);
@@ -291,7 +299,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   }
 
   function startItemDrag(event: DragEvent<HTMLElement>, itemId: string) {
-    if (!canReorder || itemId === "draft") {
+    if (!canDrag || itemId === "draft") {
       event.preventDefault();
       return;
     }
@@ -302,7 +310,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   }
 
   function startGroupDrag(event: DragEvent<HTMLElement>, status: ReviewStatus) {
-    if (!canReorder) {
+    if (!canDrag) {
       event.preventDefault();
       return;
     }
@@ -317,7 +325,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     event.stopPropagation();
     const sourceId = (dragKind === "item" ? draggedItemId : null) ?? event.dataTransfer.getData("text/plain");
     endDrag();
-    if (!canReorder || !sourceId || sourceId === targetId) return;
+    if (!canDrag || !sourceId || sourceId === targetId) return;
 
     const dragged = records.find((item) => item.id === sourceId);
     const target = records.find((item) => item.id === targetId);
@@ -327,6 +335,32 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     applyItemMove(moveQueueItem(records, sourceId, targetId), sourceId, nextStatus);
   }
 
+  /**
+   * The Focus Five panel is always rendered in the manual order, so reordering
+   * inside it stays meaningful even while the queue below is sorted.
+   */
+  function startFocusDrag(event: DragEvent<HTMLElement>, itemId: string) {
+    if (!canSetPriority) {
+      event.preventDefault();
+      return;
+    }
+    setDragKind("item");
+    setDraggedItemId(itemId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", itemId);
+  }
+
+  function dropOnFocusRow(event: DragEvent<HTMLElement>, targetId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    const sourceId = (dragKind === "item" ? draggedItemId : null) ?? event.dataTransfer.getData("text/plain");
+    endDrag();
+    if (!canSetPriority || !sourceId || sourceId === targetId) return;
+    const next = moveQueueItem(records, sourceId, targetId);
+    if (next === records) return;
+    saveItemOrder(next, sourceId);
+  }
+
   function dropOnGroup(event: DragEvent<HTMLElement>, targetStatus: ReviewStatus) {
     event.preventDefault();
     const payload = event.dataTransfer.getData("text/plain");
@@ -334,7 +368,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     const sourceItemId = draggedItemId;
     const sourceStatus = draggedStatus;
     endDrag();
-    if (!canReorder) return;
+    if (!canDrag) return;
 
     if (kind === "group" && sourceStatus) {
       saveGroupOrder(moveGroup(statusOrder, sourceStatus, targetStatus));
@@ -350,14 +384,14 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
   /** Pushes a review just past the Focus Five, keeping the rest of the order intact. */
   function releaseFromFocus(itemId: string) {
-    if (!canReorder) return;
+    if (!canSetPriority) return;
     const next = moveQueueItemToPosition(records, itemId, FOCUS_LIMIT + 1);
     if (next === records) return;
     saveItemOrder(next, itemId);
   }
 
   function moveGroupBy(status: ReviewStatus, delta: number) {
-    if (!canReorder) return;
+    if (isDemo || isOrdering) return;
     const index = statusOrder.indexOf(status);
     const targetIndex = index + delta;
     if (index < 0 || targetIndex < 0 || targetIndex >= statusOrder.length) return;
@@ -365,7 +399,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   }
 
   function moveToPosition(itemId: string, position: number) {
-    if (!canReorder) return;
+    if (!canSetPriority) return;
     const next = moveQueueItemToPosition(records, itemId, position);
     if (next === records) return;
     saveItemOrder(next, itemId);
@@ -384,7 +418,8 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
   const rowProps = {
     isDemo,
-    canReorder,
+    canDrag,
+    canSetPriority,
     draggedItemId,
     priorityById: priorityByIdMap,
     onSelect: selectItem,
@@ -410,14 +445,16 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
           <ContentReviewFocusFive
             items={focusFive}
             selectedId={selectedId}
-            canReorder={canReorder}
+            canReorder={canSetPriority}
             draggedItemId={draggedItemId}
             updateCountById={updateCountById}
+            canAdd={canSetPriority && focusCandidates.length > 0}
+            onAdd={() => setIsFocusPickerOpen(true)}
             onSelect={selectItemFromModal}
             onRelease={releaseFromFocus}
-            onDragStart={startItemDrag}
+            onDragStart={startFocusDrag}
             onDragEnd={endDrag}
-            onDrop={dropOnRow}
+            onDrop={dropOnFocusRow}
           />
           <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
             {radarContent.length > 0 ? (
@@ -479,7 +516,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
                   tone={status.tone}
                   testId={QUEUE_GROUP_TEST_IDS[status.value]}
                   open={isFiltering}
-                  canReorder={canReorder}
+                  canReorder={canDrag}
                   isDragging={dragKind === "group" && draggedStatus === status.value}
                   onDragStart={(event) => startGroupDrag(event, status.value)}
                   onDragEnd={endDrag}
@@ -509,6 +546,15 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
         onSelect={selectItem}
         onOpenDetail={selectItemFromModal}
         onChange={changeItem}
+      /> : null}
+
+      {isFocusPickerOpen ? <ContentReviewFocusPicker
+        candidates={focusCandidates}
+        onPick={(itemId) => {
+          moveToPosition(itemId, Math.min(focusFive.length + 1, FOCUS_LIMIT));
+          setIsFocusPickerOpen(false);
+        }}
+        onClose={() => setIsFocusPickerOpen(false)}
       /> : null}
 
       {isRecapOpen ? <ContentReviewRecapPanel
@@ -657,7 +703,7 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, priorityById, on
         </button>
       </header>
       <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canReorder={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canDrag={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
       </div>
       <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
         <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
@@ -778,7 +824,8 @@ type ReviewSummaryRowProps = {
   item: ContentReviewItem;
   active: boolean;
   isDemo?: boolean;
-  canReorder: boolean;
+  canDrag: boolean;
+  canSetPriority?: boolean;
   draggedItemId?: string | null;
   priorityById: Map<string, number>;
   onSelect: (id: string) => void;
@@ -790,10 +837,10 @@ type ReviewSummaryRowProps = {
   onMoveToPosition?: (id: string, position: number) => void;
 };
 
-function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition }: ReviewSummaryRowProps) {
+function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition }: ReviewSummaryRowProps) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   const isDraft = item.id === "draft";
-  const draggable = Boolean(canReorder && onDragStart && !isDraft);
+  const draggable = Boolean(canDrag && onDragStart && !isDraft);
   return (
     <div
       aria-current={active ? "true" : undefined}
@@ -809,7 +856,8 @@ function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, pri
       <PriorityCell
         item={item}
         position={priorityById.get(item.id) ?? null}
-        canReorder={draggable}
+        canDrag={draggable}
+        canSetPriority={Boolean(canSetPriority && !isDraft)}
         onMoveToPosition={onMoveToPosition}
       />
       <button
@@ -836,7 +884,7 @@ function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, pri
  * carry a number; everything below shows a pin that lifts a review into the
  * five. Typing a number is the keyboard route to the move a drag performs.
  */
-function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: ContentReviewItem; position: number | null; canReorder: boolean; onMoveToPosition?: (id: string, position: number) => void }) {
+function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPosition }: { item: ContentReviewItem; position: number | null; canDrag: boolean; canSetPriority: boolean; onMoveToPosition?: (id: string, position: number) => void }) {
   const [draftValue, setDraftValue] = useState<string | null>(null);
   const label = item.title || "Untitled review";
 
@@ -853,7 +901,7 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
     onMoveToPosition?.(item.id, parsed);
   }
 
-  const handle = canReorder ? <span
+  const handle = canDrag ? <span
     aria-hidden="true"
     title={`Drag to reorder ${label}`}
     className="flex min-h-10 cursor-grab items-center text-muted active:cursor-grabbing"
@@ -868,7 +916,7 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
         type="button"
         aria-label={`Add ${label} to the Focus Five`}
         title="Add to the Focus Five"
-        disabled={!onMoveToPosition || !canReorder}
+        disabled={!onMoveToPosition || !canSetPriority}
         onClick={() => onMoveToPosition?.(item.id, FOCUS_LIMIT)}
         className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-amber-100 hover:text-amber-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
       >
@@ -882,7 +930,7 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
     <input
       aria-label={`Priority for ${label}`}
       inputMode="numeric"
-      disabled={!onMoveToPosition || !canReorder}
+      disabled={!onMoveToPosition || !canSetPriority}
       value={draftValue ?? String(position)}
       onChange={(event) => setDraftValue(event.target.value)}
       onBlur={() => setDraftValue(null)}
