@@ -20,6 +20,21 @@ export type QueueView = "grouped" | "priority";
 
 export const emptyQueueFilters: QueueFilters = { search: "", status: "all", provider: "all" };
 
+/**
+ * How many reviews carry a priority number. Everything past this is simply "in
+ * the queue" — the point of the ranking is a short, honest working list, not a
+ * number on all seventy titles.
+ */
+export const FOCUS_LIMIT = 5;
+
+export function focusFiveItems(items: ContentReviewItem[]) {
+  return items.filter((item) => item.id !== "draft").slice(0, FOCUS_LIMIT);
+}
+
+export function isInFocusFive(position: number | null) {
+  return position !== null && position >= 1 && position <= FOCUS_LIMIT;
+}
+
 export const QUEUE_SORT_LABELS: Record<QueueSortColumn, string> = {
   priority: "Priority",
   title: "Title",

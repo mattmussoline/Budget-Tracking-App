@@ -325,7 +325,7 @@ describe("ContentReviewDashboard", () => {
     const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
     expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
     // Filtering opens the matching group even when it is a normally collapsed final status.
-    expect(approvedGroup).toHaveAttribute("open");
+    expect(approvedGroup.querySelector("details")).toHaveAttribute("open");
     expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
   });
 
@@ -542,8 +542,7 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
 
     const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "in_progress"), setData: vi.fn() };
-    const source = screen.getByTestId("content-review-group-in-progress").querySelector("summary");
-    fireEvent.dragStart(source!, { dataTransfer });
+    fireEvent.dragStart(screen.getByRole("button", { name: /Drag the In Progress group/ }), { dataTransfer });
     fireEvent.drop(screen.getByTestId("content-review-group-not-started"), { dataTransfer });
 
     await waitFor(() => expect(actionMocks.reorderContentReviewGroups).toHaveBeenCalledTimes(1));
@@ -628,5 +627,103 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByTestId("content-review-row-review-zebra")).not.toHaveAttribute("draggable", "true");
     expect(screen.getByLabelText("Priority for Zebra Chronicles")).toBeDisabled();
     expect(screen.getByLabelText("Log an update")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Drag the .* group/ })).not.toBeInTheDocument();
+  });
+
+  it("never makes a group summary the drag source", () => {
+    // A drag begun inside a <summary> fires dragstart but never completes a
+    // drop, so the handle must live outside it or group reordering silently
+    // does nothing.
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
+
+    const group = screen.getByTestId("content-review-group-in-progress");
+    const summary = group.querySelector("summary")!;
+
+    expect(summary).not.toHaveAttribute("draggable", "true");
+    expect(summary.querySelector("[draggable=\"true\"]")).toBeNull();
+
+    const handle = screen.getByRole("button", { name: /Drag the In Progress group/ });
+    expect(handle).toHaveAttribute("draggable", "true");
+    // A <button> swallows the drop the same way a <summary> does, so the handle
+    // must stay a focusable span.
+    expect(handle.tagName).toBe("SPAN");
+    expect(handle).toHaveAttribute("tabindex", "0");
+  });
+
+  it("reorders groups from the handle with the arrow keys", async () => {
+    actionMocks.reorderContentReviewGroups.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: /Drag the In Progress group/ }), { key: "ArrowUp" });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewGroups).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewGroups.mock.calls[0][0] as FormData;
+    const order = formData.getAll("reviewStatuses");
+    expect(order.indexOf("in_progress")).toBeLessThan(order.indexOf("on_the_radar"));
+  });
+
+  it("numbers only the top five and offers a pin below them", () => {
+    const many = Array.from({ length: 7 }, (_, index) => ({
+      ...item,
+      id: `review-${index + 1}`,
+      title: `Review ${index + 1}`,
+      reviewStatus: "not_started" as const,
+      priorityRank: index + 1
+    }));
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+
+    expect(screen.getByLabelText("Priority for Review 5")).toHaveValue("5");
+    expect(screen.queryByLabelText("Priority for Review 6")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Review 6 to the Focus Five" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add Review 5 to the Focus Five" })).not.toBeInTheDocument();
+  });
+
+  it("pins a queue review into the Focus Five", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    const many = Array.from({ length: 7 }, (_, index) => ({
+      ...item,
+      id: `review-${index + 1}`,
+      title: `Review ${index + 1}`,
+      reviewStatus: "not_started" as const,
+      priorityRank: index + 1
+    }));
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds").slice(0, 5)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-7"]);
+  });
+
+  it("lists the Focus Five with open slots and releases one back to the queue", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const focus = screen.getByTestId("content-review-focus-five");
+    expect(within(focus).getByText("3 of 5")).toBeVisible();
+    expect(within(focus).getAllByText(/Open slot/)).toHaveLength(2);
+    expect(within(focus).getByText("Zebra Chronicles")).toBeVisible();
+
+    fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds")).toEqual(["review-alpha", "review-beta", "review-zebra"]);
+  });
+
+  it("reorders within the Focus Five by dragging", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const focus = screen.getByTestId("content-review-focus-five");
+    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-beta"), setData: vi.fn() };
+    fireEvent.dragStart(within(focus).getByTestId("content-review-focus-row-review-beta"), { dataTransfer });
+    fireEvent.drop(within(focus).getByTestId("content-review-focus-row-review-zebra"), { dataTransfer });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds")).toEqual(["review-beta", "review-zebra", "review-alpha"]);
   });
 });

@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, GripVertical, Handshake, History, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, GripVertical, Handshake, History, Pin, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
 import { type DragEvent, type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
 import {
+  FOCUS_LIMIT,
   QUEUE_GROUP_TEST_IDS,
   QUEUE_SORT_LABELS,
   type QueueFilters,
@@ -15,7 +16,9 @@ import {
   type QueueView,
   emptyQueueFilters,
   groupQueueItems,
+  focusFiveItems,
   isDecisionQueueStatus,
+  isInFocusFive,
   matchesQueueFilters,
   moveGroup,
   moveQueueItem,
@@ -39,6 +42,7 @@ import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-mode
 import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "../planning-types";
 import { isLikelyNotesHtml, plainTextToNotesHtml } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
+import { ContentReviewFocusFive } from "./content-review-focus-five";
 import { ContentReviewRecapPanel } from "./content-review-recap-panel";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
@@ -57,6 +61,16 @@ type DragKind = "item" | "group";
 
 const decisionQueueGridClass = "md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]";
 const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
+
+/**
+ * Marks an element as a valid drop target. Cancelling dragover is what allows
+ * the drop at all, and dropEffect has to match the effectAllowed set on
+ * dragstart or the browser refuses the drop.
+ */
+function allowDrop(event: DragEvent<HTMLElement>) {
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+}
 
 const blankDraft = (): ContentReviewItem => ({
   id: "draft",
@@ -206,6 +220,12 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
   const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
   const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
+  const focusFive = focusFiveItems(records);
+  const updateCountById = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const update of updateLog) counts.set(update.itemId, (counts.get(update.itemId) ?? 0) + 1);
+    return counts;
+  }, [updateLog]);
 
   function saveItemOrder(nextRecords: ContentReviewItem[], movedItemId?: string, movedToStatus?: ReviewStatus) {
     const previousRecords = records;
@@ -328,6 +348,22 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     applyItemMove(moveQueueItemToGroupEnd(records, itemId, targetStatus), itemId, targetStatus);
   }
 
+  /** Pushes a review just past the Focus Five, keeping the rest of the order intact. */
+  function releaseFromFocus(itemId: string) {
+    if (!canReorder) return;
+    const next = moveQueueItemToPosition(records, itemId, FOCUS_LIMIT + 1);
+    if (next === records) return;
+    saveItemOrder(next, itemId);
+  }
+
+  function moveGroupBy(status: ReviewStatus, delta: number) {
+    if (!canReorder) return;
+    const index = statusOrder.indexOf(status);
+    const targetIndex = index + delta;
+    if (index < 0 || targetIndex < 0 || targetIndex >= statusOrder.length) return;
+    saveGroupOrder(moveGroup(statusOrder, status, statusOrder[targetIndex]));
+  }
+
   function moveToPosition(itemId: string, position: number) {
     if (!canReorder) return;
     const next = moveQueueItemToPosition(records, itemId, position);
@@ -371,6 +407,18 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 
       <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
         <div className="grid gap-5">
+          <ContentReviewFocusFive
+            items={focusFive}
+            selectedId={selectedId}
+            canReorder={canReorder}
+            draggedItemId={draggedItemId}
+            updateCountById={updateCountById}
+            onSelect={selectItemFromModal}
+            onRelease={releaseFromFocus}
+            onDragStart={startItemDrag}
+            onDragEnd={endDrag}
+            onDrop={dropOnRow}
+          />
           <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
             {radarContent.length > 0 ? (
               <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-cyan-50 p-3 shadow-[0_8px_18px_rgba(245,158,11,0.12)] sm:flex-row sm:items-center sm:justify-between">
@@ -436,6 +484,8 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
                   onDragStart={(event) => startGroupDrag(event, status.value)}
                   onDragEnd={endDrag}
                   onDrop={(event) => dropOnGroup(event, status.value)}
+                  onMoveBy={(delta) => moveGroupBy(status.value, delta)}
+                  isDragActive={dragKind !== null}
                 >
                   {sortQueueItems(groupItems, sort).map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} {...rowProps} />)}
                 </ContentReviewGroup>;
@@ -751,7 +801,7 @@ function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, pri
       draggable={draggable}
       onDragStart={onDragStart ? (event) => onDragStart(event, item.id) : undefined}
       onDragEnd={onDragEnd}
-      onDragOver={onDrop ? (event) => event.preventDefault() : undefined}
+      onDragOver={onDrop ? allowDrop : undefined}
       onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
       className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-gray-50 p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500", draggedItemId === item.id && "opacity-60")}
     >
@@ -782,9 +832,9 @@ function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, pri
 }
 
 /**
- * The drag handle and the review's place in the priority order share one cell.
- * Typing a number and pressing Enter is the keyboard route to the same move a
- * drag performs, so the order is reachable without a pointer.
+ * The drag handle and the review's standing share one cell. Only the Focus Five
+ * carry a number; everything below shows a pin that lifts a review into the
+ * five. Typing a number is the keyboard route to the move a drag performs.
  */
 function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: ContentReviewItem; position: number | null; canReorder: boolean; onMoveToPosition?: (id: string, position: number) => void }) {
   const [draftValue, setDraftValue] = useState<string | null>(null);
@@ -794,6 +844,8 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
     return <span className="flex items-center text-xs font-extrabold uppercase tracking-wide text-muted">New</span>;
   }
 
+  const focused = isInFocusFive(position);
+
   function commit() {
     const parsed = Number.parseInt(draftValue ?? "", 10);
     setDraftValue(null);
@@ -801,14 +853,32 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
     onMoveToPosition?.(item.id, parsed);
   }
 
+  const handle = canReorder ? <span
+    aria-hidden="true"
+    title={`Drag to reorder ${label}`}
+    className="flex min-h-10 cursor-grab items-center text-muted active:cursor-grabbing"
+  >
+    <GripVertical className="h-4 w-4" />
+  </span> : null;
+
+  if (!focused) {
+    return <span className="flex items-center gap-1">
+      {handle}
+      <button
+        type="button"
+        aria-label={`Add ${label} to the Focus Five`}
+        title="Add to the Focus Five"
+        disabled={!onMoveToPosition || !canReorder}
+        onClick={() => onMoveToPosition?.(item.id, FOCUS_LIMIT)}
+        className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-amber-100 hover:text-amber-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+      >
+        <Pin className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </span>;
+  }
+
   return <span className="flex items-center gap-1">
-    {canReorder ? <span
-      aria-hidden="true"
-      title={`Drag to reorder ${label}`}
-      className="flex min-h-10 cursor-grab items-center text-muted active:cursor-grabbing"
-    >
-      <GripVertical className="h-4 w-4" />
-    </span> : null}
+    {handle}
     <input
       aria-label={`Priority for ${label}`}
       inputMode="numeric"
@@ -825,35 +895,58 @@ function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: 
         event.preventDefault();
         commit();
       }}
-      className="min-h-10 w-9 rounded-md border-0 bg-gray-200 px-1 text-center text-sm font-extrabold text-foreground outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-transparent disabled:text-muted"
+      className="min-h-10 w-9 rounded-md bg-amber-200 px-1 text-center text-sm font-extrabold text-amber-950 outline-none ring-1 ring-amber-300 focus:ring-2 focus:ring-blue-400 disabled:bg-amber-100 disabled:text-amber-900"
     />
   </span>;
 }
 
-function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDragging, onDragStart, onDragEnd, onDrop, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; canReorder?: boolean; isDragging?: boolean; onDragStart?: (event: DragEvent<HTMLElement>) => void; onDragEnd?: () => void; onDrop?: (event: DragEvent<HTMLElement>) => void; children: ReactNode }) {
-  return <details
+/**
+ * Two <summary> quirks shape this markup, both verified in a browser:
+ *
+ * 1. A drag that begins anywhere inside a <summary> fires dragstart but never
+ *    completes a drop, so the handle sits beside the <details> and is
+ *    positioned back over the header line. A <button> swallows drops the same
+ *    way, which is why the handle is a focusable <span> instead.
+ * 2. A <summary> under the cursor also swallows the drop itself. Groups render
+ *    collapsed, so the summary is nearly the whole target — during a drag it
+ *    stops taking pointer events and the drop lands on this wrapper.
+ */
+function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDragging, isDragActive, onDragStart, onDragEnd, onDrop, onMoveBy, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; canReorder?: boolean; isDragging?: boolean; isDragActive?: boolean; onDragStart?: (event: DragEvent<HTMLElement>) => void; onDragEnd?: () => void; onDrop?: (event: DragEvent<HTMLElement>) => void; onMoveBy?: (delta: number) => void; children: ReactNode }) {
+  const isDraggable = Boolean(canReorder && onDragStart);
+  return <div
     data-testid={testId}
-    open={open}
-    onDragOver={onDrop ? (event) => event.preventDefault() : undefined}
+    onDragOver={onDrop ? allowDrop : undefined}
     onDrop={onDrop}
-    className={cn("group rounded-md border border-gray-200 bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
+    className={cn("relative rounded-md border border-gray-200 bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
   >
-    <summary
-      draggable={Boolean(canReorder && onDragStart)}
+    {isDraggable ? <span
+      draggable
+      role="button"
+      tabIndex={0}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden"
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+        event.preventDefault();
+        onMoveBy?.(event.key === "ArrowUp" ? -1 : 1);
+      }}
+      aria-label={`Drag the ${title} group. Press the up and down arrow keys to move it.`}
+      className="absolute left-1.5 top-3 z-10 flex h-6 w-5 cursor-grab items-center justify-center rounded text-muted transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400 active:cursor-grabbing"
     >
-      {canReorder ? <span aria-hidden="true" title={`Drag to move the ${title} group`} className="cursor-grab text-muted active:cursor-grabbing"><GripVertical className="h-4 w-4" /></span> : null}
-      <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-black leading-none text-muted">
-        <span className="group-open:hidden">+</span>
-        <span className="hidden group-open:inline">−</span>
-      </span>
-      <span className="flex-1">{title}</span>
-      <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
-    </summary>
-    <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
-  </details>;
+      <GripVertical className="h-4 w-4" aria-hidden="true" />
+    </span> : null}
+    <details open={open} className="group">
+      <summary className={cn("flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden", isDraggable && "pl-8", isDragActive && "pointer-events-none")}>
+        <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-black leading-none text-muted">
+          <span className="group-open:hidden">+</span>
+          <span className="hidden group-open:inline">−</span>
+        </span>
+        <span className="flex-1">{title}</span>
+        <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
+      </summary>
+      <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+    </details>
+  </div>;
 }
 
 function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId, updates, onUpdateAdded, onUpdateDeleted }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | boolean | null) => void; onSave: () => void; fiscalYearId: string; updates: ContentReviewUpdate[]; onUpdateAdded: (update: ContentReviewUpdate) => void; onUpdateDeleted: (updateId: string) => void }) {
