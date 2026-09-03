@@ -1,6 +1,6 @@
 import type { ContentLicense } from "./budget-types";
 import type { ProviderColorOverrides } from "./provider-colors";
-import type { ContentReviewItem, OngoingSeries, RoadmapCategory, RoadmapItem } from "@/features/planning/planning-types";
+import type { ContentReviewItem, ContentReviewUpdate, OngoingSeries, RoadmapCategory, RoadmapItem } from "@/features/planning/planning-types";
 
 export const demoFiscalYear = {
   id: "demo-fy26",
@@ -173,9 +173,26 @@ export const demoOngoingSeries: OngoingSeries[] = [
   { id: "demo-series-3", series: "Seasonal Retreats", cadence: "Quarterly", notes: "Tied to liturgical seasons." }
 ];
 
+function demoUpdateTime(daysAgo: number, hour = 9) {
+  const date = new Date();
+  date.setHours(hour, 0, 0, 0);
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString();
+}
+
+export const demoContentReviewUpdates: ContentReviewUpdate[] = [
+  { id: "demo-update-1", itemId: "demo-review-2", kind: "note", body: "Watched the first two episodes. Pacing is strong; asked Bluebird for the music cue sheet.", fromStatus: null, toStatus: null, authorEmail: "demo@example.com", createdAt: demoUpdateTime(0, 11) },
+  { id: "demo-update-2", itemId: "demo-review-1", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "approved", authorEmail: "demo@example.com", createdAt: demoUpdateTime(1, 14) },
+  { id: "demo-update-3", itemId: "demo-review-3", kind: "note", body: "Rights paperwork still outstanding. Chased Northstar again.", fromStatus: null, toStatus: null, authorEmail: "demo@example.com", createdAt: demoUpdateTime(2, 10) },
+  { id: "demo-update-4", itemId: "demo-review-4", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "rejected", authorEmail: "demo@example.com", createdAt: demoUpdateTime(4, 16) },
+  { id: "demo-update-5", itemId: "demo-review-5", kind: "created", body: null, fromStatus: null, toStatus: "on_the_radar", authorEmail: "demo@example.com", createdAt: demoUpdateTime(6, 8) },
+  { id: "demo-update-6", itemId: "demo-review-3", kind: "note", body: "Flagged the runtime as too long for the family block.", fromStatus: null, toStatus: null, authorEmail: "demo@example.com", createdAt: demoUpdateTime(12, 13) }
+];
+
 export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-1",
+    priorityRank: 1,
     title: "Mystics and Makers",
     provider: "Harbor Light Media",
     genre: "Biography",
@@ -189,6 +206,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   },
   {
     id: "demo-review-2",
+    priorityRank: 2,
     title: "The Sacristy Tour",
     provider: "Bluebird Learning",
     genre: "Sacraments",
@@ -203,6 +221,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   },
   {
     id: "demo-review-3",
+    priorityRank: 3,
     title: "Old Stone Abbey",
     provider: "Northstar Studios",
     genre: "International",
@@ -216,6 +235,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   },
   {
     id: "demo-review-4",
+    priorityRank: 4,
     title: "Tiny Disciples",
     provider: "Lantern House",
     genre: "Saints",
@@ -229,6 +249,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   },
   {
     id: "demo-review-5",
+    priorityRank: 5,
     title: "Monastery Garden",
     provider: "Summit Room",
     genre: "Prayer",

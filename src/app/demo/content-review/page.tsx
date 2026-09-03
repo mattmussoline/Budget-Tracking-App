@@ -1,4 +1,4 @@
-import { demoContentReviewItems, demoRoadmapItems } from "@/features/budget/demo-data";
+import { demoContentReviewItems, demoContentReviewUpdates, demoRoadmapItems } from "@/features/budget/demo-data";
 import { ContentReviewDashboard } from "@/features/planning/components/content-review-dashboard";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
 
@@ -25,6 +25,7 @@ export default function DemoContentReviewPage() {
         fiscalYearId="demo-fy26"
         items={demoContentReviewItems}
         providerOptions={providerOptions}
+        updates={demoContentReviewUpdates}
         isDemo
       />
     </PlanningShell>

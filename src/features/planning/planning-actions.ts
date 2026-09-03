@@ -7,7 +7,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
 import { contentUploadTaskExists, createContentUploadTask } from "./clickup";
 import { dollarsToOptionalCents } from "./planning-model";
-import { ROADMAP_STATUSES, type ContentReviewItem, type ReviewStatus } from "./planning-types";
+import { ROADMAP_STATUSES, type ContentReviewItem, type ContentReviewUpdate, type ReviewStatus } from "./planning-types";
 import { isEmptyNotesHtml, notesHtmlToPlainText, sanitizeNotesHtml } from "./rich-text";
 
 const roadmapStatusSchema = z.enum(ROADMAP_STATUSES);
@@ -185,10 +185,23 @@ export async function addContentReviewItem(formData: FormData) {
 
   const admin = await requirePlanningAdmin();
 
+  // New reviews land at the top of the manual order, matching where the queue
+  // already showed them. Reserving a slot above the current minimum keeps this
+  // to one insert instead of renumbering every existing row.
+  const { data: topRow } = await admin
+    .from("content_review_items")
+    .select("priority_rank")
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .not("priority_rank", "is", null)
+    .order("priority_rank", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
   const { data, error } = await admin
     .from("content_review_items")
     .insert({
       fiscal_year_id: parsed.data.fiscalYearId,
+      priority_rank: (topRow?.priority_rank ?? 1) - 1,
       title: parsed.data.title,
       provider: optionalText(parsed.data.provider),
       genre: optionalText(parsed.data.genre),
@@ -201,12 +214,19 @@ export async function addContentReviewItem(formData: FormData) {
       comparable_content: optionalText(parsed.data.comparableContent),
       is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
-    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
+    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
     .single();
 
   if (error) {
     throw new Error(error.message);
   }
+
+  await logContentReviewUpdate(admin, {
+    fiscalYearId: parsed.data.fiscalYearId,
+    itemId: data.id,
+    kind: "created",
+    toStatus: parsed.data.reviewStatus
+  });
 
   revalidatePlanning();
 
@@ -222,7 +242,8 @@ export async function addContentReviewItem(formData: FormData) {
     proposedRateCents: data.proposed_rate_cents,
     reviewLink: data.review_link,
     comparableContent: data.comparable_content,
-    isCoproductionOpportunity: data.is_coproduction_opportunity
+    isCoproductionOpportunity: data.is_coproduction_opportunity,
+    priorityRank: data.priority_rank
   } satisfies ContentReviewItem;
 }
 
@@ -233,6 +254,15 @@ export async function updateContentReviewItem(formData: FormData) {
   }
 
   const admin = await requirePlanningAdmin();
+
+  // Read the stored status first so a real transition can be logged. updated_at
+  // is bumped by every keystroke-save, so it cannot tell a decision from a typo.
+  const { data: existing } = await admin
+    .from("content_review_items")
+    .select("review_status")
+    .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .maybeSingle();
 
   const { error } = await admin
     .from("content_review_items")
@@ -250,6 +280,195 @@ export async function updateContentReviewItem(formData: FormData) {
       is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
     .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const previousStatus = existing?.review_status as ReviewStatus | undefined;
+  if (previousStatus && previousStatus !== parsed.data.reviewStatus) {
+    await logContentReviewUpdate(admin, {
+      fiscalYearId: parsed.data.fiscalYearId,
+      itemId: parsed.data.itemId,
+      kind: "status_change",
+      fromStatus: previousStatus,
+      toStatus: parsed.data.reviewStatus
+    });
+  }
+
+  revalidatePlanning();
+}
+
+const reorderReviewItemsSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  itemIds: z.array(z.string().trim().min(1)).min(1),
+  movedItemId: z.string().trim().optional(),
+  movedToStatus: reviewStatusSchema.optional()
+});
+
+const reorderReviewGroupsSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  reviewStatuses: z.array(reviewStatusSchema).min(1)
+});
+
+const reviewUpdateSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  itemId: z.string().trim().min(1),
+  body: z.string().trim().min(1).max(2000)
+});
+
+const deleteReviewUpdateSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  updateId: z.string().uuid()
+});
+
+/**
+ * Saves the manual review order. `itemIds` is the whole queue in its new order;
+ * only rows whose rank actually moved are written. When the drag crossed into a
+ * different status group the move doubles as a status change and is logged.
+ */
+export async function reorderContentReviewItems(formData: FormData) {
+  const parsed = reorderReviewItemsSchema.safeParse({
+    fiscalYearId: formData.get("fiscalYearId"),
+    itemIds: formData.getAll("itemIds"),
+    movedItemId: formData.get("movedItemId") ?? undefined,
+    movedToStatus: formData.get("movedToStatus") ?? undefined
+  });
+  if (!parsed.success) {
+    throw new Error("Choose a valid review order.");
+  }
+
+  const admin = await requirePlanningAdmin();
+
+  const { data: currentRows, error: readError } = await admin
+    .from("content_review_items")
+    .select("id,review_status,priority_rank")
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (readError) {
+    throw new Error(readError.message);
+  }
+
+  const currentById = new Map((currentRows ?? []).map((row) => [row.id as string, row]));
+  const movedItemId = parsed.data.movedItemId;
+  const movedToStatus = parsed.data.movedToStatus;
+  const previousStatus = movedItemId ? (currentById.get(movedItemId)?.review_status as ReviewStatus | undefined) : undefined;
+  const hasStatusChange = Boolean(movedItemId && movedToStatus && previousStatus && previousStatus !== movedToStatus);
+
+  const writes = parsed.data.itemIds.flatMap((itemId, index) => {
+    const rank = index + 1;
+    const current = currentById.get(itemId);
+    if (!current) return [];
+    const needsRank = current.priority_rank !== rank;
+    const needsStatus = hasStatusChange && itemId === movedItemId;
+    if (!needsRank && !needsStatus) return [];
+    return [
+      admin
+        .from("content_review_items")
+        .update(needsStatus ? { priority_rank: rank, review_status: movedToStatus } : { priority_rank: rank })
+        .eq("id", itemId)
+        .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    ];
+  });
+
+  const results = await Promise.all(writes);
+  const error = results.find((result) => result.error)?.error;
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (hasStatusChange && movedItemId && movedToStatus) {
+    await logContentReviewUpdate(admin, {
+      fiscalYearId: parsed.data.fiscalYearId,
+      itemId: movedItemId,
+      kind: "status_change",
+      fromStatus: previousStatus,
+      toStatus: movedToStatus
+    });
+  }
+
+  revalidatePlanning();
+}
+
+export async function reorderContentReviewGroups(formData: FormData) {
+  const parsed = reorderReviewGroupsSchema.safeParse({
+    fiscalYearId: formData.get("fiscalYearId"),
+    reviewStatuses: formData.getAll("reviewStatuses")
+  });
+  if (!parsed.success) {
+    throw new Error("Choose a valid group order.");
+  }
+
+  const admin = await requirePlanningAdmin();
+
+  const { error } = await admin.from("content_review_group_order").upsert(
+    parsed.data.reviewStatuses.map((reviewStatus, sortOrder) => ({
+      fiscal_year_id: parsed.data.fiscalYearId,
+      review_status: reviewStatus,
+      sort_order: sortOrder
+    })),
+    { onConflict: "fiscal_year_id,review_status" }
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePlanning();
+}
+
+export async function addContentReviewUpdate(formData: FormData) {
+  const parsed = reviewUpdateSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Write an update before saving it.");
+  }
+
+  const admin = await requirePlanningAdmin();
+  const session = await requireInternalSession();
+
+  const { data, error } = await admin
+    .from("content_review_updates")
+    .insert({
+      fiscal_year_id: parsed.data.fiscalYearId,
+      item_id: parsed.data.itemId,
+      kind: "note",
+      body: parsed.data.body,
+      author_email: session.email
+    })
+    .select("id,item_id,kind,body,from_status,to_status,author_email,created_at")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePlanning();
+
+  return {
+    id: data.id,
+    itemId: data.item_id,
+    kind: data.kind,
+    body: data.body,
+    fromStatus: data.from_status,
+    toStatus: data.to_status,
+    authorEmail: data.author_email,
+    createdAt: data.created_at
+  } satisfies ContentReviewUpdate;
+}
+
+export async function deleteContentReviewUpdate(formData: FormData) {
+  const parsed = deleteReviewUpdateSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid update to delete.");
+  }
+
+  const admin = await requirePlanningAdmin();
+
+  const { error } = await admin
+    .from("content_review_updates")
+    .delete()
+    .eq("id", parsed.data.updateId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
 
   if (error) {
@@ -624,6 +843,30 @@ async function requirePlanningAdmin() {
   await requireInternalSession();
 
   return admin;
+}
+
+/**
+ * Appends one entry to the review activity log. Logging is best-effort: a
+ * failure here must never roll back the edit that triggered it.
+ */
+async function logContentReviewUpdate(
+  admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  entry: { fiscalYearId: string; itemId: string; kind: "note" | "status_change" | "created"; body?: string | null; fromStatus?: ReviewStatus | null; toStatus?: ReviewStatus | null }
+) {
+  try {
+    const session = await requireInternalSession();
+    await admin.from("content_review_updates").insert({
+      fiscal_year_id: entry.fiscalYearId,
+      item_id: entry.itemId,
+      kind: entry.kind,
+      body: entry.body ?? null,
+      from_status: entry.fromStatus ?? null,
+      to_status: entry.toStatus ?? null,
+      author_email: session.email
+    });
+  } catch {
+    // Activity logging is not worth failing a save over.
+  }
 }
 
 function optionalText(value: string | null | undefined) {

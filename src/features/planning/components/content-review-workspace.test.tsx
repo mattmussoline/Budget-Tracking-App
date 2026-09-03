@@ -7,7 +7,11 @@ import type { ContentReviewItem } from "../planning-types";
 
 const actionMocks = vi.hoisted(() => ({
   addContentReviewItem: vi.fn(),
+  addContentReviewUpdate: vi.fn(),
   deleteContentReviewItem: vi.fn(),
+  deleteContentReviewUpdate: vi.fn(),
+  reorderContentReviewGroups: vi.fn(),
+  reorderContentReviewItems: vi.fn(),
   sendReviewToRoadmap: vi.fn(),
   updateContentReviewItem: vi.fn()
 }));
@@ -36,6 +40,36 @@ const activeItem: ContentReviewItem = {
   title: "Catholic Basics",
   reviewStatus: "in_progress",
   isCoproductionOpportunity: true
+};
+
+const zebraItem: ContentReviewItem = {
+  ...item,
+  id: "review-zebra",
+  title: "Zebra Chronicles",
+  provider: "Zed Media",
+  reviewStatus: "not_started",
+  proposedRateCents: 500000,
+  priorityRank: 1
+};
+
+const alphaItem: ContentReviewItem = {
+  ...item,
+  id: "review-alpha",
+  title: "Alpha Mission",
+  provider: "Acme Films",
+  reviewStatus: "not_started",
+  proposedRateCents: 100000,
+  priorityRank: 2
+};
+
+const betaItem: ContentReviewItem = {
+  ...item,
+  id: "review-beta",
+  title: "Beta Signal",
+  provider: "Bravo House",
+  reviewStatus: "not_started",
+  proposedRateCents: 300000,
+  priorityRank: 3
 };
 
 const rejectedItem: ContentReviewItem = {
@@ -190,15 +224,20 @@ describe("ContentReviewDashboard", () => {
   it("keeps decision queue column headers aligned with row columns", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} isDemo />);
 
-    const header = screen.getByText("Title").parentElement;
+    const header = screen.getByTestId("content-review-queue-header");
 
-    expect(header?.children).toHaveLength(5);
+    expect(header.children).toHaveLength(6);
     expect(header).toHaveClass("text-center");
-    expect(header?.children[0]).toHaveAttribute("aria-hidden", "true");
-    expect(header?.children[1]).toHaveTextContent("Title");
-    expect(header?.children[2]).toHaveTextContent("Review Status");
-    expect(header?.children[3]).toHaveTextContent("Yearly Rate");
-    expect(header?.children[4]).toHaveTextContent("Provider");
+    expect(header.children[0]).toHaveTextContent("Priority");
+    expect(header.children[1]).toHaveAttribute("aria-hidden", "true");
+    expect(header.children[2]).toHaveTextContent("Title");
+    expect(header.children[3]).toHaveTextContent("Review Status");
+    expect(header.children[4]).toHaveTextContent("Yearly Rate");
+    expect(header.children[5]).toHaveTextContent("Provider");
+
+    const row = screen.getByTestId("content-review-row-review-active");
+    expect(row.className).toContain("md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]");
+    expect(header.className).toContain("md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]");
   });
 
   it("opens a blank unsaved draft from Add Content", () => {
@@ -441,5 +480,153 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
     expect(screen.queryByRole("button", { name: "Send to Roadmap" })).not.toBeInTheDocument();
+  });
+
+  it("sorts the queue by a column header and returns to the manual order", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const titles = () => screen.getAllByLabelText("Summary Title").map((input) => (input as HTMLInputElement).value);
+    expect(titles()).toEqual(["Zebra Chronicles", "Alpha Mission", "Beta Signal"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titles()).toEqual(["Alpha Mission", "Beta Signal", "Zebra Chronicles"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titles()).toEqual(["Zebra Chronicles", "Beta Signal", "Alpha Mission"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titles()).toEqual(["Zebra Chronicles", "Alpha Mission", "Beta Signal"]);
+  });
+
+  it("offers a chip that clears an active sort", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Yearly Rate" }));
+    const chip = screen.getByRole("button", { name: /Sorted by Yearly Rate/ });
+
+    fireEvent.click(chip);
+
+    expect(screen.queryByRole("button", { name: /Sorted by Yearly Rate/ })).not.toBeInTheDocument();
+  });
+
+  it("saves a dragged review order", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-zebra"), setData: vi.fn() };
+    fireEvent.dragStart(screen.getByTestId("content-review-row-review-zebra"), { dataTransfer });
+    fireEvent.drop(screen.getByTestId("content-review-row-review-beta"), { dataTransfer });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds")).toEqual(["review-alpha", "review-beta", "review-zebra"]);
+    expect(formData.get("movedToStatus")).toBeNull();
+  });
+
+  it("changes the review status when a row is dragged into another group", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
+
+    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-active"), setData: vi.fn() };
+    fireEvent.dragStart(screen.getByTestId("content-review-row-review-active"), { dataTransfer });
+    fireEvent.drop(screen.getByTestId("content-review-row-review-1"), { dataTransfer });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.get("movedItemId")).toBe("review-active");
+    expect(formData.get("movedToStatus")).toBe("approved");
+  });
+
+  it("saves a dragged group order", async () => {
+    actionMocks.reorderContentReviewGroups.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
+
+    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "in_progress"), setData: vi.fn() };
+    const source = screen.getByTestId("content-review-group-in-progress").querySelector("summary");
+    fireEvent.dragStart(source!, { dataTransfer });
+    fireEvent.drop(screen.getByTestId("content-review-group-not-started"), { dataTransfer });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewGroups).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewGroups.mock.calls[0][0] as FormData;
+    expect(formData.getAll("reviewStatuses")[0]).toBe("in_progress");
+  });
+
+  it("moves a review to a priority typed into its badge", async () => {
+    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
+
+    const badge = screen.getByLabelText("Priority for Beta Signal");
+    expect(badge).toHaveValue("3");
+
+    fireEvent.change(badge, { target: { value: "1" } });
+    fireEvent.keyDown(badge, { key: "Enter" });
+
+    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
+    expect(formData.getAll("itemIds")).toEqual(["review-beta", "review-zebra", "review-alpha"]);
+  });
+
+  it("logs an update when Enter is pressed in the update field", async () => {
+    actionMocks.addContentReviewUpdate.mockResolvedValue({
+      id: "update-1",
+      itemId: "review-1",
+      kind: "note",
+      body: "Chased the rights paperwork.",
+      fromStatus: null,
+      toStatus: null,
+      authorEmail: "matt@example.com",
+      createdAt: new Date().toISOString()
+    });
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const field = screen.getByLabelText("Log an update");
+    fireEvent.change(field, { target: { value: "Chased the rights paperwork." } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    await waitFor(() => expect(actionMocks.addContentReviewUpdate).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.addContentReviewUpdate.mock.calls[0][0] as FormData;
+    expect(formData.get("body")).toBe("Chased the rights paperwork.");
+    expect(formData.get("itemId")).toBe("review-1");
+    expect(await screen.findByText("Chased the rights paperwork.")).toBeVisible();
+    expect(field).toHaveValue("");
+  });
+
+  it("ignores an empty update submission", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+
+    const field = screen.getByLabelText("Log an update");
+    fireEvent.change(field, { target: { value: "   " } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    expect(actionMocks.addContentReviewUpdate).not.toHaveBeenCalled();
+  });
+
+  it("summarizes recent review work in the recap panel", () => {
+    const now = new Date().toISOString();
+    render(<ContentReviewDashboard
+      fiscalYearId="00000000-0000-0000-0000-000000000028"
+      items={[item, activeItem]}
+      updates={[
+        { id: "u1", itemId: "review-1", kind: "note", body: "Watched the sample.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: now },
+        { id: "u2", itemId: "review-active", kind: "status_change", body: null, fromStatus: "not_started", toStatus: "in_progress", authorEmail: "matt@example.com", createdAt: now }
+      ]}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Weekly Recap" }));
+
+    const recap = screen.getByTestId("content-review-recap-content");
+    expect(within(recap).getByText("Reviews touched").nextSibling).toHaveTextContent("2");
+    expect(within(recap).getByText("Updates logged").nextSibling).toHaveTextContent("1");
+    expect(within(recap).getByText("Status changes").nextSibling).toHaveTextContent("1");
+    expect(within(recap).getByText("Watched the sample.")).toBeVisible();
+    expect(within(recap).getByText("Not Started → In Progress")).toBeVisible();
+  });
+
+  it("disables reordering in demo mode", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem]} isDemo />);
+
+    expect(screen.getByTestId("content-review-row-review-zebra")).not.toHaveAttribute("draggable", "true");
+    expect(screen.getByLabelText("Priority for Zebra Chronicles")).toBeDisabled();
+    expect(screen.getByLabelText("Log an update")).toBeDisabled();
   });
 });

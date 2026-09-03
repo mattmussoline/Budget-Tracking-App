@@ -115,8 +115,28 @@ create table if not exists public.content_review_items (
   review_link text,
   comparable_content text,
   is_coproduction_opportunity boolean not null default false,
+  priority_rank integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.content_review_group_order (
+  fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
+  review_status text not null check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')),
+  sort_order integer not null,
+  primary key (fiscal_year_id, review_status)
+);
+
+create table if not exists public.content_review_updates (
+  id uuid primary key default gen_random_uuid(),
+  fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
+  item_id text not null references public.content_review_items(id) on delete cascade,
+  kind text not null default 'note' check (kind in ('note', 'status_change', 'created')),
+  body text,
+  from_status text,
+  to_status text,
+  author_email text,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists content_licenses_fiscal_year_id_idx on public.content_licenses(fiscal_year_id);
@@ -132,6 +152,10 @@ create index if not exists roadmap_items_clickup_task_id_idx on public.roadmap_i
 create index if not exists roadmap_items_formed_url_idx on public.roadmap_items(formed_url) where formed_url is not null;
 create index if not exists ongoing_series_fiscal_year_id_idx on public.ongoing_series(fiscal_year_id);
 create index if not exists content_review_items_fiscal_year_id_idx on public.content_review_items(fiscal_year_id);
+create index if not exists content_review_items_priority_idx on public.content_review_items (fiscal_year_id, priority_rank);
+create index if not exists content_review_group_order_fiscal_year_id_idx on public.content_review_group_order(fiscal_year_id);
+create index if not exists content_review_updates_fy_created_idx on public.content_review_updates (fiscal_year_id, created_at desc);
+create index if not exists content_review_updates_item_idx on public.content_review_updates (item_id, created_at desc);
 
 create table if not exists public.attention_dismissals (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
@@ -282,6 +306,8 @@ alter table public.roadmap_items enable row level security;
 alter table public.roadmap_categories enable row level security;
 alter table public.ongoing_series enable row level security;
 alter table public.content_review_items enable row level security;
+alter table public.content_review_group_order enable row level security;
+alter table public.content_review_updates enable row level security;
 alter table public.attention_dismissals enable row level security;
 
 create policy "members can read fiscal years"
@@ -358,6 +384,24 @@ create policy "owners and editors can manage content review items"
 on public.content_review_items for all
 using (public.has_fiscal_year_role(content_review_items.fiscal_year_id, auth.uid(), array['owner', 'editor']))
 with check (public.has_fiscal_year_role(content_review_items.fiscal_year_id, auth.uid(), array['owner', 'editor']));
+
+create policy "members can read content review group order"
+on public.content_review_group_order for select
+using (public.is_fiscal_year_member(content_review_group_order.fiscal_year_id, auth.uid()));
+
+create policy "owners and editors can manage content review group order"
+on public.content_review_group_order for all
+using (public.has_fiscal_year_role(content_review_group_order.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(content_review_group_order.fiscal_year_id, auth.uid(), array['owner', 'editor']));
+
+create policy "members can read content review updates"
+on public.content_review_updates for select
+using (public.is_fiscal_year_member(content_review_updates.fiscal_year_id, auth.uid()));
+
+create policy "owners and editors can manage content review updates"
+on public.content_review_updates for all
+using (public.has_fiscal_year_role(content_review_updates.fiscal_year_id, auth.uid(), array['owner', 'editor']))
+with check (public.has_fiscal_year_role(content_review_updates.fiscal_year_id, auth.uid(), array['owner', 'editor']));
 
 create policy "members can read attention dismissals"
 on public.attention_dismissals for select

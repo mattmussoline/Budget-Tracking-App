@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import { ContentReviewDashboard } from "@/features/planning/components/content-review-dashboard";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
-import type { ContentReviewItem, ReviewStatus } from "@/features/planning/planning-types";
+import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "@/features/planning/planning-types";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -56,19 +56,37 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     redirect("/dashboard");
   }
 
+  // The recap panel offers 7, 14, and 30 day ranges, so one 30-day read covers
+  // every range as well as the per-review log in the editor.
+  const recapWindowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { data: reviewRows, error: reviewError },
-    { data: roadmapProviderRows, error: roadmapProviderError }
+    { data: roadmapProviderRows, error: roadmapProviderError },
+    { data: groupOrderRows },
+    { data: updateRows }
   ] = await Promise.all([
     admin
       .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
+      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
       .eq("fiscal_year_id", activeFiscalYear.id)
+      .order("priority_rank", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false }),
     admin
       .from("roadmap_items")
       .select("provider")
+      .eq("fiscal_year_id", activeFiscalYear.id),
+    admin
+      .from("content_review_group_order")
+      .select("review_status,sort_order")
       .eq("fiscal_year_id", activeFiscalYear.id)
+      .order("sort_order", { ascending: true }),
+    admin
+      .from("content_review_updates")
+      .select("id,item_id,kind,body,from_status,to_status,author_email,created_at")
+      .eq("fiscal_year_id", activeFiscalYear.id)
+      .gte("created_at", recapWindowStart)
+      .order("created_at", { ascending: false })
   ]);
 
   if (reviewError) {
@@ -90,7 +108,22 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     proposedRateCents: item.proposed_rate_cents,
     reviewLink: item.review_link,
     comparableContent: item.comparable_content,
-    isCoproductionOpportunity: item.is_coproduction_opportunity
+    isCoproductionOpportunity: item.is_coproduction_opportunity,
+    priorityRank: item.priority_rank
+  }));
+  const groupOrder: ContentReviewGroupOrderRow[] = (groupOrderRows ?? []).map((row) => ({
+    reviewStatus: row.review_status as ReviewStatus,
+    sortOrder: row.sort_order
+  }));
+  const updates: ContentReviewUpdate[] = (updateRows ?? []).map((row) => ({
+    id: row.id,
+    itemId: row.item_id,
+    kind: row.kind,
+    body: row.body,
+    fromStatus: row.from_status as ReviewStatus | null,
+    toStatus: row.to_status as ReviewStatus | null,
+    authorEmail: row.author_email,
+    createdAt: row.created_at
   }));
   const providerOptions = Array.from(new Set([
     ...(reviewRows ?? []).map((item) => item.provider).filter(Boolean),
@@ -104,7 +137,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
       description="Track possible titles before they move to the roadmap or budget."
       activeSection="content-review"
     >
-      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} />
+      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} groupOrder={groupOrder} updates={updates} />
     </PlanningShell>
   );
 }

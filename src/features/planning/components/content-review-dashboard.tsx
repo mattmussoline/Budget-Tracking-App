@@ -1,39 +1,61 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, ExternalLink, Handshake, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, GripVertical, Handshake, History, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
+import { type DragEvent, type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { SoftButton } from "@/components/ui/soft-button";
 import { cn } from "@/components/ui/soft-surface";
 import { budgetSourceOptions } from "@/features/budget/budget-source";
-import { addContentReviewItem, deleteContentReviewItem, sendReviewToRoadmap, updateContentReviewItem } from "../planning-actions";
+import {
+  QUEUE_GROUP_TEST_IDS,
+  QUEUE_SORT_LABELS,
+  type QueueFilters,
+  type QueueSort,
+  type QueueSortColumn,
+  type QueueView,
+  emptyQueueFilters,
+  groupQueueItems,
+  isDecisionQueueStatus,
+  matchesQueueFilters,
+  moveGroup,
+  moveQueueItem,
+  moveQueueItemToGroupEnd,
+  moveQueueItemToPosition,
+  nextSortState,
+  renumberQueue,
+  resolveGroupOrder,
+  sortQueueItems
+} from "../content-review-queue";
+import {
+  addContentReviewItem,
+  deleteContentReviewItem,
+  reorderContentReviewGroups,
+  reorderContentReviewItems,
+  sendReviewToRoadmap,
+  updateContentReviewItem
+} from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
 import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
-import type { ContentReviewItem, ReviewStatus } from "../planning-types";
+import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "../planning-types";
 import { isLikelyNotesHtml, plainTextToNotesHtml } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
+import { ContentReviewRecapPanel } from "./content-review-recap-panel";
+import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
 import { RichTextNotes } from "./rich-text-notes";
 
-type ContentReviewDashboardProps = { fiscalYearId: string; items: ContentReviewItem[]; providerOptions?: string[]; isDemo?: boolean };
-type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
-type QueueFilters = { search: string; status: ReviewStatus | "all"; provider: string };
-
-const emptyQueueFilters: QueueFilters = { search: "", status: "all", provider: "all" };
-
-// Approved and rejected keep their original test ids so the completed-review selectors stay stable.
-const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "approved", "rejected"];
-
-const QUEUE_GROUP_TEST_IDS: Record<ReviewStatus, string> = {
-  not_started: "content-review-group-not-started",
-  on_the_radar: "content-review-group-on-the-radar",
-  in_progress: "content-review-group-in-progress",
-  blocked: "content-review-group-blocked",
-  approved: "content-review-approved-content",
-  rejected: "content-review-rejected-content"
+type ContentReviewDashboardProps = {
+  fiscalYearId: string;
+  items: ContentReviewItem[];
+  providerOptions?: string[];
+  groupOrder?: ContentReviewGroupOrderRow[];
+  updates?: ContentReviewUpdate[];
+  isDemo?: boolean;
 };
+type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
+type DragKind = "item" | "group";
 
-const decisionQueueGridClass = "md:grid-cols-[4.5rem_1.3fr_1fr_0.9fr_1fr]";
+const decisionQueueGridClass = "md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]";
 const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
 
 const blankDraft = (): ContentReviewItem => ({
@@ -48,10 +70,11 @@ const blankDraft = (): ContentReviewItem => ({
   proposedRateCents: null,
   reviewLink: "",
   comparableContent: "",
-  isCoproductionOpportunity: false
+  isCoproductionOpportunity: false,
+  priorityRank: null
 });
 
-export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = [], isDemo }: ContentReviewDashboardProps) {
+export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
   const [selectedId, setSelectedId] = useState(() => items.find((item) => isDecisionQueueStatus(item.reviewStatus))?.id ?? items[0]?.id ?? "");
   const [draft, setDraft] = useState<ContentReviewItem | null>(null);
@@ -62,6 +85,19 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const editorSectionRef = useRef<HTMLElement>(null);
   const shouldFocusEditorRef = useRef(false);
   const [filters, setFilters] = useState<QueueFilters>(emptyQueueFilters);
+  const [sort, setSort] = useState<QueueSort>(null);
+  const [view, setView] = useState<QueueView>("grouped");
+  const [statusOrder, setStatusOrder] = useState<ReviewStatus[]>(() => resolveGroupOrder(groupOrder));
+  const [updateLog, setUpdateLog] = useState<ContentReviewUpdate[]>(updates);
+  const [isRecapOpen, setIsRecapOpen] = useState(false);
+  const [dragKind, setDragKind] = useState<DragKind | null>(null);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [draggedStatus, setDraggedStatus] = useState<ReviewStatus | null>(null);
+  const [orderStatus, setOrderStatus] = useState("");
+  const [isOrdering, startOrdering] = useTransition();
+  // Tracks the last status the server knows about so a save can tell a real
+  // transition from an unrelated edit and mirror the server-side log entry.
+  const persistedStatusRef = useRef(new Map(items.map((item) => [item.id, item.reviewStatus])));
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
@@ -72,6 +108,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     shouldFocusEditorRef.current = true;
     selectItem(id);
     setOpenStatusModal(null);
+    setIsRecapOpen(false);
   }
 
   function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) {
@@ -82,6 +119,19 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
       return;
     }
     setRecords((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+  }
+
+  function logLocalStatusChange(itemId: string, fromStatus: ReviewStatus | null, toStatus: ReviewStatus, kind: ContentReviewUpdate["kind"] = "status_change") {
+    setUpdateLog((current) => [{
+      id: `local-${itemId}-${Date.now()}`,
+      itemId,
+      kind,
+      body: null,
+      fromStatus,
+      toStatus,
+      authorEmail: null,
+      createdAt: new Date().toISOString()
+    }, ...current]);
   }
 
   function itemFormData(item: ContentReviewItem) {
@@ -105,16 +155,23 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   function save(item: ContentReviewItem) {
     if (isDemo || isPending || !item.title.trim()) return;
     setSaveState("saving");
+    const previousStatus = persistedStatusRef.current.get(item.id) ?? null;
     startTransition(async () => {
       try {
         const formData = itemFormData(item);
         if (item.id === "draft") {
           const savedItem = await addContentReviewItem(formData);
           setRecords((current) => [savedItem, ...current]);
+          persistedStatusRef.current.set(savedItem.id, savedItem.reviewStatus);
+          logLocalStatusChange(savedItem.id, null, savedItem.reviewStatus, "created");
           setDraft(null);
           setSelectedId(savedItem.id);
         } else {
           await updateContentReviewItem(formData);
+          persistedStatusRef.current.set(item.id, item.reviewStatus);
+          if (previousStatus && previousStatus !== item.reviewStatus) {
+            logLocalStatusChange(item.id, previousStatus, item.reviewStatus);
+          }
         }
         setSaveState("saved");
       } catch {
@@ -133,10 +190,10 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const queue = draft ? [draft, ...records] : records;
   const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
   const filteredQueue = queue.filter((item) => matchesQueueFilters(item, filters));
-  const groupedQueue = QUEUE_GROUP_ORDER.map((value) => {
-    const status = REVIEW_STATUSES.find((option) => option.value === value) ?? REVIEW_STATUSES[0];
-    return { status, items: filteredQueue.filter((item) => item.reviewStatus === value) };
-  });
+  const canReorder = !isDemo && sort === null && !isOrdering;
+  const priorityByIdMap = useMemo(() => new Map(records.map((item, index) => [item.id, index + 1])), [records]);
+  const groupedQueue = groupQueueItems(filteredQueue, statusOrder);
+  const flatQueue = sortQueueItems(filteredQueue, sort);
   const providerFilterOptions = useMemo(
     () => Array.from(new Set([...records.map((item) => (item.provider ?? "").trim()), ...providerOptions.map((option) => option.trim())].filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [records, providerOptions]
@@ -148,6 +205,139 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   const coproductionContent = queue.filter((item) => item.isCoproductionOpportunity);
   const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
   const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
+  const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
+
+  function saveItemOrder(nextRecords: ContentReviewItem[], movedItemId?: string, movedToStatus?: ReviewStatus) {
+    const previousRecords = records;
+    const renumbered = renumberQueue(nextRecords);
+    setRecords(renumbered);
+    if (isDemo) return;
+
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    renumbered.forEach((item) => formData.append("itemIds", item.id));
+    if (movedItemId) formData.set("movedItemId", movedItemId);
+    if (movedItemId && movedToStatus) formData.set("movedToStatus", movedToStatus);
+
+    setOrderStatus("Saving order");
+    startOrdering(async () => {
+      try {
+        await reorderContentReviewItems(formData);
+        setOrderStatus("Order saved");
+        if (movedItemId && movedToStatus) {
+          const previousStatus = persistedStatusRef.current.get(movedItemId) ?? null;
+          persistedStatusRef.current.set(movedItemId, movedToStatus);
+          if (previousStatus !== movedToStatus) logLocalStatusChange(movedItemId, previousStatus, movedToStatus);
+        }
+      } catch {
+        setRecords(previousRecords);
+        setOrderStatus("Order error");
+      }
+    });
+  }
+
+  function applyItemMove(nextRecords: ContentReviewItem[], itemId: string, nextStatus?: ReviewStatus) {
+    const withStatus = nextStatus
+      ? nextRecords.map((item) => item.id === itemId ? { ...item, reviewStatus: nextStatus } : item)
+      : nextRecords;
+    saveItemOrder(withStatus, itemId, nextStatus);
+  }
+
+  function saveGroupOrder(nextOrder: ReviewStatus[]) {
+    const previousOrder = statusOrder;
+    setStatusOrder(nextOrder);
+    if (isDemo) return;
+
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    nextOrder.forEach((status) => formData.append("reviewStatuses", status));
+
+    setOrderStatus("Saving order");
+    startOrdering(async () => {
+      try {
+        await reorderContentReviewGroups(formData);
+        setOrderStatus("Order saved");
+      } catch {
+        setStatusOrder(previousOrder);
+        setOrderStatus("Order error");
+      }
+    });
+  }
+
+  function endDrag() {
+    setDragKind(null);
+    setDraggedItemId(null);
+    setDraggedStatus(null);
+  }
+
+  function startItemDrag(event: DragEvent<HTMLElement>, itemId: string) {
+    if (!canReorder || itemId === "draft") {
+      event.preventDefault();
+      return;
+    }
+    setDragKind("item");
+    setDraggedItemId(itemId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", itemId);
+  }
+
+  function startGroupDrag(event: DragEvent<HTMLElement>, status: ReviewStatus) {
+    if (!canReorder) {
+      event.preventDefault();
+      return;
+    }
+    setDragKind("group");
+    setDraggedStatus(status);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", status);
+  }
+
+  function dropOnRow(event: DragEvent<HTMLElement>, targetId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    const sourceId = (dragKind === "item" ? draggedItemId : null) ?? event.dataTransfer.getData("text/plain");
+    endDrag();
+    if (!canReorder || !sourceId || sourceId === targetId) return;
+
+    const dragged = records.find((item) => item.id === sourceId);
+    const target = records.find((item) => item.id === targetId);
+    if (!dragged || !target) return;
+
+    const nextStatus = target.reviewStatus !== dragged.reviewStatus ? target.reviewStatus : undefined;
+    applyItemMove(moveQueueItem(records, sourceId, targetId), sourceId, nextStatus);
+  }
+
+  function dropOnGroup(event: DragEvent<HTMLElement>, targetStatus: ReviewStatus) {
+    event.preventDefault();
+    const payload = event.dataTransfer.getData("text/plain");
+    const kind = dragKind;
+    const sourceItemId = draggedItemId;
+    const sourceStatus = draggedStatus;
+    endDrag();
+    if (!canReorder) return;
+
+    if (kind === "group" && sourceStatus) {
+      saveGroupOrder(moveGroup(statusOrder, sourceStatus, targetStatus));
+      return;
+    }
+
+    const itemId = kind === "item" ? sourceItemId : payload;
+    if (!itemId) return;
+    const dragged = records.find((item) => item.id === itemId);
+    if (!dragged || dragged.reviewStatus === targetStatus) return;
+    applyItemMove(moveQueueItemToGroupEnd(records, itemId, targetStatus), itemId, targetStatus);
+  }
+
+  function moveToPosition(itemId: string, position: number) {
+    if (!canReorder) return;
+    const next = moveQueueItemToPosition(records, itemId, position);
+    if (next === records) return;
+    saveItemOrder(next, itemId);
+  }
+
+  function toggleSort(column: QueueSortColumn) {
+    setSort((current) => nextSortState(current, column));
+  }
 
   useEffect(() => {
     if (!shouldFocusEditorRef.current || openStatusModal) return;
@@ -155,6 +345,19 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
     editorSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     editorSectionRef.current?.focus({ preventScroll: true });
   }, [openStatusModal, selectedId]);
+
+  const rowProps = {
+    isDemo,
+    canReorder,
+    draggedItemId,
+    priorityById: priorityByIdMap,
+    onSelect: selectItem,
+    onChange: changeItem,
+    onDragStart: startItemDrag,
+    onDragEnd: endDrag,
+    onDrop: dropOnRow,
+    onMoveToPosition: moveToPosition
+  };
 
   return (
     <div className="grid gap-5">
@@ -189,8 +392,11 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
               </div>
             ) : null}
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Select a title to edit every review detail.</p></div>
-              <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
+              <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Drag to set your review order, or sort a column to look at the list another way.</p></div>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                <SoftButton type="button" variant="ghost" onClick={() => setIsRecapOpen(true)}><History className="h-4 w-4" />Weekly Recap</SoftButton>
+                <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
+              </div>
             </div>
             <QueueFilterBar
               filters={filters}
@@ -198,16 +404,24 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
               matchCount={filteredQueue.length}
               totalCount={queue.length}
               isFiltering={isFiltering}
+              sort={sort}
+              view={view}
+              orderStatus={orderStatus}
               onChange={setFilters}
               onClear={() => setFilters(emptyQueueFilters)}
+              onClearSort={() => setSort(null)}
+              onChangeView={setView}
             />
-            <div className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-              <span aria-hidden="true" /><span>Title</span><span>Review Status</span><span>Yearly Rate</span><span>Provider</span>
-            </div>
+            <QueueColumnHeader sort={sort} onToggleSort={toggleSort} />
             <div data-testid="content-review-active-queue" className="grid gap-4">
               {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : null}
               {queue.length > 0 && filteredQueue.length === 0 ? <p data-testid="content-review-no-matches" className="rounded-lg bg-white p-5 font-bold text-muted">No reviews match these filters.</p> : null}
-              {groupedQueue.map(({ status, items: groupItems }) => {
+              {queue.length > 0 && view === "priority" ? (
+                <div data-testid="content-review-priority-list" className="grid gap-3">
+                  {flatQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} {...rowProps} />)}
+                </div>
+              ) : null}
+              {view === "grouped" ? groupedQueue.map(({ status, items: groupItems }) => {
                 if (isFiltering && groupItems.length === 0) return null;
                 if (queue.length === 0) return null;
                 return <ContentReviewGroup
@@ -217,16 +431,21 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
                   tone={status.tone}
                   testId={QUEUE_GROUP_TEST_IDS[status.value]}
                   open={isFiltering}
+                  canReorder={canReorder}
+                  isDragging={dragKind === "group" && draggedStatus === status.value}
+                  onDragStart={(event) => startGroupDrag(event, status.value)}
+                  onDragEnd={endDrag}
+                  onDrop={(event) => dropOnGroup(event, status.value)}
                 >
-                  {groupItems.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={selectItem} onChange={changeItem} />)}
+                  {sortQueueItems(groupItems, sort).map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} {...rowProps} />)}
                 </ContentReviewGroup>;
-              })}
+              }) : null}
             </div>
           </section>
         </div>
 
         <section ref={editorSectionRef} tabIndex={-1} className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] outline-none focus:ring-2 focus:ring-blue-300 md:p-7">
-          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
+          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} updates={selectedUpdates} onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])} onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
         </section>
       </div>
 
@@ -235,10 +454,18 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
         items={modalItems}
         selectedId={selectedId}
         isDemo={isDemo}
+        priorityById={priorityByIdMap}
         onClose={() => setOpenStatusModal(null)}
         onSelect={selectItem}
         onOpenDetail={selectItemFromModal}
         onChange={changeItem}
+      /> : null}
+
+      {isRecapOpen ? <ContentReviewRecapPanel
+        items={records}
+        updates={updateLog}
+        onClose={() => setIsRecapOpen(false)}
+        onSelect={selectItemFromModal}
       /> : null}
     </div>
   );
@@ -328,7 +555,7 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   }
 };
 
-function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelect, onOpenDetail, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; onClose: () => void; onSelect: (id: string) => void; onOpenDetail: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
+function ReviewStatusModal({ config, items, selectedId, isDemo, priorityById, onClose, onSelect, onOpenDetail, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; priorityById: Map<string, number>; onClose: () => void; onSelect: (id: string) => void; onOpenDetail: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toneClasses = STATUS_CARD_TONES[config.tone];
   const titleId = `review-status-modal-${config.tone}`;
@@ -380,7 +607,7 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelec
         </button>
       </header>
       <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canReorder={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
       </div>
       <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
         <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
@@ -389,20 +616,9 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, onClose, onSelec
   </dialog>, document.body);
 }
 
-function matchesQueueFilters(item: ContentReviewItem, filters: QueueFilters) {
-  // An unsaved draft always stays visible so it cannot disappear mid-edit behind a filter.
-  if (item.id === "draft") return true;
-
-  const search = filters.search.trim().toLowerCase();
-  if (search && !(item.title ?? "").toLowerCase().includes(search)) return false;
-  if (filters.status !== "all" && item.reviewStatus !== filters.status) return false;
-  if (filters.provider !== "all" && (item.provider ?? "").trim() !== filters.provider) return false;
-  return true;
-}
-
 const filterControlClass = "min-h-10 w-full rounded-md border-0 bg-white px-3 text-sm font-bold text-foreground shadow-sm ring-1 ring-gray-200 outline-none focus:ring-2 focus:ring-blue-400";
 
-function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFiltering, onChange, onClear }: { filters: QueueFilters; providerOptions: string[]; matchCount: number; totalCount: number; isFiltering: boolean; onChange: (filters: QueueFilters) => void; onClear: () => void }) {
+function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFiltering, sort, view, orderStatus, onChange, onClear, onClearSort, onChangeView }: { filters: QueueFilters; providerOptions: string[]; matchCount: number; totalCount: number; isFiltering: boolean; sort: QueueSort; view: QueueView; orderStatus: string; onChange: (filters: QueueFilters) => void; onClear: () => void; onClearSort: () => void; onChangeView: (view: QueueView) => void }) {
   return <div data-testid="content-review-queue-filters" className="mb-4 grid gap-2 rounded-lg bg-white/70 p-3 ring-1 ring-gray-200">
     <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
       <div className="relative">
@@ -436,29 +652,116 @@ function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFi
       </select>
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <p aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">
-        {isFiltering ? `Showing ${matchCount} of ${totalCount}` : `${totalCount} ${totalCount === 1 ? "review" : "reviews"}`}
-      </p>
-      {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-gray-100 px-3 text-xs font-extrabold uppercase tracking-wide text-muted transition hover:bg-gray-200 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <X className="h-3.5 w-3.5" aria-hidden="true" />Clear filters
-      </button> : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <p aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">
+          {isFiltering ? `Showing ${matchCount} of ${totalCount}` : `${totalCount} ${totalCount === 1 ? "review" : "reviews"}`}
+        </p>
+        {sort ? <button
+          type="button"
+          onClick={onClearSort}
+          className="inline-flex min-h-8 items-center gap-1 rounded-md bg-blue-100 px-3 text-xs font-extrabold uppercase tracking-wide text-blue-800 transition hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />Sorted by {QUEUE_SORT_LABELS[sort.column]} · Back to my order
+        </button> : null}
+        {orderStatus ? <span aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">{orderStatus}</span> : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Queue layout" className="flex gap-1 rounded-md bg-gray-100 p-1">
+          <button
+            type="button"
+            aria-pressed={view === "grouped"}
+            onClick={() => onChangeView("grouped")}
+            className={cn("min-h-8 rounded px-2 text-[10px] font-extrabold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-blue-400", view === "grouped" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
+          >
+            Group by status
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "priority"}
+            onClick={() => onChangeView("priority")}
+            className={cn("min-h-8 rounded px-2 text-[10px] font-extrabold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-blue-400", view === "priority" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
+          >
+            Priority order
+          </button>
+        </div>
+        {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-gray-100 px-3 text-xs font-extrabold uppercase tracking-wide text-muted transition hover:bg-gray-200 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <X className="h-3.5 w-3.5" aria-hidden="true" />Clear filters
+        </button> : null}
+      </div>
     </div>
   </div>;
 }
 
-function isFinalReviewStatus(status: ReviewStatus) {
-  return status === "approved" || status === "rejected";
+function QueueColumnHeader({ sort, onToggleSort }: { sort: QueueSort; onToggleSort: (column: QueueSortColumn) => void }) {
+  return <div data-testid="content-review-queue-header" className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
+    <SortHeaderCell column="priority" sort={sort} onToggleSort={onToggleSort} align="justify-start" />
+    <span aria-hidden="true" />
+    <SortHeaderCell column="title" sort={sort} onToggleSort={onToggleSort} />
+    <SortHeaderCell column="reviewStatus" sort={sort} onToggleSort={onToggleSort} />
+    <SortHeaderCell column="proposedRateCents" sort={sort} onToggleSort={onToggleSort} />
+    <SortHeaderCell column="provider" sort={sort} onToggleSort={onToggleSort} />
+  </div>;
 }
 
-function isDecisionQueueStatus(status: ReviewStatus) {
-  return !isFinalReviewStatus(status) && status !== "on_the_radar";
+function SortHeaderCell({ column, sort, onToggleSort, align = "justify-center" }: { column: QueueSortColumn; sort: QueueSort; onToggleSort: (column: QueueSortColumn) => void; align?: string }) {
+  const active = sort?.column === column ? sort.direction : null;
+  const label = QUEUE_SORT_LABELS[column];
+  return <span aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}>
+    <button
+      type="button"
+      onClick={() => onToggleSort(column)}
+      aria-label={`Sort by ${label}`}
+      className={cn(
+        "inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[10px] font-extrabold uppercase tracking-wide transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400",
+        align,
+        active ? "text-blue-700" : "text-muted"
+      )}
+    >
+      {label}
+      {active === "asc" ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : null}
+      {active === "desc" ? <ChevronDown className="h-3 w-3" aria-hidden="true" /> : null}
+    </button>
+  </span>;
 }
 
-function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChange }: { item: ContentReviewItem; active: boolean; isDemo?: boolean; onSelect: (id: string) => void; onOpenDetail?: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
+type ReviewSummaryRowProps = {
+  item: ContentReviewItem;
+  active: boolean;
+  isDemo?: boolean;
+  canReorder: boolean;
+  draggedItemId?: string | null;
+  priorityById: Map<string, number>;
+  onSelect: (id: string) => void;
+  onOpenDetail?: (id: string) => void;
+  onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void;
+  onDragStart?: (event: DragEvent<HTMLElement>, id: string) => void;
+  onDragEnd?: () => void;
+  onDrop?: (event: DragEvent<HTMLElement>, id: string) => void;
+  onMoveToPosition?: (id: string, position: number) => void;
+};
+
+function ReviewSummaryRow({ item, active, isDemo, canReorder, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition }: ReviewSummaryRowProps) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
+  const isDraft = item.id === "draft";
+  const draggable = Boolean(canReorder && onDragStart && !isDraft);
   return (
-    <div aria-current={active ? "true" : undefined} className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-gray-50 p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500")}>
+    <div
+      aria-current={active ? "true" : undefined}
+      data-testid={`content-review-row-${item.id}`}
+      draggable={draggable}
+      onDragStart={onDragStart ? (event) => onDragStart(event, item.id) : undefined}
+      onDragEnd={onDragEnd}
+      onDragOver={onDrop ? (event) => event.preventDefault() : undefined}
+      onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
+      className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-gray-50 p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500", draggedItemId === item.id && "opacity-60")}
+    >
       {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-slate-700 px-2 py-1 text-[9px] font-extrabold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
+      <PriorityCell
+        item={item}
+        position={priorityById.get(item.id) ?? null}
+        canReorder={draggable}
+        onMoveToPosition={onMoveToPosition}
+      />
       <button
         type="button"
         aria-label={`Select ${item.title || "Untitled review"}`}
@@ -478,9 +781,70 @@ function ReviewSummaryRow({ item, active, isDemo, onSelect, onOpenDetail, onChan
   );
 }
 
-function ContentReviewGroup({ title, count, testId, tone, open, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; children: ReactNode }) {
-  return <details data-testid={testId} open={open} className={cn("group rounded-md border border-gray-200 bg-white py-3 shadow-sm", tone && cn("border-l-4", TONE_CLASSES[tone].accent))}>
-    <summary className="flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
+/**
+ * The drag handle and the review's place in the priority order share one cell.
+ * Typing a number and pressing Enter is the keyboard route to the same move a
+ * drag performs, so the order is reachable without a pointer.
+ */
+function PriorityCell({ item, position, canReorder, onMoveToPosition }: { item: ContentReviewItem; position: number | null; canReorder: boolean; onMoveToPosition?: (id: string, position: number) => void }) {
+  const [draftValue, setDraftValue] = useState<string | null>(null);
+  const label = item.title || "Untitled review";
+
+  if (position === null) {
+    return <span className="flex items-center text-xs font-extrabold uppercase tracking-wide text-muted">New</span>;
+  }
+
+  function commit() {
+    const parsed = Number.parseInt(draftValue ?? "", 10);
+    setDraftValue(null);
+    if (!Number.isFinite(parsed) || parsed === position) return;
+    onMoveToPosition?.(item.id, parsed);
+  }
+
+  return <span className="flex items-center gap-1">
+    {canReorder ? <span
+      aria-hidden="true"
+      title={`Drag to reorder ${label}`}
+      className="flex min-h-10 cursor-grab items-center text-muted active:cursor-grabbing"
+    >
+      <GripVertical className="h-4 w-4" />
+    </span> : null}
+    <input
+      aria-label={`Priority for ${label}`}
+      inputMode="numeric"
+      disabled={!onMoveToPosition || !canReorder}
+      value={draftValue ?? String(position)}
+      onChange={(event) => setDraftValue(event.target.value)}
+      onBlur={() => setDraftValue(null)}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setDraftValue(null);
+          return;
+        }
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        commit();
+      }}
+      className="min-h-10 w-9 rounded-md border-0 bg-gray-200 px-1 text-center text-sm font-extrabold text-foreground outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-transparent disabled:text-muted"
+    />
+  </span>;
+}
+
+function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDragging, onDragStart, onDragEnd, onDrop, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; canReorder?: boolean; isDragging?: boolean; onDragStart?: (event: DragEvent<HTMLElement>) => void; onDragEnd?: () => void; onDrop?: (event: DragEvent<HTMLElement>) => void; children: ReactNode }) {
+  return <details
+    data-testid={testId}
+    open={open}
+    onDragOver={onDrop ? (event) => event.preventDefault() : undefined}
+    onDrop={onDrop}
+    className={cn("group rounded-md border border-gray-200 bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
+  >
+    <summary
+      draggable={Boolean(canReorder && onDragStart)}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className="flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden"
+    >
+      {canReorder ? <span aria-hidden="true" title={`Drag to move the ${title} group`} className="cursor-grab text-muted active:cursor-grabbing"><GripVertical className="h-4 w-4" /></span> : null}
       <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-black leading-none text-muted">
         <span className="group-open:hidden">+</span>
         <span className="hidden group-open:inline">−</span>
@@ -492,7 +856,7 @@ function ContentReviewGroup({ title, count, testId, tone, open, children }: { ti
   </details>;
 }
 
-function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | boolean | null) => void; onSave: () => void; fiscalYearId: string }) {
+function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId, updates, onUpdateAdded, onUpdateDeleted }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | boolean | null) => void; onSave: () => void; fiscalYearId: string; updates: ContentReviewUpdate[]; onUpdateAdded: (update: ContentReviewUpdate) => void; onUpdateDeleted: (updateId: string) => void }) {
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
   const [isPipelinePending, startPipelineTransition] = useTransition();
 
@@ -543,6 +907,14 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     <div className="grid gap-4 md:grid-cols-2">
       <div className="md:col-span-2"><RichTextNotes label="Notes" value={combineReviewNotes(item)} onChange={(value) => { onChange("notes", value); onChange("comparableContent", ""); }} disabled={isDemo} /></div>
     </div>
+    <ContentReviewUpdateLog
+      fiscalYearId={fiscalYearId}
+      itemId={item.id}
+      updates={updates}
+      isDemo={isDemo}
+      onAdded={onUpdateAdded}
+      onDeleted={onUpdateDeleted}
+    />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
         {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : null}

@@ -53,4 +53,29 @@ export type ContentReviewItem = {
   reviewLink: string | null;
   comparableContent: string | null;
   isCoproductionOpportunity?: boolean | null;
+  /**
+   * Ordering key for the manual review order, not the number shown on screen.
+   * The queue displays each item's 1-based position after sorting by this
+   * column, so adding a review only has to write one row instead of renumbering
+   * the whole list.
+   */
+  priorityRank?: number | null;
+};
+
+export type ContentReviewUpdateKind = "note" | "status_change" | "created";
+
+export type ContentReviewUpdate = {
+  id: string;
+  itemId: string;
+  kind: ContentReviewUpdateKind;
+  body: string | null;
+  fromStatus: ReviewStatus | null;
+  toStatus: ReviewStatus | null;
+  authorEmail: string | null;
+  createdAt: string;
+};
+
+export type ContentReviewGroupOrderRow = {
+  reviewStatus: ReviewStatus;
+  sortOrder: number;
 };
