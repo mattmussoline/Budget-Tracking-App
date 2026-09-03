@@ -19,7 +19,7 @@ export function DashboardPopout({
   title,
   eyebrow,
   description,
-  toneClassName = "bg-gray-50 text-foreground",
+  toneClassName = "bg-panel-warm text-foreground",
   triggerClassName,
   trigger,
   children
@@ -84,7 +84,7 @@ export function DashboardPopout({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Open ${title}`}
-        className={cn("soft-raised group relative min-w-0 rounded-lg text-left shadow-none transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2", triggerClassName)}
+        className={cn("soft-raised group relative min-w-0 rounded-lg text-left shadow-none transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue focus-visible:ring-offset-2", triggerClassName)}
       >
         <div key="trigger" className="contents">
           {trigger}
@@ -105,13 +105,13 @@ export function DashboardPopout({
               onKeyDown={closeFromEscape}
               onCancel={closeFromCancel}
               onClose={() => setOpen(false)}
-              className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+              className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
             >
               <div className="flex max-h-[calc(100vh-2rem)] flex-col">
                 <header className={cn("flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-7", toneClassName)}>
                   <div className="min-w-0">
-                    {eyebrow ? <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">{eyebrow}</p> : null}
-                    <h2 id={titleId} className="font-display text-3xl font-extrabold tracking-tight">
+                    {eyebrow ? <p className="text-xs font-semibold uppercase tracking-wide opacity-75">{eyebrow}</p> : null}
+                    <h2 id={titleId} className="font-display text-3xl tracking-tight">
                       {title}
                     </h2>
                     {description ? <p className="mt-1 text-sm font-bold opacity-75">{description}</p> : null}
@@ -120,14 +120,14 @@ export function DashboardPopout({
                     type="button"
                     onClick={closeDialog}
                     aria-label={`Close ${title}`}
-                    className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-gray-100"
+                    className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm"
                   >
                     <X className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </header>
                 <div className="min-h-0 overflow-y-auto p-5 sm:p-7">{children}</div>
-                <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
-                  <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">
+                <footer className="flex shrink-0 justify-end border-t border-hairline p-4 sm:px-7">
+                  <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">
                     Close
                   </button>
                 </footer>

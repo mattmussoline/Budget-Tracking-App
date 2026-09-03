@@ -32,7 +32,7 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
       label: "Other Budgets",
       value: formatCurrencyWholeDollars(model.otherBudgetSpentCents),
       icon: WalletCards,
-      className: "bg-blue-100 text-blue-950",
+      className: "bg-formed-blue-soft text-augustine-blue",
       description: "Spend tracked here but paid by another source, such as internal production or donor-funded budgets.",
       renderDetail: () => <OtherBudgetsDetail model={model} />
     },
@@ -60,9 +60,9 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
               <div className="grid h-12 w-12 place-items-center rounded-lg bg-white">
                 <WalletCards className={health.icon} aria-hidden="true" />
               </div>
-              <span className="min-w-0 rounded-md bg-white px-3 py-1 text-sm font-extrabold text-foreground">{percentUsed}% used</span>
+              <span className="min-w-0 rounded-md bg-white px-3 py-1 text-sm font-semibold text-foreground">{percentUsed}% used</span>
             </div>
-            <p className="text-sm font-extrabold uppercase tracking-wide text-foreground">Fiscal year health</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">Fiscal year health</p>
             <div className="mt-4 h-5 rounded-md bg-white">
               <div className={`h-full rounded-md transition-all duration-500 ${health.bar}`} style={{ width: `${barPercent}%` }} />
             </div>
@@ -84,8 +84,8 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
               <div className="mb-4 grid h-12 w-12 place-items-center rounded-lg bg-white">
                 <metric.icon className={health.icon} aria-hidden="true" />
               </div>
-              <p className="text-sm font-extrabold uppercase tracking-wide text-foreground">{metric.label}</p>
-              <p className="break-words font-display text-3xl font-extrabold tracking-tight">{metric.value}</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-foreground">{metric.label}</p>
+              <p className="break-words font-display text-3xl tracking-tight">{metric.value}</p>
             </div>
           }
         >
@@ -99,9 +99,9 @@ export function SummaryMetrics({ model }: SummaryMetricsProps) {
 function HealthDetail({ model, health, barPercent, percentUsed }: { model: DashboardModel; health: ReturnType<typeof getBudgetHealth>; barPercent: number; percentUsed: number }) {
   return (
     <div className="grid gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(240px,0.7fr)]">
-      <div className="rounded-lg bg-gray-50 p-5">
-        <p className="text-sm font-extrabold uppercase tracking-wide text-muted">Budget progress</p>
-        <div className="mt-4 h-6 rounded-md bg-white ring-1 ring-gray-200">
+      <div className="rounded-lg bg-panel-warm p-5">
+        <p className="text-sm font-semibold uppercase tracking-wide text-muted">Budget progress</p>
+        <div className="mt-4 h-6 rounded-md bg-white ring-1 ring-hairline">
           <div className={`h-full rounded-md ${health.bar}`} style={{ width: `${barPercent}%` }} />
         </div>
         <p className="mt-3 text-sm font-bold text-muted">
@@ -175,9 +175,9 @@ function MetricBreakdown({ rows }: { rows: Array<[string, string]> }) {
   return (
     <div className="grid gap-3">
       {rows.map(([label, value]) => (
-        <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <span className="text-sm font-extrabold text-muted">{label}</span>
-          <span className="text-right font-display text-xl font-extrabold text-foreground">{value}</span>
+        <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-hairline bg-panel-warm px-4 py-3">
+          <span className="text-sm font-semibold text-muted">{label}</span>
+          <span className="text-right font-display text-xl text-foreground">{value}</span>
         </div>
       ))}
     </div>
@@ -187,26 +187,26 @@ function MetricBreakdown({ rows }: { rows: Array<[string, string]> }) {
 function getBudgetHealth(remainingPercent: number) {
   if (remainingPercent < 0) {
     return {
-      tile: "bg-red-100 text-red-950",
-      committed: "bg-red-500 text-white",
-      bar: "bg-red-500",
-      icon: "h-5 w-5 text-red-600"
+      tile: "bg-danger-soft text-danger",
+      committed: "bg-danger text-white",
+      bar: "bg-danger",
+      icon: "h-5 w-5 text-danger"
     };
   }
 
   if (remainingPercent < 30) {
     return {
-      tile: "bg-amber-100 text-amber-950",
-      committed: "bg-amber-500 text-white",
-      bar: "bg-amber-500",
-      icon: "h-5 w-5 text-amber-600"
+      tile: "bg-guild-gold-soft text-guild-gold-ink",
+      committed: "bg-guild-gold text-white",
+      bar: "bg-guild-gold",
+      icon: "h-5 w-5 text-guild-gold-ink"
     };
   }
 
   return {
-    tile: "bg-emerald-100 text-emerald-950",
-    committed: "bg-emerald-500 text-white",
-    bar: "bg-emerald-500",
-    icon: "h-5 w-5 text-emerald-600"
+    tile: "bg-deep-teal-soft text-deep-teal",
+    committed: "bg-deep-teal text-white",
+    bar: "bg-deep-teal",
+    icon: "h-5 w-5 text-deep-teal"
   };
 }

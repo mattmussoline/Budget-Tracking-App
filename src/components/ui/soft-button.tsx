@@ -1,7 +1,7 @@
 import { cn } from "./soft-surface";
 
 type SoftButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
 };
 
 export function SoftButton({
@@ -12,16 +12,17 @@ export function SoftButton({
   ...props
 }: SoftButtonProps) {
   const variantClass = {
-    primary: "bg-blue-500 text-white hover:bg-blue-600",
-    secondary: "bg-gray-100 text-foreground hover:bg-gray-200",
-    ghost: "bg-transparent text-muted hover:bg-gray-100"
+    primary: "border-formed-blue bg-formed-blue text-white hover:bg-formed-blue-hover hover:border-formed-blue-hover",
+    secondary: "border-hairline bg-panel text-foreground hover:border-hairline-strong hover:bg-panel-warm",
+    ghost: "border-transparent bg-transparent text-muted hover:bg-panel-warm hover:text-foreground",
+    danger: "border-danger-border bg-danger-soft text-danger hover:border-danger hover:bg-danger hover:text-white"
   }[variant];
 
   return (
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide shadow-none transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
         variantClass,
         className
       )}

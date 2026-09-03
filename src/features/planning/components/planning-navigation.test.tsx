@@ -21,7 +21,7 @@ describe("PlanningNavigation", () => {
     expect(screen.getByRole("link", { name: "Licensing Summary" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "Roadmap" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "Content Review" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Content Review" })).toHaveClass("bg-white", "text-blue-700");
+    expect(screen.getByRole("link", { name: "Content Review" })).toHaveClass("bg-panel", "text-augustine-blue");
   });
 
   it("keeps the navigation order consistent on every page", () => {

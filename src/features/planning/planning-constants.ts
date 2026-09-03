@@ -61,12 +61,12 @@ export const ROADMAP_COLORS = [
 ] as const satisfies ReadonlyArray<PlanningOption>;
 
 export const TONE_CLASSES: Record<PlanningTone, { accent: string; field: string; chip: string }> = {
-  blue: { accent: "border-blue-500", field: "bg-blue-50 text-blue-800", chip: "bg-blue-100 text-blue-800" },
-  amber: { accent: "border-amber-500", field: "bg-amber-50 text-amber-900", chip: "bg-amber-100 text-amber-900" },
-  green: { accent: "border-emerald-500", field: "bg-emerald-50 text-emerald-800", chip: "bg-emerald-100 text-emerald-800" },
-  purple: { accent: "border-violet-500", field: "bg-violet-50 text-violet-800", chip: "bg-violet-100 text-violet-800" },
-  red: { accent: "border-red-500", field: "bg-red-50 text-red-800", chip: "bg-red-100 text-red-800" },
-  cyan: { accent: "border-cyan-500", field: "bg-cyan-50 text-cyan-900", chip: "bg-cyan-100 text-cyan-900" },
-  orange: { accent: "border-orange-500", field: "bg-orange-50 text-orange-900", chip: "bg-orange-100 text-orange-900" },
-  slate: { accent: "border-slate-500", field: "bg-slate-100 text-slate-800", chip: "bg-slate-200 text-slate-800" }
+  blue: { accent: "border-tone-blue-line", field: "bg-tone-blue-bg text-tone-blue-ink", chip: "bg-tone-blue-bg text-tone-blue-ink" },
+  amber: { accent: "border-tone-amber-line", field: "bg-tone-amber-bg text-tone-amber-ink", chip: "bg-tone-amber-bg text-tone-amber-ink" },
+  green: { accent: "border-tone-green-line", field: "bg-tone-green-bg text-tone-green-ink", chip: "bg-tone-green-bg text-tone-green-ink" },
+  purple: { accent: "border-tone-purple-line", field: "bg-tone-purple-bg text-tone-purple-ink", chip: "bg-tone-purple-bg text-tone-purple-ink" },
+  red: { accent: "border-tone-red-line", field: "bg-tone-red-bg text-tone-red-ink", chip: "bg-tone-red-bg text-tone-red-ink" },
+  cyan: { accent: "border-tone-cyan-line", field: "bg-tone-cyan-bg text-tone-cyan-ink", chip: "bg-tone-cyan-bg text-tone-cyan-ink" },
+  orange: { accent: "border-tone-orange-line", field: "bg-tone-orange-bg text-tone-orange-ink", chip: "bg-tone-orange-bg text-tone-orange-ink" },
+  slate: { accent: "border-tone-slate-line", field: "bg-tone-slate-bg text-tone-slate-ink", chip: "bg-tone-slate-bg text-tone-slate-ink" }
 };

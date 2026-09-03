@@ -67,15 +67,15 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
       aria-label={`Edit ${item.title}`}
       className={cn("w-full rounded-md border-l-4 bg-white p-3 text-left transition-transform hover:-translate-y-0.5", TONE_CLASSES[tone].accent)}
     >
-      <p className="font-extrabold leading-tight">{item.title}</p>
+      <p className="font-semibold leading-tight">{item.title}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {item.featuredInIndividualMarketing ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[9px] font-extrabold uppercase text-amber-900 ring-1 ring-amber-200" title="Individual marketing campaign spotlight">
-          <Star className="h-3 w-3 fill-amber-400 text-amber-500" aria-hidden="true" />
+        {item.featuredInIndividualMarketing ? <span className="inline-flex items-center gap-1 rounded-full bg-guild-gold-soft px-2 py-1 text-[9px] font-semibold uppercase text-guild-gold-ink ring-1 ring-guild-gold" title="Individual marketing campaign spotlight">
+          <Star className="h-3 w-3 fill-amber-400 text-guild-gold-ink" aria-hidden="true" />
           Spotlight
         </span> : null}
-        {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
-        {item.provider ? <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
-        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", (item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate)) ? "bg-red-100 text-red-700" : "bg-gray-100")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
+        {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-semibold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
+        {item.provider ? <span className="rounded-full bg-panel-warm px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
+        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", (item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate)) ? "bg-danger-soft text-danger" : "bg-panel-warm")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
       </div>
     </button>
     {isOpen ? createPortal(<dialog
@@ -90,29 +90,29 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
         if (controlledIsOpen === undefined) setUncontrolledIsOpen(false);
         triggerRef.current?.focus();
       }}
-      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
     >
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7 sm:py-6">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-5 sm:px-7 sm:py-6">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Roadmap</p>
-            <h2 id={`edit-roadmap-title-${item.id}`} className="font-display text-2xl font-extrabold sm:text-3xl">Edit Roadmap Item</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p>
+            <h2 id={`edit-roadmap-title-${item.id}`} className="font-display text-2xl sm:text-3xl">Edit Roadmap Item</h2>
           </div>
-          <button type="button" onClick={closeDialog} aria-label="Close edit roadmap modal" className="rounded-md bg-gray-100 p-3 text-muted transition-colors hover:bg-gray-200 hover:text-foreground">
+          <button type="button" onClick={closeDialog} aria-label="Close edit roadmap modal" className="rounded-md bg-panel-warm p-3 text-muted transition-colors hover:bg-hairline hover:text-foreground">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </header>
         <div className="min-h-0 overflow-y-auto px-5 sm:px-7">{children}</div>
-        <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-200 p-4 sm:px-7">
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-hairline p-4 sm:px-7">
           <button
             type="submit"
             form={`edit-${item.id}-form`}
             disabled={isDemo}
-            className="min-h-12 rounded-md bg-blue-500 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-12 rounded-md bg-formed-blue px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-formed-blue-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             Save Item
           </button>
-          <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
+          <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Cancel</button>
         </footer>
       </div>
     </dialog>, document.body) : null}

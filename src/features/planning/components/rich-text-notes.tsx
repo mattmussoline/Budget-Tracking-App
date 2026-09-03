@@ -46,7 +46,7 @@ export function RichTextNotes({ label, value, onChange, disabled }: RichTextNote
     onChange(isEmptyNotesHtml(sanitized) ? "" : sanitized);
   }
 
-  return <div className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">
+  return <div className="grid gap-2 text-xs font-semibold uppercase tracking-wide">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <span id={`${label}-rich-text-label`}>{label}</span>
       <div role="group" aria-label={`${label} formatting`} className="flex flex-wrap gap-1">
@@ -59,7 +59,7 @@ export function RichTextNotes({ label, value, onChange, disabled }: RichTextNote
           // Keep the selection alive: mousedown would otherwise blur the editor before the command runs.
           onMouseDown={(event: ReactMouseEvent<HTMLButtonElement>) => event.preventDefault()}
           onClick={() => runCommand(command)}
-          className="grid h-8 w-8 place-items-center rounded-md bg-gray-100 text-muted transition hover:bg-gray-200 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="grid h-8 w-8 place-items-center rounded-md bg-panel-warm text-muted transition hover:bg-hairline hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Icon className="h-4 w-4" aria-hidden="true" />
         </button>)}
@@ -70,7 +70,7 @@ export function RichTextNotes({ label, value, onChange, disabled }: RichTextNote
       aria-disabled={disabled}
       aria-label={label}
       className={cn(
-        "min-h-[7rem] break-words rounded-md border-0 bg-gray-50 p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-300",
+        "min-h-[7rem] break-words rounded-md border-0 bg-panel-warm p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue",
         "[&_p]:min-h-[1.25rem] [&_p:not(:last-child)]:mb-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-bold [&_em]:italic [&_u]:underline",
         disabled && "cursor-not-allowed opacity-60"
       )}

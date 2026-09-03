@@ -66,7 +66,7 @@ export function FiscalYearManager({
           const isMenuOpen = year.id === menuFiscalYearId;
 
           return (
-            <div key={year.id} className="relative flex items-stretch rounded-md bg-blue-400">
+            <div key={year.id} className="relative flex items-stretch rounded-md bg-formed-blue">
               <Link
                 href={`${routePrefix}/dashboard?fy=${year.id}`}
                 aria-current={isActive ? "page" : undefined}
@@ -74,8 +74,8 @@ export function FiscalYearManager({
                   event.preventDefault();
                   setMenuFiscalYearId(year.id);
                 }}
-                className={`flex min-h-11 items-center gap-1.5 rounded-l-md px-3 py-2 text-sm font-extrabold transition ${
-                  isActive ? "bg-white text-blue-700" : "text-white hover:bg-white/20"
+                className={`flex min-h-11 items-center gap-1.5 rounded-l-md px-3 py-2 text-sm font-semibold transition ${
+                  isActive ? "bg-white text-formed-blue" : "text-white hover:bg-white/20"
                 }`}
               >
                 {year.is_pinned ? <Pin className="h-3.5 w-3.5" aria-label="Pinned default" /> : null}
@@ -93,7 +93,7 @@ export function FiscalYearManager({
                 }}
                 className={`grid min-h-11 w-11 place-items-center rounded-r-md border-l transition ${
                   isActive
-                    ? "border-blue-100 bg-white text-blue-700 hover:bg-blue-50"
+                    ? "border-formed-blue-border bg-white text-formed-blue hover:bg-formed-blue-soft"
                     : "border-white/20 text-white hover:bg-white/20"
                 }`}
               >
@@ -103,7 +103,7 @@ export function FiscalYearManager({
               {isMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full z-30 mt-2 grid min-w-56 gap-1 rounded-lg border border-gray-200 bg-white p-2 text-gray-900 shadow-xl"
+                  className="absolute left-0 top-full z-30 mt-2 grid min-w-56 gap-1 rounded-lg border border-hairline bg-white p-2 text-foreground shadow-xl"
                 >
                   <form action={pinAction}>
                     <input type="hidden" name="fiscalYearId" value={year.id} />
@@ -111,7 +111,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={year.is_pinned || isDemo}
-                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-formed-blue-soft disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Pin className="h-4 w-4" aria-hidden="true" />
                       {year.is_pinned ? "Pinned as default" : "Pin as default"}
@@ -134,7 +134,7 @@ export function FiscalYearManager({
                       type="submit"
                       role="menuitem"
                       disabled={isDemo}
-                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-bold text-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                       Delete budget
@@ -150,7 +150,7 @@ export function FiscalYearManager({
           type="button"
           disabled={isDemo}
           onClick={() => setIsCreateOpen((isOpen) => !isOpen)}
-          className="flex min-h-11 items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-extrabold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-11 items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-formed-blue transition hover:bg-formed-blue-soft disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add fiscal year
@@ -158,12 +158,12 @@ export function FiscalYearManager({
       </nav>
 
       {isCreateOpen ? (
-        <div className="relative text-gray-900">
+        <div className="relative text-foreground">
           <button
             type="button"
             aria-label="Cancel adding fiscal year"
             onClick={() => setIsCreateOpen(false)}
-            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-md bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
+            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-md bg-white text-muted shadow-sm transition hover:bg-panel-warm"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

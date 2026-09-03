@@ -57,7 +57,7 @@ export function AddRoadmapModal({
       type="button"
       onClick={openDialog}
       aria-label={triggerAriaLabel}
-      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-500 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition-all duration-200 hover:scale-[1.03] hover:bg-blue-600 active:scale-[0.98]", triggerClassName)}
+      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-formed-blue px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-all duration-200 hover:bg-formed-blue-hover", triggerClassName)}
     >
       {triggerIcon}
       {triggerLabel}
@@ -72,21 +72,21 @@ export function AddRoadmapModal({
         setIsOpen(false);
         triggerRef.current?.focus();
       }}
-      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+      className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
     >
       <div className="max-h-[calc(100vh-2rem)] overflow-y-auto p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Roadmap</p>
-            <h2 id={titleId} className="font-display text-3xl font-extrabold">Add Roadmap Item</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p>
+            <h2 id={titleId} className="font-display text-3xl">Add Roadmap Item</h2>
           </div>
-          <button type="button" onClick={closeDialog} aria-label="Close add roadmap modal" className="rounded-md bg-gray-100 p-3 text-muted transition-colors hover:bg-gray-200 hover:text-foreground">
+          <button type="button" onClick={closeDialog} aria-label="Close add roadmap modal" className="rounded-md bg-panel-warm p-3 text-muted transition-colors hover:bg-hairline hover:text-foreground">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
         {children}
         <div className="mt-3 flex justify-end">
-          <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Cancel</button>
+          <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Cancel</button>
         </div>
       </div>
     </dialog>, document.body) : null}

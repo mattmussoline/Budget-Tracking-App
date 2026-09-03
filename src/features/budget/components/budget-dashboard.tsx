@@ -86,14 +86,14 @@ export function BudgetDashboard({
               </div>
               <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
                 {isDemo ? (
-                  <p className="rounded-md bg-white px-4 py-3 text-sm font-extrabold text-blue-700 shadow-sm">
+                  <p className="rounded-md bg-white px-4 py-3 text-sm font-semibold text-formed-blue shadow-sm">
                     Public demo mode. Sample data only; editing is disabled.
                   </p>
                 ) : null}
                 {userEmail ? (
-                  <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-extrabold text-white">
+                  <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-semibold text-white">
                     <span className="min-w-0 break-all">{userEmail}</span>
-                    <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-blue-700">
+                    <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-formed-blue">
                       Logout
                     </button>
                   </form>
@@ -152,9 +152,9 @@ export function BudgetDashboard({
 }
 
 const attentionToneClasses: Record<NeedsAttentionItem["tone"], string> = {
-  amber: "border-amber-300 bg-amber-50 text-amber-950",
-  blue: "border-blue-300 bg-blue-50 text-blue-950",
-  red: "border-red-300 bg-red-50 text-red-950"
+  amber: "border-guild-gold bg-guild-gold-soft text-guild-gold-ink",
+  blue: "border-formed-blue-border bg-formed-blue-soft text-augustine-blue",
+  red: "border-danger-border bg-danger-soft text-danger"
 };
 
 function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
@@ -168,19 +168,19 @@ function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
         title="Budget Sources"
         eyebrow={`${total} tracked`}
         description="Content counted across budget items, roadmap titles, and content reviews."
-        toneClassName="bg-purple-50 text-purple-950"
-        triggerClassName="w-full bg-purple-50 p-0 text-purple-950 ring-1 ring-purple-100"
+        toneClassName="bg-deep-teal-soft text-deep-teal"
+        triggerClassName="w-full bg-deep-teal-soft p-0 text-deep-teal ring-1 ring-deep-teal"
         trigger={
           <div className="flex min-w-0 items-center justify-between gap-3 p-5 md:p-6">
             <div className="min-w-0">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight">Budget Sources</h2>
+              <h2 className="font-display text-2xl tracking-tight">Budget Sources</h2>
               <p className="text-sm font-medium text-muted">Content counted across budget items, roadmap titles, and content reviews.</p>
             </div>
             <span className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-white/80 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-purple-900">
+              <span className="rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-deep-teal">
                 {total} tracked
               </span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/80 text-purple-900 shadow-sm ring-1 ring-purple-100">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/80 text-deep-teal shadow-sm ring-1 ring-deep-teal">
                 <Plus className="h-4 w-4" aria-hidden="true" />
               </span>
             </span>
@@ -189,9 +189,9 @@ function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
       >
         <div className="grid gap-3 md:grid-cols-4">
           {items.map((item) => (
-            <div key={item.source} className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-2xl font-extrabold text-foreground">{item.count}</p>
-              <p className="text-xs font-extrabold uppercase tracking-wide text-muted">{item.label}</p>
+            <div key={item.source} className="rounded-md border border-hairline bg-panel-warm p-4">
+              <p className="text-2xl font-semibold text-foreground">{item.count}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
             </div>
           ))}
         </div>
@@ -207,19 +207,19 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
         title="Needs Attention"
         eyebrow={`${items.length} open`}
         description="Items that are blocked, undated, approved, released, or close to budget limits."
-        toneClassName="bg-red-50 text-red-950"
-        triggerClassName="w-full bg-red-50 p-0 text-red-950"
+        toneClassName="bg-guild-gold-soft text-guild-gold-ink"
+        triggerClassName="w-full bg-guild-gold-soft p-0 text-guild-gold-ink"
         trigger={
           <div className="flex min-w-0 items-center justify-between gap-3 p-5 md:p-6">
             <div className="min-w-0">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight">Needs Attention</h2>
+              <h2 className="font-display text-2xl tracking-tight">Needs Attention</h2>
               <p className="text-sm font-medium text-muted">Items that are blocked, undated, approved, released, or close to budget limits.</p>
             </div>
             <span className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-red-900">
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-danger">
                 {items.length} open
               </span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-red-900 shadow-sm ring-1 ring-red-100">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-danger shadow-sm ring-1 ring-danger-border">
                 <Plus className="h-4 w-4" aria-hidden="true" />
               </span>
             </span>
@@ -231,7 +231,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
             {items.map((item) => (
               <div key={item.id} className={`grid gap-3 rounded-md border p-4 ${attentionToneClasses[item.tone]}`}>
                 <Link href={isDemo ? (`/demo${item.href}` as Route) : item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
-                  <p className="text-sm font-extrabold">{item.title}</p>
+                  <p className="text-sm font-semibold">{item.title}</p>
                   <p className="mt-1 text-xs font-bold opacity-80">{item.detail}</p>
                 </Link>
                 <form action={dismissNeedsAttentionItem}>
@@ -241,7 +241,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
                     type="submit"
                     aria-label={`Mark ${item.title} complete`}
                     disabled={isDemo}
-                    className="min-h-9 rounded-md bg-white px-3 py-2 text-xs font-extrabold text-foreground shadow-sm ring-1 ring-black/5 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-9 rounded-md bg-white px-3 py-2 text-xs font-semibold text-foreground shadow-sm ring-1 ring-black/5 hover:bg-panel-warm disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Mark complete
                   </button>
@@ -250,7 +250,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
             ))}
           </div>
         ) : (
-          <p className="rounded-md bg-gray-50 px-4 py-3 text-sm font-extrabold text-muted">Nothing needs attention right now.</p>
+          <p className="rounded-md bg-panel-warm px-4 py-3 text-sm font-semibold text-muted">Nothing needs attention right now.</p>
         )}
       </DashboardPopout>
     </div>

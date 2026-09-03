@@ -61,7 +61,7 @@ type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 type DragKind = "item" | "group";
 
 const decisionQueueGridClass = "md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]";
-const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-gray-50 focus:px-2 focus:ring-2 focus:ring-blue-200";
+const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-panel-warm focus:px-2 focus:ring-2 focus:ring-formed-blue";
 
 /**
  * Marks an element as a valid drop target. Cancelling dragover is what allows
@@ -456,28 +456,28 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
             onDragEnd={endDrag}
             onDrop={dropOnFocusRow}
           />
-          <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-gray-100 p-4 md:p-6">
+          <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-panel-warm p-4 md:p-6">
             {radarContent.length > 0 ? (
-              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-cyan-50 p-3 shadow-[0_8px_18px_rgba(245,158,11,0.12)] sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-guild-gold bg-gradient-to-r from-guild-gold-soft to-deep-teal-soft p-3 shadow-[0_8px_18px_rgba(245,158,11,0.12)] sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-amber-100 text-amber-800">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-guild-gold-soft text-guild-gold-ink">
                     <Radar className="h-4 w-4" aria-hidden="true" />
                   </span>
-                  <p className="text-sm font-extrabold leading-snug text-amber-900">
+                  <p className="text-sm font-semibold leading-snug text-guild-gold-ink">
                     {radarContent.length} On the Radar {radarContent.length === 1 ? "piece is" : "pieces are"} waiting for follow-up. Open the list and decide who gets a next touch.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setOpenStatusModal("radar")}
-                  className="shrink-0 rounded-md bg-amber-400 px-3 py-2 text-sm font-extrabold text-gray-950 transition hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="shrink-0 rounded-md bg-guild-gold px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-guild-gold-soft focus:outline-none focus:ring-2 focus:ring-formed-blue"
                 >
                   View Items
                 </button>
               </div>
             ) : null}
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div><h2 className="font-display text-2xl font-extrabold">Decision Queue</h2><p className="text-sm text-muted">Drag to set your review order, or sort a column to look at the list another way.</p></div>
+              <div><h2 className="font-display text-2xl">Decision Queue</h2><p className="text-sm text-muted">Drag to set your review order, or sort a column to look at the list another way.</p></div>
               <div className="flex shrink-0 flex-wrap justify-end gap-2">
                 <SoftButton type="button" variant="ghost" onClick={() => setIsRecapOpen(true)}><History className="h-4 w-4" />Weekly Recap</SoftButton>
                 <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
@@ -531,8 +531,8 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
           </section>
         </div>
 
-        <section ref={editorSectionRef} tabIndex={-1} className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] outline-none focus:ring-2 focus:ring-blue-300 md:p-7">
-          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} updates={selectedUpdates} onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])} onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-extrabold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
+        <section ref={editorSectionRef} tabIndex={-1} className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] outline-none focus:ring-2 focus:ring-formed-blue md:p-7">
+          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} updates={selectedUpdates} onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])} onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-semibold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
         </section>
       </div>
 
@@ -571,12 +571,12 @@ type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "approve
 type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "approved" | "rejected";
 
 const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string; icon: string; rail: string; value: string; Icon: typeof CheckCircle2 }> = {
-  neutral: { card: "bg-white text-foreground ring-gray-200", label: "text-muted", helper: "text-muted", icon: "bg-gray-100 text-muted", rail: "bg-gray-300", value: "text-foreground", Icon: CheckCircle2 },
-  active: { card: "bg-orange-50 text-orange-950 ring-orange-200", label: "text-orange-800", helper: "text-orange-900", icon: "bg-orange-100 text-orange-800", rail: "bg-orange-500", value: "text-orange-950", Icon: ArrowRight },
-  coproduction: { card: "bg-sky-50 text-slate-950 ring-sky-200", label: "text-sky-800", helper: "text-slate-700", icon: "bg-white text-sky-800 ring-1 ring-sky-200", rail: "bg-sky-500", value: "text-slate-950", Icon: Handshake },
-  radar: { card: "bg-amber-50 text-amber-950 ring-amber-200", label: "text-amber-800", helper: "text-amber-900", icon: "bg-amber-100 text-amber-800", rail: "bg-amber-400", value: "text-amber-950", Icon: Radar },
-  approved: { card: "bg-emerald-50 text-emerald-950 ring-emerald-200", label: "text-emerald-800", helper: "text-emerald-900", icon: "bg-emerald-100 text-emerald-800", rail: "bg-emerald-500", value: "text-emerald-950", Icon: CheckCircle2 },
-  rejected: { card: "bg-rose-50 text-rose-950 ring-rose-200", label: "text-rose-800", helper: "text-rose-900", icon: "bg-white text-rose-800 ring-1 ring-rose-200", rail: "bg-rose-400", value: "text-rose-950", Icon: XCircle }
+  neutral: { card: "bg-white text-foreground ring-hairline", label: "text-muted", helper: "text-muted", icon: "bg-panel-warm text-muted", rail: "bg-hairline-strong", value: "text-foreground", Icon: CheckCircle2 },
+  active: { card: "bg-guild-gold-soft text-guild-gold-ink ring-guild-gold", label: "text-guild-gold-ink", helper: "text-guild-gold-ink", icon: "bg-guild-gold-soft text-guild-gold-ink", rail: "bg-guild-gold", value: "text-guild-gold-ink", Icon: ArrowRight },
+  coproduction: { card: "bg-formed-blue-soft text-foreground ring-formed-blue-border", label: "text-formed-blue", helper: "text-muted", icon: "bg-white text-formed-blue ring-1 ring-formed-blue-border", rail: "bg-formed-blue", value: "text-foreground", Icon: Handshake },
+  radar: { card: "bg-guild-gold-soft text-guild-gold-ink ring-guild-gold", label: "text-guild-gold-ink", helper: "text-guild-gold-ink", icon: "bg-guild-gold-soft text-guild-gold-ink", rail: "bg-guild-gold", value: "text-guild-gold-ink", Icon: Radar },
+  approved: { card: "bg-deep-teal-soft text-deep-teal ring-deep-teal", label: "text-deep-teal", helper: "text-deep-teal", icon: "bg-deep-teal-soft text-deep-teal", rail: "bg-deep-teal", value: "text-deep-teal", Icon: CheckCircle2 },
+  rejected: { card: "bg-danger-soft text-danger ring-danger-border", label: "text-danger", helper: "text-danger", icon: "bg-white text-danger ring-1 ring-danger-border", rail: "bg-danger", value: "text-danger", Icon: XCircle }
 };
 
 function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
@@ -585,17 +585,17 @@ function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label
   const cardClass = cn(
     "group relative min-h-28 overflow-hidden rounded-lg p-4 text-left shadow-sm ring-1 transition",
     toneClasses.card,
-    onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-formed-blue"
   );
   const content = <>
     <span aria-hidden="true" className={cn("absolute inset-x-0 bottom-0 h-1", toneClasses.rail)} />
     <span className="flex items-start justify-between gap-3">
-      <span className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{label}</span>
+      <span className={cn("text-xs font-semibold uppercase tracking-wide", toneClasses.label)}>{label}</span>
       <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md transition group-hover:scale-105", toneClasses.icon)}>
         <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
     </span>
-    <span className={cn("mt-1 block font-display text-3xl font-extrabold", toneClasses.value)}>{value}</span>
+    <span className={cn("mt-1 block font-display text-3xl", toneClasses.value)}>{value}</span>
     <span className={cn("mt-1 block max-w-56 text-xs font-bold leading-snug", toneClasses.helper)}>{helper}</span>
   </>;
 
@@ -689,33 +689,33 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, priorityById, on
     onClick={closeFromBackdrop}
     onKeyDown={closeFromEscape}
     onClose={onClose}
-    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
   >
     <div className="flex max-h-[calc(100vh-2rem)] flex-col">
       <header className={cn("flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-7", toneClasses.card)}>
         <div>
-          <p className={cn("text-xs font-extrabold uppercase tracking-wide", toneClasses.label)}>{items.length} {config.eyebrow}{items.length === 1 ? "" : "s"}</p>
-          <h2 id={titleId} className="font-display text-3xl font-extrabold">{config.title}</h2>
+          <p className={cn("text-xs font-semibold uppercase tracking-wide", toneClasses.label)}>{items.length} {config.eyebrow}{items.length === 1 ? "" : "s"}</p>
+          <h2 id={titleId} className="font-display text-3xl">{config.title}</h2>
           <p className={cn("mt-1 text-sm font-medium", toneClasses.helper)}>{config.description}</p>
         </div>
-        <button type="button" onClick={closeDialog} aria-label={`Close ${config.title} reviews`} className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-gray-100">
+        <button type="button" onClick={closeDialog} aria-label={`Close ${config.title} reviews`} className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
       <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canDrag={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">{config.empty}</p>}
+        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canDrag={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-panel-warm p-5 font-bold text-muted">{config.empty}</p>}
       </div>
-      <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
-        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
+      <footer className="flex shrink-0 justify-end border-t border-hairline p-4 sm:px-7">
+        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Close</button>
       </footer>
     </div>
   </dialog>, document.body);
 }
 
-const filterControlClass = "min-h-10 w-full rounded-md border-0 bg-white px-3 text-sm font-bold text-foreground shadow-sm ring-1 ring-gray-200 outline-none focus:ring-2 focus:ring-blue-400";
+const filterControlClass = "min-h-10 w-full rounded-md border-0 bg-white px-3 text-sm font-bold text-foreground shadow-sm ring-1 ring-hairline outline-none focus:ring-2 focus:ring-formed-blue";
 
 function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFiltering, sort, view, orderStatus, onChange, onClear, onClearSort, onChangeView }: { filters: QueueFilters; providerOptions: string[]; matchCount: number; totalCount: number; isFiltering: boolean; sort: QueueSort; view: QueueView; orderStatus: string; onChange: (filters: QueueFilters) => void; onClear: () => void; onClearSort: () => void; onChangeView: (view: QueueView) => void }) {
-  return <div data-testid="content-review-queue-filters" className="mb-4 grid gap-2 rounded-lg bg-white/70 p-3 ring-1 ring-gray-200">
+  return <div data-testid="content-review-queue-filters" className="mb-4 grid gap-2 rounded-lg bg-white/70 p-3 ring-1 ring-hairline">
     <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -749,25 +749,25 @@ function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFi
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <p aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">
+        <p aria-live="polite" className="text-xs font-semibold uppercase tracking-wide text-muted">
           {isFiltering ? `Showing ${matchCount} of ${totalCount}` : `${totalCount} ${totalCount === 1 ? "review" : "reviews"}`}
         </p>
         {sort ? <button
           type="button"
           onClick={onClearSort}
-          className="inline-flex min-h-8 items-center gap-1 rounded-md bg-blue-100 px-3 text-xs font-extrabold uppercase tracking-wide text-blue-800 transition hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="inline-flex min-h-8 items-center gap-1 rounded-md bg-formed-blue-soft px-3 text-xs font-semibold uppercase tracking-wide text-formed-blue transition hover:bg-formed-blue-soft focus:outline-none focus:ring-2 focus:ring-formed-blue"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />Sorted by {QUEUE_SORT_LABELS[sort.column]} · Back to my order
         </button> : null}
-        {orderStatus ? <span aria-live="polite" className="text-xs font-extrabold uppercase tracking-wide text-muted">{orderStatus}</span> : null}
+        {orderStatus ? <span aria-live="polite" className="text-xs font-semibold uppercase tracking-wide text-muted">{orderStatus}</span> : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Queue layout" className="flex gap-1 rounded-md bg-gray-100 p-1">
+        <div role="group" aria-label="Queue layout" className="flex gap-1 rounded-md bg-panel-warm p-1">
           <button
             type="button"
             aria-pressed={view === "grouped"}
             onClick={() => onChangeView("grouped")}
-            className={cn("min-h-8 rounded px-2 text-[10px] font-extrabold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-blue-400", view === "grouped" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
+            className={cn("min-h-8 rounded px-2 text-[10px] font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-formed-blue", view === "grouped" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
           >
             Group by status
           </button>
@@ -775,12 +775,12 @@ function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFi
             type="button"
             aria-pressed={view === "priority"}
             onClick={() => onChangeView("priority")}
-            className={cn("min-h-8 rounded px-2 text-[10px] font-extrabold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-blue-400", view === "priority" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
+            className={cn("min-h-8 rounded px-2 text-[10px] font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-formed-blue", view === "priority" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
           >
             Priority order
           </button>
         </div>
-        {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-gray-100 px-3 text-xs font-extrabold uppercase tracking-wide text-muted transition hover:bg-gray-200 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400">
+        {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-panel-warm px-3 text-xs font-semibold uppercase tracking-wide text-muted transition hover:bg-hairline hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue">
           <X className="h-3.5 w-3.5" aria-hidden="true" />Clear filters
         </button> : null}
       </div>
@@ -789,7 +789,7 @@ function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFi
 }
 
 function QueueColumnHeader({ sort, onToggleSort }: { sort: QueueSort; onToggleSort: (column: QueueSortColumn) => void }) {
-  return <div data-testid="content-review-queue-header" className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-extrabold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
+  return <div data-testid="content-review-queue-header" className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-semibold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
     <SortHeaderCell column="priority" sort={sort} onToggleSort={onToggleSort} align="justify-start" />
     <span aria-hidden="true" />
     <SortHeaderCell column="title" sort={sort} onToggleSort={onToggleSort} />
@@ -808,9 +808,9 @@ function SortHeaderCell({ column, sort, onToggleSort, align = "justify-center" }
       onClick={() => onToggleSort(column)}
       aria-label={`Sort by ${label}`}
       className={cn(
-        "inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[10px] font-extrabold uppercase tracking-wide transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400",
+        "inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue",
         align,
-        active ? "text-blue-700" : "text-muted"
+        active ? "text-formed-blue" : "text-muted"
       )}
     >
       {label}
@@ -850,9 +850,9 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
       onDragEnd={onDragEnd}
       onDragOver={onDrop ? allowDrop : undefined}
       onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
-      className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-gray-50 p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-blue-500", draggedItemId === item.id && "opacity-60")}
+      className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-panel-warm p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-formed-blue", draggedItemId === item.id && "opacity-60")}
     >
-      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-slate-700 px-2 py-1 text-[9px] font-extrabold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
+      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-augustine-blue-raised px-2 py-1 text-[9px] font-semibold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
       <PriorityCell
         item={item}
         position={priorityById.get(item.id) ?? null}
@@ -865,16 +865,16 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
         aria-label={`Select ${item.title || "Untitled review"}`}
         onClick={() => (onOpenDetail ?? onSelect)(item.id)}
         className={cn(
-          "min-h-10 rounded-md px-3 text-left text-xs font-extrabold uppercase tracking-wide transition",
-          active ? "bg-blue-600 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
+          "min-h-10 rounded-md px-3 text-left text-xs font-semibold uppercase tracking-wide transition",
+          active ? "bg-formed-blue text-white" : "bg-augustine-blue text-white hover:bg-augustine-blue-raised"
         )}
       >
         Select
       </button>
-      <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm font-extrabold" />
+      <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-panel-warm px-3 text-sm font-semibold" />
       <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-      <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-gray-50 px-3 text-sm" />
-      <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-blue-50 px-3 text-sm font-bold text-blue-800" />
+      <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-panel-warm px-3 text-sm" />
+      <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-formed-blue-soft px-3 text-sm font-bold text-formed-blue" />
     </div>
   );
 }
@@ -889,7 +889,7 @@ function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPositio
   const label = item.title || "Untitled review";
 
   if (position === null) {
-    return <span className="flex items-center text-xs font-extrabold uppercase tracking-wide text-muted">New</span>;
+    return <span className="flex items-center text-xs font-semibold uppercase tracking-wide text-muted">New</span>;
   }
 
   const focused = isInFocusFive(position);
@@ -918,7 +918,7 @@ function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPositio
         title="Add to the Focus Five"
         disabled={!onMoveToPosition || !canSetPriority}
         onClick={() => onMoveToPosition?.(item.id, FOCUS_LIMIT)}
-        className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-amber-100 hover:text-amber-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+        className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-guild-gold-soft hover:text-guild-gold-ink focus:outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
       >
         <Pin className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -943,7 +943,7 @@ function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPositio
         event.preventDefault();
         commit();
       }}
-      className="min-h-10 w-9 rounded-md bg-amber-200 px-1 text-center text-sm font-extrabold text-amber-950 outline-none ring-1 ring-amber-300 focus:ring-2 focus:ring-blue-400 disabled:bg-amber-100 disabled:text-amber-900"
+      className="min-h-10 w-9 rounded-md bg-guild-gold-soft px-1 text-center text-sm font-semibold text-guild-gold-ink outline-none ring-1 ring-guild-gold focus:ring-2 focus:ring-formed-blue disabled:bg-amber-100 disabled:text-amber-900"
     />
   </span>;
 }
@@ -965,7 +965,7 @@ function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDr
     data-testid={testId}
     onDragOver={onDrop ? allowDrop : undefined}
     onDrop={onDrop}
-    className={cn("relative rounded-md border border-gray-200 bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
+    className={cn("relative rounded-md border border-hairline bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
   >
     {isDraggable ? <span
       draggable
@@ -979,20 +979,20 @@ function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDr
         onMoveBy?.(event.key === "ArrowUp" ? -1 : 1);
       }}
       aria-label={`Drag the ${title} group. Press the up and down arrow keys to move it.`}
-      className="absolute left-1.5 top-3 z-10 flex h-6 w-5 cursor-grab items-center justify-center rounded text-muted transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400 active:cursor-grabbing"
+      className="absolute left-1.5 top-3 z-10 flex h-6 w-5 cursor-grab items-center justify-center rounded text-muted transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue active:cursor-grabbing"
     >
       <GripVertical className="h-4 w-4" aria-hidden="true" />
     </span> : null}
     <details open={open} className="group">
-      <summary className={cn("flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden", isDraggable && "pl-8", isDragActive && "pointer-events-none")}>
-        <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-black leading-none text-muted">
+      <summary className={cn("flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-semibold [&::-webkit-details-marker]:hidden", isDraggable && "pl-8", isDragActive && "pointer-events-none")}>
+        <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-panel-warm text-xs font-black leading-none text-muted">
           <span className="group-open:hidden">+</span>
           <span className="hidden group-open:inline">−</span>
         </span>
         <span className="flex-1">{title}</span>
-        <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
+        <span className="rounded-full bg-panel-warm px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
       </summary>
-      <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+      <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-panel-warm p-3 text-sm font-bold text-muted">No items.</p>}</div>
     </details>
   </div>;
 }
@@ -1018,9 +1018,9 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
   }
 
   return <div className="grid gap-4">
-    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wide text-blue-600">Selected Review</p><h2 className="font-display text-2xl font-extrabold">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-extrabold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
-    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-700 ring-1 ring-slate-200">Potential co-production opportunity</p> : null}
-    <div className="grid gap-1 border-y border-gray-200">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Selected Review</p><h2 className="font-display text-2xl">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-semibold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
+    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-full bg-panel-warm px-3 py-1 text-xs font-semibold text-muted ring-1 ring-hairline">Potential co-production opportunity</p> : null}
+    <div className="grid gap-1 border-y border-hairline">
       <CompactField label="Detail Title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
       <CompactField label="Proposed Yearly Rate"><CurrencyField label="Proposed Yearly Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
       <CompactField label="Provider">
@@ -1058,28 +1058,28 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
-        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-red-700" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : null}
+        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-danger" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : null}
         {item.id !== "draft" && item.reviewStatus === "approved" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to Roadmap"}</SoftButton> : null}
       </div>
       <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
     </div>
-    {pipelineMessage ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{pipelineMessage}</p> : null}
+    {pipelineMessage ? <p role="status" className="rounded-md bg-deep-teal-soft px-4 py-3 text-sm font-bold text-deep-teal">{pipelineMessage}</p> : null}
   </div>;
 }
 
 function CompactField({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="grid gap-3 border-t border-gray-100 py-2 first:border-t-0 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center">
-    <span className="text-[11px] font-extrabold uppercase tracking-wide text-muted">{label}</span>
+  return <div className="grid gap-3 border-t border-hairline py-2 first:border-t-0 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center">
+    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</span>
     <div className="min-w-0">{children}</div>
   </div>;
 }
 
 function Field({ label, value, onChange, disabled, hideLabel, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean; type?: string }) {
-  const input = <input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"} />;
+  const input = <input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"} />;
 
   if (hideLabel) return input;
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{input}</label>;
+  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{input}</label>;
 }
 
 function LinkField({ label, value, onChange, disabled, hideLabel }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
@@ -1087,33 +1087,33 @@ function LinkField({ label, value, onChange, disabled, hideLabel }: { label: str
   const canOpen = /^https?:\/\//.test(trimmedValue);
 
   const field = <div className="flex flex-wrap gap-2">
-    <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={cn("min-w-0 flex-1", hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal")} />
-    {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className={cn("inline-flex items-center justify-center gap-2 rounded-md bg-blue-50 text-xs font-extrabold uppercase tracking-wide text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100", hideLabel ? "min-h-9 px-3" : "min-h-11 px-4")}><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
+    <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={cn("min-w-0 flex-1", hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal")} />
+    {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className={cn("inline-flex items-center justify-center gap-2 rounded-md bg-formed-blue-soft text-xs font-semibold uppercase tracking-wide text-formed-blue ring-1 ring-formed-blue-border hover:bg-formed-blue-soft", hideLabel ? "min-h-9 px-3" : "min-h-11 px-4")}><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
   </div>;
 
   if (hideLabel) return field;
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{field}</label>;
+  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{field}</label>;
 }
 
 function SelectField({ label, value, options, onChange, disabled, hideLabel }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
-  const select = <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>;
+  const select = <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>;
 
   if (hideLabel) return select;
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{select}</label>;
+  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{select}</label>;
 }
 
 function CurrencyField({ label, value, onChange, disabled, hideLabel }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; hideLabel?: boolean }) {
-  const input = <CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-gray-100 px-3 text-sm font-medium normal-case tracking-normal"} />;
+  const input = <CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"} />;
 
   if (hideLabel) return input;
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide">{label}{input}</label>;
+  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{input}</label>;
 }
 
 function OpportunityField({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: (value: boolean) => void }) {
-  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-extrabold text-slate-700 ring-1 ring-slate-200">
+  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-panel-warm px-3 text-xs font-semibold text-muted ring-1 ring-hairline">
     <input
       aria-label="Potential co-production opportunity"
       type="checkbox"

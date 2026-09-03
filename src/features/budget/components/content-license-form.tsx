@@ -28,13 +28,13 @@ export function ContentLicenseForm({
   }));
 
   return (
-    <SoftSurface className="bg-blue-50 p-6 md:p-8">
+    <SoftSurface className="bg-formed-blue-soft p-6 md:p-8">
       <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-500">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-formed-blue">
           <Plus className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Add Content</h2>
+          <h2 className="font-display text-2xl tracking-tight">Add Content</h2>
           <p className="text-sm font-medium text-muted">The first quarterly payment is prorated automatically.</p>
         </div>
       </div>

@@ -116,7 +116,7 @@ describe("BudgetDashboard", () => {
     renderDashboard();
 
     expect(screen.getByRole("banner")).toHaveClass("h-80", "md:h-80", "p-6", "md:p-8");
-    expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("text-3xl", "md:text-5xl");
+    expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("text-4xl", "md:text-6xl");
     expect(screen.getByRole("navigation", { name: "Planning sections" }).parentElement).toHaveClass("self-end");
     expect(screen.getByRole("banner")).toContainElement(screen.getByRole("navigation", { name: "Fiscal year budgets" }));
     expect(screen.getByRole("banner")).toContainElement(screen.getByRole("button", { name: "Logout" }).closest("form"));
@@ -125,12 +125,12 @@ describe("BudgetDashboard", () => {
   it("uses white fields inside the fiscal year and add content forms", () => {
     renderDashboard();
 
-    expect(screen.getByRole("textbox", { name: "Label" })).toHaveClass("bg-white");
-    expect(screen.getByRole("spinbutton", { name: "Fiscal year" })).toHaveClass("bg-white");
-    expect(screen.getByRole("textbox", { name: "Budget" })).toHaveClass("bg-white");
-    expect(screen.getByPlaceholderText("Jesus Thirsts")).toHaveClass("bg-white");
-    expect(screen.getByPlaceholderText("Provider name")).toHaveClass("bg-white");
-    expect(screen.getByRole("textbox", { name: "Payment amount" })).toHaveClass("bg-white");
+    expect(screen.getByRole("textbox", { name: "Label" })).toHaveClass("bg-panel");
+    expect(screen.getByRole("spinbutton", { name: "Fiscal year" })).toHaveClass("bg-panel");
+    expect(screen.getByRole("textbox", { name: "Budget" })).toHaveClass("bg-panel");
+    expect(screen.getByPlaceholderText("Jesus Thirsts")).toHaveClass("bg-panel");
+    expect(screen.getByPlaceholderText("Provider name")).toHaveClass("bg-panel");
+    expect(screen.getByRole("textbox", { name: "Payment amount" })).toHaveClass("bg-panel");
   });
 
   it("uses short placeholder text for add content dropdowns", () => {
@@ -151,8 +151,8 @@ describe("BudgetDashboard", () => {
     expect(screen.getByText("Cadence mix")).toBeInTheDocument();
     expect(screen.getByText("$48,000.00 quarterly")).toBeInTheDocument();
     expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
-    expect(container.querySelector(".bg-teal-100")).toHaveTextContent("Cadence mix");
-    expect(container.querySelector(".bg-rose-100")).not.toBeInTheDocument();
+    expect(container.querySelector(".bg-deep-teal-soft")).toHaveTextContent("Cadence mix");
+    expect(container.querySelector("[data-testid='needs-attention-panel'] .bg-danger-soft")).not.toBeInTheDocument();
   });
 
   it("keeps dashboard insight text contained at narrower desktop widths", () => {

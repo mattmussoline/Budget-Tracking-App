@@ -8,7 +8,7 @@ import { ProviderPieChart } from "./provider-pie-chart";
 import { ProviderSummaryTable } from "./provider-summary";
 
 type DashboardRow = [string, string];
-const insightValueClassName = "break-words font-display text-2xl font-extrabold leading-none tracking-tight xl:text-3xl";
+const insightValueClassName = "break-words font-display text-2xl leading-none tracking-tight xl:text-3xl";
 const insightDetailClassName = "mt-2 text-sm font-bold leading-snug opacity-75";
 
 export function DashboardInsights({
@@ -41,7 +41,7 @@ export function DashboardInsights({
       value: String(model.insights.licenseCount),
       detail: `${model.insights.quarterlyLicenseCount} quarterly / ${model.insights.yearlyLicenseCount} yearly`,
       icon: GalleryHorizontalEnd,
-      className: "bg-blue-100 text-blue-950",
+      className: "bg-formed-blue-soft text-augustine-blue",
       description: "Every content title currently tracked in this fiscal year.",
       modalRows: [
         ["Total content pieces", String(model.insights.licenseCount)],
@@ -55,7 +55,7 @@ export function DashboardInsights({
       value: formatCurrency(model.insights.averageInstallmentCents),
       detail: "Average installment amount",
       icon: Gauge,
-      className: "bg-emerald-100 text-emerald-950",
+      className: "bg-tone-cyan-bg text-tone-cyan-ink",
       description: "The average payment amount across tracked content.",
       modalRows: [
         ["Average installment", formatCurrency(model.insights.averageInstallmentCents)],
@@ -69,7 +69,7 @@ export function DashboardInsights({
       detail: `${formatCurrency(model.cadenceTotals.quarterlyCents)} quarterly`,
       secondaryDetail: `${formatCurrency(model.cadenceTotals.yearlyCents)} yearly`,
       icon: Repeat2,
-      className: "bg-teal-100 text-teal-950",
+      className: "bg-deep-teal-soft text-deep-teal",
       description: "How the fiscal year splits between quarterly and yearly payment rhythms.",
       modalRows: [
         ["Quarterly content pieces", String(model.insights.quarterlyLicenseCount)],
@@ -146,7 +146,7 @@ export function DashboardInsights({
   return (
     <SoftSurface className="bg-white p-6 md:p-8">
       <div className="mb-5">
-        <h2 className="font-display text-2xl font-extrabold tracking-tight">Licensing Summary</h2>
+        <h2 className="font-display text-2xl tracking-tight">Licensing Summary</h2>
         <p className="text-sm font-medium text-muted">Quick signals for how the licensing year is taking shape.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]">
@@ -163,7 +163,7 @@ export function DashboardInsights({
                 <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-white">
                   <item.icon className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <p className="text-xs font-extrabold uppercase leading-tight tracking-wide opacity-75">{item.label}</p>
+                <p className="text-xs font-semibold uppercase leading-tight tracking-wide opacity-75">{item.label}</p>
                 <p className={insightValueClassName}>{item.value}</p>
                 <p className={insightDetailClassName}>{item.detail}</p>
                 {"secondaryDetail" in item ? <p className="text-sm font-bold leading-snug opacity-75">{item.secondaryDetail}</p> : null}
@@ -177,8 +177,8 @@ export function DashboardInsights({
           title="Active Providers"
           eyebrow={providerLabel[0]}
           description={providerLabel[1]}
-          toneClassName="bg-amber-100 text-amber-950"
-          triggerClassName="min-w-0 p-0 bg-amber-100 text-amber-950"
+          toneClassName="bg-guild-gold-soft text-guild-gold-ink"
+          triggerClassName="min-w-0 p-0 bg-guild-gold-soft text-guild-gold-ink"
           trigger={
             <div className="grid min-w-0 gap-4 p-5 md:grid-cols-[112px_minmax(0,1fr)]">
             <div className="grid place-items-center">
@@ -195,8 +195,8 @@ export function DashboardInsights({
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">Active Providers</p>
-                    <p className="text-wrap font-display text-xl font-extrabold leading-tight tracking-tight">{providerLabel[0]}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide opacity-75">Active Providers</p>
+                    <p className="text-wrap font-display text-xl leading-tight tracking-tight">{providerLabel[0]}</p>
                     <p className="text-sm font-bold opacity-75">{providerLabel[1]}</p>
                   </div>
                 </div>
@@ -209,7 +209,7 @@ export function DashboardInsights({
                     const color = providerColorMap[provider.provider];
 
                     return (
-                      <div key={provider.provider} className="flex items-center justify-between gap-3 text-sm font-extrabold">
+                      <div key={provider.provider} className="flex items-center justify-between gap-3 text-sm font-semibold">
                         <span className="flex min-w-0 items-center gap-2">
                           <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
                           <span className="truncate">{provider.provider}</span>
@@ -225,10 +225,10 @@ export function DashboardInsights({
           }
         >
           <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-              <div className="grid content-start justify-items-center gap-4 rounded-lg bg-amber-50 p-5 text-amber-950">
+              <div className="grid content-start justify-items-center gap-4 rounded-lg bg-guild-gold-soft p-5 text-guild-gold-ink">
                 <ProviderPieChart
                   center={expandedPieCenter}
-                  centerClassName="bg-amber-50"
+                  centerClassName="bg-guild-gold-soft"
                   providerCount={model.insights.providerCount}
                   radius={expandedPieRadius}
                   size={expandedPieSize}
@@ -236,12 +236,12 @@ export function DashboardInsights({
                   strokeWidth={expandedPieStrokeWidth}
                 />
                 <div className="text-center">
-                  <p className="text-xs font-extrabold uppercase tracking-wide opacity-75">Provider mix</p>
-                  <p className="font-display text-2xl font-extrabold">{providerLabel[0]}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-75">Provider mix</p>
+                  <p className="font-display text-2xl">{providerLabel[0]}</p>
                   <p className="text-sm font-bold opacity-75">{providerLabel[1]}</p>
                 </div>
               </div>
-              <div className="min-w-0 overflow-hidden rounded-lg border border-gray-200">
+              <div className="min-w-0 overflow-hidden rounded-lg border border-hairline">
                 <ProviderSummaryTable
                   fiscalYearId={fiscalYearId}
                   isDemo={isDemo}
@@ -261,9 +261,9 @@ function DashboardRows({ rows }: { rows: DashboardRow[] }) {
   return (
     <div className="grid gap-3">
       {rows.map(([label, value]) => (
-        <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <span className="text-sm font-extrabold text-muted">{label}</span>
-          <span className="text-right font-display text-xl font-extrabold text-foreground">{value}</span>
+        <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-hairline bg-panel-warm px-4 py-3">
+          <span className="text-sm font-semibold text-muted">{label}</span>
+          <span className="text-right font-display text-xl text-foreground">{value}</span>
         </div>
       ))}
     </div>

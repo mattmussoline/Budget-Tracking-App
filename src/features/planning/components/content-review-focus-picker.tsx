@@ -68,16 +68,16 @@ export function ContentReviewFocusPicker({ candidates, onPick, onClose }: Conten
     onClick={closeFromBackdrop}
     onKeyDown={closeFromEscape}
     onClose={onClose}
-    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60"
+    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
   >
     <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-amber-200 bg-amber-50 p-5 sm:p-7">
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-guild-gold bg-guild-gold-soft p-5 sm:p-7">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-wide text-amber-800">Focus Five</p>
-          <h2 id={titleId} className="font-display text-2xl font-extrabold">Add a review</h2>
-          <p className="mt-1 text-sm font-medium text-amber-900">Pick the title you want to work on next.</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-guild-gold-ink">Focus Five</p>
+          <h2 id={titleId} className="font-display text-2xl">Add a review</h2>
+          <p className="mt-1 text-sm font-medium text-guild-gold-ink">Pick the title you want to work on next.</p>
         </div>
-        <button type="button" onClick={closeDialog} aria-label="Close add to Focus Five" className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-gray-100">
+        <button type="button" onClick={closeDialog} aria-label="Close add to Focus Five" className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
@@ -92,12 +92,12 @@ export function ContentReviewFocusPicker({ candidates, onPick, onClose }: Conten
             placeholder="Search by title or provider"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="min-h-11 w-full rounded-md border-0 bg-gray-100 pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-blue-400"
+            className="min-h-11 w-full rounded-md border-0 bg-panel-warm pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue"
           />
         </div>
 
         {matches.length === 0 ? (
-          <p className="rounded-lg bg-gray-100 p-5 font-bold text-muted">
+          <p className="rounded-lg bg-panel-warm p-5 font-bold text-muted">
             {candidates.length === 0 ? "Every review is already in the Focus Five." : "No reviews match that search."}
           </p>
         ) : (
@@ -110,17 +110,17 @@ export function ContentReviewFocusPicker({ candidates, onPick, onClose }: Conten
                   type="button"
                   onClick={() => onPick(item.id)}
                   aria-label={`Add ${label} to the Focus Five`}
-                  className="flex w-full items-center gap-3 rounded-lg bg-gray-50 p-3 text-left ring-1 ring-gray-200 transition hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex w-full items-center gap-3 rounded-lg bg-panel-warm p-3 text-left ring-1 ring-hairline transition hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-formed-blue"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-extrabold">{label}</span>
+                    <span className="block truncate text-sm font-semibold">{label}</span>
                     <span className="flex flex-wrap items-center gap-2 text-xs font-bold text-muted">
-                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide", TONE_CLASSES[status.tone].chip)}>{status.label}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", TONE_CLASSES[status.tone].chip)}>{status.label}</span>
                       {item.provider ? <span className="truncate">{item.provider}</span> : null}
                       {item.proposedRateCents ? <span>{formatOptionalCurrency(item.proposedRateCents)}</span> : null}
                     </span>
                   </span>
-                  <span aria-hidden="true" className="shrink-0 rounded-md bg-amber-200 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-amber-950">Add</span>
+                  <span aria-hidden="true" className="shrink-0 rounded-md bg-guild-gold-soft px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-guild-gold-ink">Add</span>
                 </button>
               </li>;
             })}
@@ -128,8 +128,8 @@ export function ContentReviewFocusPicker({ candidates, onPick, onClose }: Conten
         )}
       </div>
 
-      <footer className="flex shrink-0 justify-end border-t border-gray-200 p-4 sm:px-7">
-        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100">Close</button>
+      <footer className="flex shrink-0 justify-end border-t border-hairline p-4 sm:px-7">
+        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Close</button>
       </footer>
     </div>
   </dialog>, document.body);

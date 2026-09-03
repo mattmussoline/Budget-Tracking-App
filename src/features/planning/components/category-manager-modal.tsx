@@ -147,21 +147,21 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
   };
 
   return <>
-    <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-gray-100 px-5 py-3 text-sm font-extrabold uppercase tracking-wide transition-all duration-200 hover:scale-[1.03] hover:bg-gray-200 active:scale-[0.98]">
+    <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-panel-warm px-5 py-3 text-sm font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-hairline">
       <KeyRound className="h-4 w-4" aria-hidden="true" />Manage Key
     </button>
-    <dialog ref={dialogRef} aria-labelledby="manage-key-title" onClick={closeFromBackdrop} onKeyDown={closeFromEscape} onClose={() => triggerRef.current?.focus()} className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-gray-950/60">
+    <dialog ref={dialogRef} aria-labelledby="manage-key-title" onClick={closeFromBackdrop} onKeyDown={closeFromEscape} onClose={() => triggerRef.current?.focus()} className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60">
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-4 sm:p-5">
-          <div><p className="text-[11px] font-extrabold uppercase tracking-wide text-blue-600">Roadmap</p><h2 id="manage-key-title" className="font-display text-2xl font-extrabold">Manage Key</h2><p className="mt-1 text-xs font-bold text-muted">Roadmap key overview.</p></div>
-          <button type="button" onClick={closeDialog} aria-label="Close Manage Key modal" className="rounded-md bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700"><X className="h-5 w-5" aria-hidden="true" /></button>
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-4 sm:p-5">
+          <div><p className="text-[11px] font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p><h2 id="manage-key-title" className="font-display text-2xl">Manage Key</h2><p className="mt-1 text-xs font-bold text-muted">Roadmap key overview.</p></div>
+          <button type="button" onClick={closeDialog} aria-label="Close Manage Key modal" className="rounded-md bg-formed-blue p-2 text-white transition-colors hover:bg-formed-blue-hover"><X className="h-5 w-5" aria-hidden="true" /></button>
         </header>
         <div className="grid min-h-0 gap-2 overflow-y-auto p-4 sm:p-5">
-          <span aria-live="polite" className="min-h-4 text-xs font-extrabold uppercase text-muted">{saveStatus || orderStatus}</span>
+          <span aria-live="polite" className="min-h-4 text-xs font-semibold uppercase text-muted">{saveStatus || orderStatus}</span>
           {orderedCategories.map((category) => <CategoryEditor key={category.id} fiscalYearId={fiscalYearId} category={category} isDemo={isDemo} isOrdering={isOrdering || isSaving} draggedCategoryId={draggedCategoryId} onChange={updateCategoryDraft} onDragStart={startCategoryDrag} onDragEnd={() => setDraggedCategoryId(null)} onDragOver={(event) => event.preventDefault()} onDrop={dropCategory} />)}
           <NewCategoryForm fiscalYearId={fiscalYearId} isDemo={isDemo} />
         </div>
-        <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-200 p-3 sm:px-5"><button type="button" onClick={saveCategoryEdits} disabled={isDemo || isSaving || isOrdering || !hasCategoryEdits} className="min-h-10 rounded-md bg-blue-600 px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500">{isSaving ? "Saving" : "Save"}</button><button type="button" onClick={closeDialog} className="min-h-10 rounded-md bg-blue-600 px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-colors hover:bg-blue-700">Close</button></footer>
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-hairline p-3 sm:px-5"><button type="button" onClick={saveCategoryEdits} disabled={isDemo || isSaving || isOrdering || !hasCategoryEdits} className="min-h-10 rounded-md bg-formed-blue px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-formed-blue-hover disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500">{isSaving ? "Saving" : "Save"}</button><button type="button" onClick={closeDialog} className="min-h-10 rounded-md bg-formed-blue px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-formed-blue-hover">Close</button></footer>
       </div>
     </dialog>
   </>;
@@ -209,12 +209,12 @@ function CategoryEditor({
     });
   };
 
-  return <div data-testid={`category-editor-${category.id}`} draggable={!isDemo && !isOrdering} onDragStart={(event) => onDragStart(event, category.id)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={(event) => onDrop(event, category.id)} className={`grid gap-2 rounded-md bg-gray-100 p-3 transition-opacity sm:grid-cols-[auto_minmax(0,1fr)_132px_auto] ${draggedCategoryId === category.id ? "opacity-60" : ""}`}>
+  return <div data-testid={`category-editor-${category.id}`} draggable={!isDemo && !isOrdering} onDragStart={(event) => onDragStart(event, category.id)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={(event) => onDrop(event, category.id)} className={`grid gap-2 rounded-md bg-panel-warm p-3 transition-opacity sm:grid-cols-[auto_minmax(0,1fr)_132px_auto] ${draggedCategoryId === category.id ? "opacity-60" : ""}`}>
     <button type="button" aria-label={`Drag ${category.name}`} className="flex min-h-10 cursor-grab items-center justify-center rounded-md bg-white px-2 text-muted active:cursor-grabbing" tabIndex={-1}><GripVertical className="h-4 w-4" aria-hidden="true" /></button>
     <input aria-label={`Category name ${category.name}`} value={category.name} onChange={(event) => onChange(category.id, { name: event.target.value, colorKey: category.colorKey })} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm" />
     <select aria-label={`Category color ${category.name}`} value={category.colorKey} onChange={(event) => onChange(category.id, { name: category.name, colorKey: event.target.value })} disabled={isDemo || isPending || isOrdering} className="min-h-10 rounded-md bg-white px-3 text-sm">{ROADMAP_COLORS.map((color) => <option key={color.value} value={color.value}>{color.label}</option>)}</select>
-    <SoftButton type="button" variant="ghost" onClick={remove} disabled={isDemo || isPending || isOrdering} aria-label={`Delete ${category.name}`} className="text-red-700"><Trash2 className="h-4 w-4" />Delete</SoftButton>
-    <span aria-live="polite" className="text-xs font-extrabold uppercase text-muted sm:col-span-4">{status}</span>
+    <SoftButton type="button" variant="ghost" onClick={remove} disabled={isDemo || isPending || isOrdering} aria-label={`Delete ${category.name}`} className="text-danger"><Trash2 className="h-4 w-4" />Delete</SoftButton>
+    <span aria-live="polite" className="text-xs font-semibold uppercase text-muted sm:col-span-4">{status}</span>
   </div>;
 }
 
@@ -246,10 +246,10 @@ function NewCategoryForm({ fiscalYearId, isDemo }: { fiscalYearId: string; isDem
     });
   };
 
-  return <form onSubmit={add} className="grid gap-2 rounded-md bg-blue-50 p-3 sm:grid-cols-[minmax(0,1fr)_132px_auto]">
+  return <form onSubmit={add} className="grid gap-2 rounded-md bg-formed-blue-soft p-3 sm:grid-cols-[minmax(0,1fr)_132px_auto]">
     <input aria-label="New category name" value={name} onChange={(event) => setName(event.target.value)} placeholder="New category" disabled={isDemo || isPending} className="min-h-10 rounded-md bg-white px-3 text-sm" />
     <select aria-label="New category color" value={colorKey} onChange={(event) => setColorKey(event.target.value)} disabled={isDemo || isPending} className="min-h-10 rounded-md bg-white px-3 text-sm">{ROADMAP_COLORS.map((color) => <option key={color.value} value={color.value}>{color.label}</option>)}</select>
     <SoftButton type="submit" variant="primary" disabled={isDemo || isPending || !name.trim()}><Plus className="h-4 w-4" />Add Key</SoftButton>
-    <span aria-live="polite" className="text-xs font-extrabold uppercase text-muted sm:col-span-3">{status}</span>
+    <span aria-live="polite" className="text-xs font-semibold uppercase text-muted sm:col-span-3">{status}</span>
   </form>;
 }

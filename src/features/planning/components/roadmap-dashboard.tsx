@@ -90,36 +90,36 @@ export function RoadmapDashboard({ fiscalYearId, roadmapItems, ongoingSeries, ca
         {categories.filter((category) => category.isActive).map((category) => {
           const tone = (category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
           const isActive = activeFilter?.id === category.id;
-          return <button key={category.id} type="button" aria-label={isActive ? `Clear ${category.name} filter` : `Filter ${category.name}`} aria-pressed={isActive} onClick={() => setActiveFilter(isActive ? null : { id: category.id, label: category.name })} className={cn("rounded-md px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide transition hover:-translate-y-0.5", TONE_CLASSES[tone].chip, isActive && "ring-2 ring-gray-900")}>{category.name}</button>;
+          return <button key={category.id} type="button" aria-label={isActive ? `Clear ${category.name} filter` : `Filter ${category.name}`} aria-pressed={isActive} onClick={() => setActiveFilter(isActive ? null : { id: category.id, label: category.name })} className={cn("rounded-md px-3 py-2 text-[10px] font-semibold uppercase tracking-wide transition hover:-translate-y-0.5", TONE_CLASSES[tone].chip, isActive && "ring-2 ring-augustine-blue")}>{category.name}</button>;
         })}
       </div>
     </div> : null}
 
-    {!isRoadmapFocus ? <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-900 p-3 text-white">
-      <div className="flex flex-wrap gap-2"><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, -monthCount))}><ChevronLeft className="inline h-4 w-4" /> Previous</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-amber-400 px-3 py-2 text-sm font-extrabold text-gray-900" href={href(today)}>Today</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, monthCount))}>Next <ChevronRight className="inline h-4 w-4" /></Link></div>
-      <div className="flex flex-wrap gap-2">{([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-bold", monthCount === count ? "bg-white text-gray-900" : "bg-white/10 text-white")}>{count} months</Link>)}</div>
+    {!isRoadmapFocus ? <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-augustine-blue p-3 text-white">
+      <div className="flex flex-wrap gap-2"><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, -monthCount))}><ChevronLeft className="inline h-4 w-4" /> Previous</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-guild-gold px-3 py-2 text-sm font-semibold text-foreground" href={href(today)}>Today</Link><Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-3 py-2 text-sm font-bold" href={href(shiftMonthAnchor(startMonth, monthCount))}>Next <ChevronRight className="inline h-4 w-4" /></Link></div>
+      <div className="flex flex-wrap gap-2">{([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-bold", monthCount === count ? "bg-white text-foreground" : "bg-white/10 text-white")}>{count} months</Link>)}</div>
     </nav> : null}
 
     {!isRoadmapFocus ? <RoadmapSummary summary={summary} /> : null}
 
-    <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-gray-200 md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-3xl font-extrabold">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-blue-100" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-blue-100")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
-      <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-gray-200 p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
+    <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-3xl">{months[0].label}–{months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
+      <div data-testid="roadmap-month-scroll" className={cn("flex gap-4 overflow-x-auto overflow-y-visible rounded-lg bg-hairline p-3", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
           const items = filteredItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key);
-          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-gray-100 p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-blue-50"><h3 className="text-lg font-extrabold">{month.label}</h3><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-blue-700 shadow-sm ring-1 ring-blue-100 hover:bg-blue-50 hover:!text-blue-800"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</div></article>;
+          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-lg bg-panel-warm p-3", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[320px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2 min-h-11 w-full rounded-md bg-white p-3 text-left transition-colors hover:bg-formed-blue-soft"><h3 className="text-lg font-semibold">{month.label}</h3><p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-3 min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-formed-blue shadow-sm ring-1 ring-formed-blue-border hover:bg-formed-blue-soft hover:!text-formed-blue"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</div></article>;
         })}
       </div>
     </section>
 
     {!isRoadmapFocus ? <div className="grid gap-6 xl:grid-cols-[1.35fr_0.8fr]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <details data-testid="roadmap-backlog" className="self-start rounded-lg bg-gray-100" open>
+      <details data-testid="roadmap-backlog" className="self-start rounded-lg bg-panel-warm" open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
           <div>
-            <h2 className="font-display text-lg font-extrabold">Backlog</h2>
+            <h2 className="font-display text-lg">Backlog</h2>
             <p className="text-sm text-muted">Undated items and releases outside this visible window.</p>
           </div>
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-muted shadow-sm ring-1 ring-gray-200">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-muted shadow-sm ring-1 ring-hairline">
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Expand Backlog section</span>
           </span>
@@ -147,14 +147,14 @@ type RoadmapSummaryData = {
 
 const RANKING_COLORS = ["#2563eb", "#d97706", "#059669", "#7c3aed", "#0891b2", "#ea580c", "#475569"];
 const TONE_HEX: Record<PlanningTone, string> = {
-  blue: "#2563eb",
-  amber: "#d97706",
-  green: "#059669",
-  purple: "#7c3aed",
-  red: "#dc2626",
-  cyan: "#0891b2",
-  orange: "#ea580c",
-  slate: "#475569"
+  blue: "#327fef",
+  amber: "#c79a3c",
+  green: "#4e7a44",
+  purple: "#7a5c94",
+  red: "#a4343a",
+  cyan: "#176c72",
+  orange: "#c1703c",
+  slate: "#b3a996"
 };
 
 function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
@@ -163,24 +163,24 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
   const topGenre = summary.genreRankings[0] ?? null;
   const topFormat = summary.formatRankings[0] ?? null;
 
-  return <details data-testid="roadmap-summary" className="rounded-lg bg-blue-50 ring-1 ring-blue-100">
+  return <details data-testid="roadmap-summary" className="rounded-lg bg-formed-blue-soft ring-1 ring-formed-blue-border">
     <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 p-5">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-blue-950">Fiscal year at a glance</h2>
-        <p className="text-sm font-bold text-blue-700">July - June roadmap snapshot.</p>
+        <h2 className="font-display text-2xl text-augustine-blue">Fiscal year at a glance</h2>
+        <p className="text-sm font-bold text-formed-blue">July - June roadmap snapshot.</p>
       </div>
       <div className="flex flex-wrap justify-end gap-2">
-        <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">{summary.totalTitles} {summary.totalTitles === 1 ? "title" : "titles"}</span>
-        {summary.nextRelease ? <span className="rounded-full bg-amber-300 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-amber-950">Next up</span> : null}
+        <span className="rounded-full bg-formed-blue px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">{summary.totalTitles} {summary.totalTitles === 1 ? "title" : "titles"}</span>
+        {summary.nextRelease ? <span className="rounded-full bg-guild-gold-soft px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-guild-gold-ink">Next up</span> : null}
       </div>
     </summary>
     <div className="px-5 pb-5">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-sm font-bold text-blue-900">Snapshot of what is live, moving, and still needs a date.</p>
+          <p className="text-sm font-bold text-augustine-blue">Snapshot of what is live, moving, and still needs a date.</p>
         </div>
-        {summary.nextRelease ? <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-right text-xs font-bold text-amber-900">
-          <span className="block text-[10px] font-extrabold uppercase tracking-wide">Next up</span>
+        {summary.nextRelease ? <div className="rounded-md border border-guild-gold bg-guild-gold-soft px-3 py-2 text-right text-xs font-bold text-guild-gold-ink">
+          <span className="block text-[10px] font-semibold uppercase tracking-wide">Next up</span>
           <span className="block text-foreground">{summary.nextRelease.title}</span>
           <span>{formatRoadmapDate(summary.nextRelease.date)}</span>
         </div> : null}
@@ -190,7 +190,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Total Content"
           value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`}
           label="Total content"
-          accentClassName="bg-blue-600"
+          accentClassName="bg-formed-blue"
           description="Every roadmap item in this fiscal-year snapshot."
         >
           <SummaryRows rows={[
@@ -204,7 +204,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Already Live"
           value={`${summary.releasedCount} released`}
           label="Already live"
-          accentClassName="bg-green-500"
+          accentClassName="bg-deep-teal"
           description="Roadmap items marked as released."
         >
           <StatusItemList items={summary.releasedItems} emptyText="No released items yet." />
@@ -213,7 +213,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Being Worked On"
           value={`${summary.inProgressCount} in progress`}
           label="Being worked on"
-          accentClassName="bg-violet-500"
+          accentClassName="bg-deep-teal"
           description="Roadmap items currently marked in progress."
         >
           <StatusItemList items={summary.inProgressItems} emptyText="No in-progress items yet." />
@@ -222,7 +222,7 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Need A Date"
           value={`${summary.unscheduledCount} unscheduled`}
           label="Need a date"
-          accentClassName="bg-amber-400"
+          accentClassName="bg-guild-gold"
           description="Roadmap items without an exact release date."
         >
           <StatusItemList items={summary.unscheduledItems} emptyText="Every item has an exact release date." />
@@ -233,12 +233,12 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Top Audiences"
           eyebrow={`${summary.audienceRankings.length} audience${summary.audienceRankings.length === 1 ? "" : "s"}`}
           description="Ranking by roadmap item count."
-          toneClassName="bg-blue-100 text-blue-950"
+          toneClassName="bg-formed-blue-soft text-augustine-blue"
           triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-blue-100 p-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-blue-700">Top audiences</h3>
+          trigger={<div className="min-h-36 rounded-md border border-formed-blue-border p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Top audiences</h3>
           <div className="mt-3 flex flex-wrap gap-2">
-            {topAudiences.length ? topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-extrabold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
+            {topAudiences.length ? topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-semibold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
           </div>
           </div>}
         >
@@ -248,11 +248,11 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Top Providers"
           eyebrow={`${summary.providerRankings.length} provider${summary.providerRankings.length === 1 ? "" : "s"}`}
           description="Ranking by roadmap item count."
-          toneClassName="bg-amber-100 text-amber-950"
+          toneClassName="bg-guild-gold-soft text-guild-gold-ink"
           triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-amber-100 p-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-amber-700">Top provider</h3>
-          <p className="mt-2 text-lg font-extrabold text-foreground">{topProvider ? topProvider.name : "No provider yet"}</p>
+          trigger={<div className="min-h-36 rounded-md border border-guild-gold p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-guild-gold-ink">Top provider</h3>
+          <p className="mt-2 text-lg font-semibold text-foreground">{topProvider ? topProvider.name : "No provider yet"}</p>
           <p className="text-xs font-bold text-muted">{topProvider ? `${topProvider.count} ${topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
           </div>}
         >
@@ -262,11 +262,11 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Top Genres"
           eyebrow={`${summary.genreRankings.length} genre${summary.genreRankings.length === 1 ? "" : "s"}`}
           description="Ranking by roadmap item count."
-          toneClassName="bg-orange-100 text-orange-950"
+          toneClassName="bg-guild-gold-soft text-guild-gold-ink"
           triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-orange-100 p-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-orange-700">Top genre</h3>
-          <p className="mt-2 text-lg font-extrabold text-foreground">{topGenre ? topGenre.name : "No genre yet"}</p>
+          trigger={<div className="min-h-36 rounded-md border border-guild-gold p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-guild-gold-ink">Top genre</h3>
+          <p className="mt-2 text-lg font-semibold text-foreground">{topGenre ? topGenre.name : "No genre yet"}</p>
           <p className="text-xs font-bold text-muted">{topGenre ? `${topGenre.count} ${topGenre.count === 1 ? "title" : "titles"}` : "Genre stats will show here once added."}</p>
           </div>}
         >
@@ -276,11 +276,11 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
           title="Top Formats"
           eyebrow={`${summary.formatRankings.length} format${summary.formatRankings.length === 1 ? "" : "s"}`}
           description="Ranking by roadmap item count."
-          toneClassName="bg-violet-100 text-violet-950"
+          toneClassName="bg-deep-teal-soft text-deep-teal"
           triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-violet-100 p-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-violet-700">Top format</h3>
-          <p className="mt-2 text-lg font-extrabold text-foreground">{topFormat ? topFormat.name : "No format yet"}</p>
+          trigger={<div className="min-h-36 rounded-md border border-deep-teal p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-deep-teal">Top format</h3>
+          <p className="mt-2 text-lg font-semibold text-foreground">{topFormat ? topFormat.name : "No format yet"}</p>
           <p className="text-xs font-bold text-muted">{topFormat ? `${topFormat.count} ${topFormat.count === 1 ? "title" : "titles"}` : "Format stats will show here once added."}</p>
           </div>}
         >
@@ -296,12 +296,12 @@ function SummaryMetric({ title, value, label, accentClassName, description, chil
     title={title}
     eyebrow={value}
     description={description}
-    toneClassName="bg-blue-100 text-blue-950"
+    toneClassName="bg-formed-blue-soft text-augustine-blue"
     triggerClassName="min-w-0 p-0 bg-white"
     trigger={<div className="overflow-hidden rounded-md">
     <div className={cn("h-1", accentClassName)} />
     <div className="p-4">
-    <p className="text-xl font-extrabold text-foreground">{value}</p>
+    <p className="text-xl font-semibold text-foreground">{value}</p>
     <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
     </div>
   </div>}
@@ -311,36 +311,36 @@ function SummaryMetric({ title, value, label, accentClassName, description, chil
 }
 
 function SummaryRows({ rows }: { rows: Array<[string, string]> }) {
-  return <div className="overflow-hidden rounded-lg border border-gray-200">
-    {rows.map(([label, value]) => <div key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-gray-200 px-4 py-3 last:border-b-0">
+  return <div className="overflow-hidden rounded-lg border border-hairline">
+    {rows.map(([label, value]) => <div key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-hairline px-4 py-3 last:border-b-0">
       <span className="text-sm font-bold text-muted">{label}</span>
-      <span className="text-sm font-extrabold text-foreground">{value}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>)}
   </div>;
 }
 
 function StatusItemList({ items, emptyText }: { items: RoadmapItem[]; emptyText: string }) {
-  if (!items.length) return <p className="rounded-lg bg-gray-50 p-4 text-sm font-bold text-muted">{emptyText}</p>;
+  if (!items.length) return <p className="rounded-lg bg-panel-warm p-4 text-sm font-bold text-muted">{emptyText}</p>;
 
   return <div className="grid gap-2">
-    {items.map((item) => <div key={item.id} className="rounded-lg border border-gray-200 bg-white p-4">
+    {items.map((item) => <div key={item.id} className="rounded-lg border border-hairline bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-base font-extrabold text-foreground">{item.title}</p>
+          <p className="truncate text-base font-semibold text-foreground">{item.title}</p>
           <p className="text-sm font-bold text-muted">{item.provider?.trim() || "No provider"}</p>
         </div>
-        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-extrabold text-muted">{formatRoadmapSummaryDate(item.releaseDate)}</span>
+        <span className="rounded-full bg-panel-warm px-3 py-1 text-xs font-semibold text-muted">{formatRoadmapSummaryDate(item.releaseDate)}</span>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {item.genre ? <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-extrabold text-orange-900">{item.genre}</span> : null}
-        {item.format ? <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-extrabold text-violet-800">{item.format}</span> : null}
+        {item.genre ? <span className="rounded-full bg-guild-gold-soft px-3 py-1 text-xs font-semibold text-guild-gold-ink">{item.genre}</span> : null}
+        {item.format ? <span className="rounded-full bg-deep-teal-soft px-3 py-1 text-xs font-semibold text-deep-teal">{item.format}</span> : null}
       </div>
     </div>)}
   </div>;
 }
 
 function RankingBreakdown({ items, emptyText }: { items: Array<{ name: string; count: number; tone?: PlanningTone }>; emptyText: string }) {
-  if (!items.length) return <p className="rounded-lg bg-gray-50 p-4 text-sm font-bold text-muted">{emptyText}</p>;
+  if (!items.length) return <p className="rounded-lg bg-panel-warm p-4 text-sm font-bold text-muted">{emptyText}</p>;
 
   return <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
     <RankingPie items={items} />
@@ -352,14 +352,14 @@ function RankingList({ items }: { items: Array<{ name: string; count: number; to
   const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
 
   return <div className="grid content-start gap-2">
-    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
-      <span className="grid h-8 w-8 place-items-center rounded-md bg-gray-100 text-xs font-extrabold text-muted">{index + 1}</span>
+    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-hairline bg-white p-3">
+      <span className="grid h-8 w-8 place-items-center rounded-md bg-panel-warm text-xs font-semibold text-muted">{index + 1}</span>
       <span className="flex min-w-0 items-center gap-2">
         <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: getRankingColor(item, index) }} />
-        <span className={cn("min-w-0 truncate text-sm font-extrabold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
+        <span className={cn("min-w-0 truncate text-sm font-semibold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
       </span>
-      <span className="text-sm font-extrabold text-foreground">{Math.round((item.count / total) * 100)}%</span>
-      <span className="text-sm font-extrabold text-muted">{item.count} {item.count === 1 ? "title" : "titles"}</span>
+      <span className="text-sm font-semibold text-foreground">{Math.round((item.count / total) * 100)}%</span>
+      <span className="text-sm font-semibold text-muted">{item.count} {item.count === 1 ? "title" : "titles"}</span>
     </div>)}
   </div>;
 }
@@ -381,7 +381,7 @@ function RankingPie({ items }: { items: Array<{ name: string; count: number; ton
     setActiveSlice(null);
   }
 
-  return <div className="relative grid justify-items-center gap-3 rounded-lg bg-gray-50 p-5 text-center">
+  return <div className="relative grid justify-items-center gap-3 rounded-lg bg-panel-warm p-5 text-center">
     <svg aria-label="Percent breakdown" role="img" viewBox={`0 0 ${size} ${size}`} className="h-44 w-44 -rotate-90">
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
       {items.map((item, index) => {
@@ -417,10 +417,10 @@ function RankingPie({ items }: { items: Array<{ name: string; count: number; ton
       })}
     </svg>
     <div>
-      <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Breakdown</p>
-      <p className="font-display text-2xl font-extrabold text-foreground">{total} {total === 1 ? "title" : "titles"}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Breakdown</p>
+      <p className="font-display text-2xl text-foreground">{total} {total === 1 ? "title" : "titles"}</p>
     </div>
-    {activeSlice ? <div data-testid="roadmap-pie-tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-gray-950 px-3 py-2 text-center text-xs font-extrabold text-white shadow-lg">
+    {activeSlice ? <div data-testid="roadmap-pie-tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-augustine-blue px-3 py-2 text-center text-xs font-semibold text-white shadow-lg">
       <p>{activeSlice.name}</p>
       <p className="font-bold opacity-85">{activeSlice.count} {activeSlice.count === 1 ? "title" : "titles"} · {activeSlice.percent}%</p>
     </div> : null}
@@ -536,11 +536,11 @@ function isBeforeCurrentMonth(releaseDate: string | null, currentMonthKey: strin
 
 function BacklogGroup({ title, count, testId, children, defaultOpen = false }: { title: string; count: number; testId: string; children: ReactNode; defaultOpen?: boolean }) {
   return <details data-testid={testId} className="rounded-md bg-white p-3" open={defaultOpen}>
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold">
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
       <span>{title}</span>
-      <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
+      <span className="rounded-full bg-panel-warm px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
     </summary>
-    <div className="mt-3 grid gap-2">{count ? children : <p className="rounded-md bg-gray-50 p-3 text-sm font-bold text-muted">No items.</p>}</div>
+    <div className="mt-3 grid gap-2">{count ? children : <p className="rounded-md bg-panel-warm p-3 text-sm font-bold text-muted">No items.</p>}</div>
   </details>;
 }
 
@@ -606,11 +606,11 @@ function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo 
   };
 
   return <div className="mb-3 grid gap-2">
-    <SoftButton type="button" variant="ghost" className="min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-sky-700 shadow-sm ring-1 ring-sky-100 hover:bg-sky-50 hover:!text-sky-800" disabled={isDemo || isPushing || !hasItems} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
+    <SoftButton type="button" variant="ghost" className="min-h-11 w-full justify-center bg-white px-3 py-2 text-xs !text-formed-blue shadow-sm ring-1 ring-formed-blue-border hover:bg-formed-blue-soft hover:!text-formed-blue" disabled={isDemo || isPushing || !hasItems} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
       <CalendarPlus className="h-4 w-4" aria-hidden="true" />
       {isPushing ? "Checking..." : unpushedCount ? `Push ${unpushedCount} to ClickUp` : "Check ClickUp"}
     </SoftButton>
-    {message ? <p role="status" className="rounded-md bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800">{message}</p> : null}
+    {message ? <p role="status" className="rounded-md bg-formed-blue-soft px-3 py-2 text-xs font-bold text-formed-blue">{message}</p> : null}
   </div>;
 }
 
@@ -698,10 +698,10 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
   return <form id={item ? `edit-${item.id}-form` : undefined} ref={formRef} action={item ? action : undefined} onSubmit={item ? handleEditSubmit : handleAddSubmit} className="grid gap-5 py-5">
     <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
     {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
-    {message ? <p role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{message}</p> : null}
+    {message ? <p role="status" className="rounded-md bg-deep-teal-soft px-4 py-3 text-sm font-bold text-deep-teal">{message}</p> : null}
 
     <section className="grid gap-3">
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-2 text-sm font-extrabold uppercase tracking-wide text-muted">
+      <div className="flex items-center gap-2 border-b border-hairline pb-2 text-sm font-semibold uppercase tracking-wide text-muted">
         Core details
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -717,7 +717,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
     </section>
 
     <section className="grid gap-3">
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-2 text-sm font-extrabold uppercase tracking-wide text-muted">
+      <div className="flex items-center gap-2 border-b border-hairline pb-2 text-sm font-semibold uppercase tracking-wide text-muted">
         Planning details
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -728,53 +728,53 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
         <div className="grid gap-2 md:col-span-2">
           <SoftInput id={`${fieldPrefix}-formed-url`} label="Formed link" name="formedUrl" type="url" placeholder="https://watch.formed.org/..." value={formedUrl} onChange={(event) => setFormedUrl(event.target.value)} disabled={fieldsDisabled} />
           <input type="hidden" name="formedUrlCandidate" value={formedUrlCandidate} />
-          {formedUrl ? <a href={formedUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-md bg-green-50 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-green-800 ring-1 ring-green-100 transition hover:bg-green-100"><ExternalLink className="h-4 w-4" aria-hidden="true" />Open on Formed</a> : null}
+          {formedUrl ? <a href={formedUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-md bg-deep-teal-soft px-4 py-2 text-xs font-semibold uppercase tracking-wide text-deep-teal ring-1 ring-deep-teal transition hover:bg-deep-teal-soft"><ExternalLink className="h-4 w-4" aria-hidden="true" />Open on Formed</a> : null}
           {!formedUrl && formedUrlCandidate ? (
-            <div className="grid gap-2 rounded-md bg-amber-50 p-3 text-amber-950 ring-1 ring-amber-200">
-              <p className="text-xs font-extrabold uppercase tracking-wide">Suggested Formed link</p>
+            <div className="grid gap-2 rounded-md bg-guild-gold-soft p-3 text-guild-gold-ink ring-1 ring-guild-gold">
+              <p className="text-xs font-semibold uppercase tracking-wide">Suggested Formed link</p>
               <a href={formedUrlCandidate} target="_blank" rel="noreferrer" className="min-w-0 break-all text-sm font-bold underline decoration-amber-400 underline-offset-4">{formedUrlCandidate}</a>
-              <SoftButton type="button" variant="ghost" className="w-fit bg-white text-amber-900 ring-1 ring-amber-200" disabled={fieldsDisabled} onClick={() => { setFormedUrl(formedUrlCandidate); setFormedUrlCandidate(""); }}>
+              <SoftButton type="button" variant="ghost" className="w-fit bg-white text-guild-gold-ink ring-1 ring-guild-gold" disabled={fieldsDisabled} onClick={() => { setFormedUrl(formedUrlCandidate); setFormedUrlCandidate(""); }}>
                 <Check className="h-4 w-4" />Use suggested link
               </SoftButton>
             </div>
           ) : null}
         </div>
-        <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-16 items-start gap-3 rounded-md bg-amber-50 p-3 text-amber-950 ring-1 ring-amber-200 md:col-span-2">
+        <label htmlFor={`${fieldPrefix}-individual-marketing`} className="flex min-h-16 items-start gap-3 rounded-md bg-guild-gold-soft p-3 text-guild-gold-ink ring-1 ring-guild-gold md:col-span-2">
           <input
             id={`${fieldPrefix}-individual-marketing`}
             type="checkbox"
             name="featuredInIndividualMarketing"
             defaultChecked={Boolean(item?.featuredInIndividualMarketing)}
             disabled={fieldsDisabled}
-            className="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 accent-amber-500"
+            className="mt-1 h-5 w-5 rounded border-guild-gold text-guild-gold-ink accent-amber-500"
           />
           <span>
-            <span className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide"><Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />Individual marketing campaign</span>
-            <span className="mt-1 block text-sm font-bold normal-case tracking-normal text-amber-900">Highlight this roadmap item when it is being leveraged in individual marketing.</span>
+            <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide"><Star className="h-4 w-4 fill-amber-400 text-guild-gold-ink" aria-hidden="true" />Individual marketing campaign</span>
+            <span className="mt-1 block text-sm font-bold normal-case tracking-normal text-guild-gold-ink">Highlight this roadmap item when it is being leveraged in individual marketing.</span>
           </span>
         </label>
-        <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground md:col-span-2" htmlFor={`${fieldPrefix}-notes`}>
+        <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-foreground md:col-span-2" htmlFor={`${fieldPrefix}-notes`}>
           Notes
           <textarea
             id={`${fieldPrefix}-notes`}
             name="notes"
             defaultValue={item?.notes ?? ""}
             disabled={fieldsDisabled}
-            className="min-h-20 w-full resize-y rounded-md border-0 bg-gray-100 px-4 py-3 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-gray-500 focus:border-2 focus:border-blue-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-20 w-full resize-y rounded-md border-0 bg-panel-warm px-4 py-3 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-faint focus:border-2 focus:border-formed-blue focus:bg-white disabled:cursor-not-allowed disabled:opacity-70"
           />
         </label>
       </div>
     </section>
 
-    <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4", item && "pb-1")}>
+    <div data-testid="roadmap-form-actions" className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4", item && "pb-1")}>
       <div className="flex flex-wrap gap-2">
         {!item ? <SoftButton type="submit" variant="primary" disabled={fieldsDisabled}>{isSaving ? "Adding..." : "Add Item"}</SoftButton> : null}
-        {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-red-700" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
+        {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-danger" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       </div>
       <div className="flex flex-wrap gap-2">
         {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Licensing Summary</SoftButton> : null}
         {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
-        {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky-50 px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-sky-700 transition-all duration-200 hover:scale-[1.03] hover:bg-sky-100 active:scale-[0.98]"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
+        {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-formed-blue-soft px-5 py-3 text-sm font-semibold uppercase tracking-wide text-formed-blue transition-all duration-200 hover:bg-formed-blue-soft"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
       </div>
     </div>
   </form>;
@@ -786,7 +786,7 @@ function RoadmapColoredSelect({ label, options, id, defaultValue = "", ...props 
   const selected = options.find((option) => option.value === value);
   const tone = selected?.tone ?? "slate";
 
-  return <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={fieldId}>
+  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-foreground" htmlFor={fieldId}>
     {label}
     <select
       {...props}
@@ -810,11 +810,11 @@ function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultV
 
   if (mode === "tbd") {
     return <div className="grid gap-2">
-      <div className="flex min-h-12 items-center justify-between gap-3 rounded-md bg-red-50 px-4">
-        <span className="text-xs font-extrabold uppercase tracking-wide text-red-700">Release date: TBD</span>
+      <div className="flex min-h-12 items-center justify-between gap-3 rounded-md bg-danger-soft px-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-danger">Release date: TBD</span>
         <div className="flex flex-wrap justify-end gap-1">
-          <button type="button" onClick={() => setMode("month-tbd")} className="rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700 hover:bg-red-100" disabled={disabled}>Pick month</button>
-          <button type="button" onClick={() => setMode("date")} className="rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700 hover:bg-red-100" disabled={disabled}>Pick date</button>
+          <button type="button" onClick={() => setMode("month-tbd")} className="rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-danger hover:bg-danger-soft" disabled={disabled}>Pick month</button>
+          <button type="button" onClick={() => setMode("date")} className="rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-danger hover:bg-danger-soft" disabled={disabled}>Pick date</button>
         </div>
       </div>
       <input aria-label="Release date value" className="sr-only" name="releaseDate" value="TBD" readOnly disabled={disabled} />
@@ -823,7 +823,7 @@ function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultV
 
   if (mode === "month-tbd") {
     return <div className="grid gap-2">
-      <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide text-foreground" htmlFor={`${id}-month`}>
+      <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-foreground" htmlFor={`${id}-month`}>
         Release month
         <input
           id={`${id}-month`}
@@ -832,13 +832,13 @@ function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultV
           value={monthKey}
           onChange={(event) => setMonthKey(event.target.value)}
           disabled={disabled}
-          className="min-h-12 rounded-md border-0 bg-red-50 px-3 text-sm font-bold normal-case tracking-normal text-red-800 shadow-inner ring-1 ring-red-100"
+          className="min-h-12 rounded-md border-0 bg-danger-soft px-3 text-sm font-bold normal-case tracking-normal text-danger shadow-inner ring-1 ring-danger-border"
         />
       </label>
       <div className="flex flex-wrap gap-2">
-        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-red-700">Date TBD</span>
-        <button type="button" onClick={() => setMode("date")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>Pick exact date</button>
-        <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>No month yet</button>
+        <span className="rounded-full bg-danger-soft px-3 py-1 text-xs font-semibold uppercase tracking-wide text-danger">Date TBD</span>
+        <button type="button" onClick={() => setMode("date")} className="w-fit rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm hover:text-foreground" disabled={disabled}>Pick exact date</button>
+        <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm hover:text-foreground" disabled={disabled}>No month yet</button>
       </div>
       <input aria-label="Release date value" className="sr-only" name="releaseDate" value={`${monthKey}-TBD`} readOnly disabled={disabled} />
     </div>;
@@ -847,8 +847,8 @@ function ReleaseDateField({ id, defaultValue, disabled }: { id: string; defaultV
   return <div className="grid gap-2">
     <SoftInput id={id} type="date" label="Release date" name="releaseDate" defaultValue={isExactRoadmapDate(defaultValue) ? defaultValue : ""} disabled={disabled} />
     <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={() => setMode("month-tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>Date TBD in this month</button>
-      <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-muted hover:bg-gray-100 hover:text-foreground" disabled={disabled}>No month yet</button>
+      <button type="button" onClick={() => setMode("month-tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm hover:text-foreground" disabled={disabled}>Date TBD in this month</button>
+      <button type="button" onClick={() => setMode("tbd")} className="w-fit rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm hover:text-foreground" disabled={disabled}>No month yet</button>
     </div>
   </div>;
 }
@@ -857,10 +857,10 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-extrabold">Ongoing Series Cadence</h2>
+        <h2 className="font-display text-2xl">Ongoing Series Cadence</h2>
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <div className="grid grid-cols-[1.2fr_0.7fr_1fr_auto] gap-3 bg-gray-900 p-3 text-[10px] font-extrabold uppercase tracking-wide text-white">
+      <div className="overflow-hidden rounded-lg border border-hairline">
+        <div className="grid grid-cols-[1.2fr_0.7fr_1fr_auto] gap-3 bg-augustine-blue p-3 text-[10px] font-semibold uppercase tracking-wide text-white">
           <span>Series</span>
           <span>Cadence</span>
           <span>Notes</span>
@@ -870,7 +870,7 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
           <details
             data-testid={`series-row-${item.id}`}
             key={item.id}
-            className={cn("border-t border-orange-100 p-3", index % 2 === 0 ? "bg-white" : "bg-orange-50")}
+            className={cn("border-t border-guild-gold p-3", index % 2 === 0 ? "bg-white" : "bg-guild-gold-soft")}
           >
             <summary className="grid min-h-11 cursor-pointer list-none items-center gap-3 text-sm md:grid-cols-[1.2fr_0.7fr_1fr_auto]">
               <b>{item.series}</b>
@@ -878,7 +878,7 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
               <span>{item.notes}</span>
               <span>Edit</span>
             </summary>
-            <form action={updateOngoingSeries} className="mt-3 grid gap-3 border-t border-gray-200 pt-3 md:grid-cols-2">
+            <form action={updateOngoingSeries} className="mt-3 grid gap-3 border-t border-hairline pt-3 md:grid-cols-2">
               <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
               <input type="hidden" name="seriesId" value={item.id} />
               <SoftInput id={`series-${item.id}`} label="Series" name="series" defaultValue={item.series} disabled={isDemo} />
@@ -890,7 +890,7 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
                   form={`delete-series-${item.id}`}
                   type="submit"
                   variant="ghost"
-                  className="text-red-700"
+                  className="text-danger"
                   disabled={isDemo}
                   onClick={(event) => {
                     if (!window.confirm(`Delete ${item.series}? This cannot be undone.`)) event.preventDefault();
@@ -906,8 +906,8 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
             </form>
           </details>
         ))}
-        <details className="border-t border-orange-100 bg-blue-50 p-3">
-          <summary className="flex min-h-11 cursor-pointer items-center font-extrabold">+ Add ongoing series</summary>
+        <details className="border-t border-guild-gold bg-formed-blue-soft p-3">
+          <summary className="flex min-h-11 cursor-pointer items-center font-semibold">+ Add ongoing series</summary>
           <form action={addOngoingSeries} className="mt-3 grid gap-3 md:grid-cols-3">
             <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
             <SoftInput id="new-series" label="Series" name="series" disabled={isDemo} />

@@ -20,10 +20,10 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
   );
 
   return (
-    <SoftSurface className="overflow-hidden border border-gray-200 bg-white">
+    <SoftSurface className="overflow-hidden border border-hairline bg-white">
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between md:p-6">
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">Provider Summary</h2>
+          <h2 className="font-display text-2xl tracking-tight">Provider Summary</h2>
           <p className="mt-1 text-sm font-medium text-muted">
             {model.providers.length
               ? `${model.providers.length} provider${model.providers.length === 1 ? "" : "s"} tracked across the fiscal year.`
@@ -31,22 +31,22 @@ export function ProviderSummary({ model, fiscalYearId, providerColorOverrides, i
           </p>
         </div>
         {model.providers.length > 0 ? (
-          <span className="w-fit rounded-md bg-gray-100 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-muted">
+          <span className="w-fit rounded-md bg-panel-warm px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Color settings
           </span>
         ) : null}
       </div>
       {model.providers.length === 0 ? (
-        <p className="border-t border-gray-200 p-5 text-sm font-medium text-muted md:p-6">Providers will appear here after content is added.</p>
+        <p className="border-t border-hairline p-5 text-sm font-medium text-muted md:p-6">Providers will appear here after content is added.</p>
       ) : (
-        <details className="group border-t border-gray-200">
+        <details className="group border-t border-hairline">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 marker:hidden md:px-6">
-            <span className="text-sm font-extrabold text-foreground">
+            <span className="text-sm font-semibold text-foreground">
               <span className="group-open:hidden">Expand table</span>
               <span className="hidden group-open:inline">Collapse table</span>
             </span>
             <span className="flex items-center gap-2">
-              <span className="rounded-md bg-gray-100 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-muted">
+              <span className="rounded-md bg-panel-warm px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 {model.providers.length} rows
               </span>
               <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
@@ -81,10 +81,10 @@ export function ProviderSummaryTable({
   isDemo
 }: ProviderSummaryTableProps) {
   return (
-    <div className="overflow-x-auto border-t border-gray-200">
+    <div className="overflow-x-auto border-t border-hairline">
       <table className="min-w-[760px] w-full border-collapse">
         <thead>
-          <tr className="bg-gray-50 text-left text-[10px] font-extrabold uppercase tracking-wide text-muted">
+          <tr className="bg-panel-warm text-left text-[10px] font-semibold uppercase tracking-wide text-muted">
             <th scope="col" className="px-5 py-3 md:px-6">
               Provider
             </th>
@@ -102,7 +102,7 @@ export function ProviderSummaryTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-hairline">
           {providers.map((provider) => {
             const color = providerColorMap[provider.provider];
             const colorSelectId = `provider-color-${provider.provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
@@ -112,13 +112,13 @@ export function ProviderSummaryTable({
                 <td className="px-5 py-3 md:px-6">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className={`h-3 w-3 shrink-0 rounded-full ${color.marker}`} />
-                    <span className="min-w-0 truncate text-sm font-extrabold text-foreground">{provider.provider}</span>
+                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">{provider.provider}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-bold text-muted">
                   {provider.licenseCount}
                 </td>
-                <td className="px-4 py-3 text-right font-display text-base font-extrabold text-foreground">
+                <td className="px-4 py-3 text-right font-display text-base text-foreground">
                   {formatCurrency(provider.totalCents)}
                 </td>
                 <td className="px-4 py-3">
@@ -135,7 +135,7 @@ export function ProviderSummaryTable({
                     name="colorKey"
                     defaultValue={providerColorOverrides[provider.provider] ?? color.key}
                     disabled={isDemo}
-                    className={`min-h-9 w-full rounded-md border-0 px-2 text-xs font-extrabold ${color.bg} ${color.text} disabled:opacity-60`}
+                    className={`min-h-9 w-full rounded-md border-0 px-2 text-xs font-semibold ${color.bg} ${color.text} disabled:opacity-60`}
                   >
                     {providerColorOptions.map((option) => (
                       <option key={option.key} value={option.key}>
@@ -149,7 +149,7 @@ export function ProviderSummaryTable({
                     type="submit"
                     form={`provider-color-form-${colorSelectId}`}
                     variant="ghost"
-                    className="min-h-9 rounded-md bg-white px-3 py-2 text-gray-600 ring-1 ring-gray-100 hover:bg-gray-100"
+                    className="min-h-9 rounded-md bg-white px-3 py-2 text-muted ring-1 ring-hairline hover:bg-panel-warm"
                     disabled={isDemo}
                     aria-label={`Save color for ${provider.provider}`}
                     title="Save color"

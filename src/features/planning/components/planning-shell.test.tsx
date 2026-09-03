@@ -22,7 +22,7 @@ describe("PlanningShell", () => {
     );
 
     expect(screen.getByRole("banner")).toHaveClass("h-80", "md:h-80", "p-6", "md:p-8");
-    expect(screen.getByRole("heading", { name: "Roadmap" })).toHaveClass("text-3xl", "md:text-5xl");
+    expect(screen.getByRole("heading", { name: "Roadmap" })).toHaveClass("text-4xl", "md:text-6xl");
     expect(screen.getByRole("navigation", { name: "Planning sections" }).parentElement).toHaveClass("self-end");
   });
 });

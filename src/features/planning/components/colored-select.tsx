@@ -17,7 +17,7 @@ export function ColoredSelect({ label, options, id, className, value, compact, .
       id={fieldId}
       aria-label={compact ? label : props["aria-label"]}
       value={value}
-      className={cn(compact ? "min-h-9 w-full rounded-md border-0 px-3 text-sm font-bold normal-case tracking-normal" : "min-h-11 rounded-md border-0 px-3 text-sm font-bold normal-case tracking-normal", TONE_CLASSES[tone].field, className)}
+      className={cn(compact ? "min-h-9 w-full rounded-md border-0 px-3 text-sm font-semibold normal-case tracking-normal" : "min-h-11 rounded-md border-0 px-3 text-sm font-semibold normal-case tracking-normal", TONE_CLASSES[tone].field, className)}
     >
       <option value="">Choose {label.toLowerCase()}</option>
       {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -27,7 +27,7 @@ export function ColoredSelect({ label, options, id, className, value, compact, .
   if (compact) return select;
 
   return (
-    <label className="grid gap-2 text-xs font-extrabold uppercase tracking-wide" htmlFor={fieldId}>
+    <label className="grid gap-1.5 text-xs font-semibold text-muted" htmlFor={fieldId}>
       {label}
       {select}
     </label>

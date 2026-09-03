@@ -37,13 +37,13 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
   const isEditing = Boolean(fiscalYear);
 
   return (
-    <SoftSurface className="bg-gray-100 p-6 md:p-8">
+    <SoftSurface className="bg-panel-warm p-6 md:p-8">
       <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-500">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-formed-blue">
           <CalendarDays className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">
+          <h2 className="font-display text-2xl tracking-tight">
             {isEditing ? "Edit Fiscal Year" : "Start a Fiscal Year"}
           </h2>
           <p className="text-sm font-medium text-muted">

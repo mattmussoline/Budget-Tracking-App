@@ -84,7 +84,7 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
-    expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-blue-100"))).toBe(true);
+    expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-tone-blue-bg"))).toBe(true);
   });
 
   it("summarizes fiscal-year roadmap progress at a glance", () => {
@@ -93,7 +93,7 @@ describe("RoadmapDashboard", () => {
     const summary = screen.getByTestId("roadmap-summary");
 
     expect(summary).not.toHaveAttribute("open");
-    expect(summary).toHaveClass("bg-blue-50");
+    expect(summary).toHaveClass("bg-formed-blue-soft");
     expect(within(summary).getByRole("heading", { name: "Fiscal year at a glance" })).toBeVisible();
     expect(within(summary).getByText("2 released")).not.toBeVisible();
 
@@ -268,8 +268,8 @@ describe("RoadmapDashboard", () => {
 
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
     expect(within(dialog).getByLabelText(/Individual marketing campaign/)).toBeChecked();
-    expect(within(dialog).getByLabelText("Genre")).toHaveClass("bg-orange-50", "text-orange-900");
-    expect(within(dialog).getByLabelText("Format")).toHaveClass("bg-violet-50", "text-violet-800");
+    expect(within(dialog).getByLabelText("Genre")).toHaveClass("bg-tone-orange-bg", "text-tone-orange-ink");
+    expect(within(dialog).getByLabelText("Format")).toHaveClass("bg-tone-purple-bg", "text-tone-purple-ink");
   });
 
   it("renders category management and ongoing series", () => {
@@ -309,7 +309,7 @@ describe("RoadmapDashboard", () => {
 
     const januaryAddButton = screen.getByRole("button", { name: "Add item to January 2027" });
     expect(januaryAddButton).toHaveTextContent("Add item");
-    expect(januaryAddButton).toHaveClass("!text-blue-700");
+    expect(januaryAddButton).toHaveClass("!text-formed-blue");
 
     fireEvent.click(januaryAddButton);
 
@@ -376,7 +376,7 @@ describe("RoadmapDashboard", () => {
     ];
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={tbdItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    expect(within(screen.getByRole("button", { name: "Edit Mystery Series" })).getByText("TBD")).toHaveClass("bg-red-100", "text-red-700");
+    expect(within(screen.getByRole("button", { name: "Edit Mystery Series" })).getByText("TBD")).toHaveClass("bg-danger-soft", "text-danger");
 
     fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
     const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
@@ -397,7 +397,7 @@ describe("RoadmapDashboard", () => {
     const februaryColumn = columns.find((column) => within(column).queryByRole("heading", { name: "February 2027" }));
     expect(februaryColumn).toBeTruthy();
     expect(within(februaryColumn!).getByText("February TBD Series")).toBeVisible();
-    expect(within(screen.getByRole("button", { name: "Edit February TBD Series" })).getByText("TBD")).toHaveClass("bg-red-100", "text-red-700");
+    expect(within(screen.getByRole("button", { name: "Edit February TBD Series" })).getByText("TBD")).toHaveClass("bg-danger-soft", "text-danger");
 
     fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
     expect(within(screen.getByTestId("roadmap-backlog")).queryByText("February TBD Series")).not.toBeInTheDocument();
@@ -641,7 +641,7 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     expect(screen.getByTestId("series-row-series-1")).toHaveClass("bg-white");
-    expect(screen.getByTestId("series-row-series-2")).toHaveClass("bg-orange-50");
+    expect(screen.getByTestId("series-row-series-2")).toHaveClass("bg-guild-gold-soft");
   });
 
   it("opens Manage Key as a modal with stable name and color fields only", async () => {

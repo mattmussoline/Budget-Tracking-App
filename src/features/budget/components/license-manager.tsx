@@ -38,16 +38,16 @@ export function LicenseManager({
   }));
 
   return (
-    <SoftSurface className="overflow-hidden bg-gray-900">
+    <SoftSurface className="overflow-hidden bg-augustine-blue">
       <details id="edit-content-manager" className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gray-900 px-4 py-3 text-white marker:hidden md:px-5">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-augustine-blue px-4 py-3 text-white marker:hidden md:px-5">
           <span className="flex min-w-0 items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-500 text-white">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-formed-blue text-white">
               <Pencil className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block font-display text-lg font-extrabold tracking-tight">Edit Content</span>
-              <span className="block text-xs font-medium text-gray-300">Adjust titles, providers, payment amounts, cadence, or added month.</span>
+              <span className="block font-display text-lg tracking-tight">Edit Content</span>
+              <span className="block text-xs font-medium text-faint">Adjust titles, providers, payment amounts, cadence, or added month.</span>
             </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
@@ -57,7 +57,7 @@ export function LicenseManager({
             <option key={provider} value={provider} />
           ))}
         </datalist>
-        <div className="grid gap-2 bg-gray-100 p-3 md:p-4">
+        <div className="grid gap-2 bg-panel-warm p-3 md:p-4">
           {licenses.length === 0 ? (
             <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-muted">Added content will appear here for editing.</p>
           ) : (
@@ -67,23 +67,23 @@ export function LicenseManager({
               return (
                 <details id={`edit-license-${license.id}`} key={license.id} className="group/license overflow-hidden rounded-md bg-white shadow-sm">
                   <summary
-                    className={`flex cursor-pointer list-none items-center justify-between gap-3 border-l-4 px-3 py-2 marker:hidden ${index % 2 === 0 ? "bg-white" : "bg-blue-50"}`}
+                    className={`flex cursor-pointer list-none items-center justify-between gap-3 border-l-4 px-3 py-2 marker:hidden ${index % 2 === 0 ? "bg-white" : "bg-formed-blue-soft"}`}
                     style={{ borderLeftColor: providerColor.hex }}
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-display text-base font-extrabold tracking-tight">{license.title}</span>
+                      <span className="block truncate font-display text-base tracking-tight">{license.title}</span>
                       <span className="block truncate text-xs font-bold text-muted">
                         {license.provider} - {formatCurrency(license.installmentCents)}
                       </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
-                      <span className={`rounded-md px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide ${providerColor.bg} ${providerColor.text}`}>
+                      <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${providerColor.bg} ${providerColor.text}`}>
                         {license.cadence}
                       </span>
                       <ChevronDown className="h-4 w-4 text-muted transition-transform group-open/license:rotate-180" aria-hidden="true" />
                     </span>
                   </summary>
-                  <div className="border-t border-gray-100 p-3">
+                  <div className="border-t border-hairline p-3">
                     <form action={updateContentLicense} className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                       <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
                       <input type="hidden" name="licenseId" value={license.id} />
@@ -150,7 +150,7 @@ export function LicenseManager({
                           form={`delete-${license.id}`}
                           type="submit"
                           variant="ghost"
-                          className="min-h-9 px-3 py-2 text-xs text-red-700 hover:bg-red-100"
+                          className="min-h-9 px-3 py-2 text-xs text-danger hover:bg-danger-soft"
                           disabled={isDemo}
                           onClick={(event) => {
                             if (!window.confirm(`Delete ${license.title}? This cannot be undone.`)) {

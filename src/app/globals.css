@@ -2,19 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Formed brand colors come from the parent Formed logo guide
+ * (13_Formed Guild HQ/00_Resources/brand-assets). Formed Blue and Augustine
+ * Blue are the two official anchor colors; Parchment, Ink, Guild Gold,
+ * Deep Teal and Soft Slate are the approved support palette. Tints, hovers
+ * and the destructive red are derived here — they are not in the guide.
+ */
 :root {
   color-scheme: light;
-  --surface: #ffffff;
-  --foreground: #111827;
-  --muted: #6b7280;
-  --accent: #3b82f6;
-  --accent-light: #60a5fa;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --muted-surface: #f3f4f6;
-  --border: #e5e7eb;
-  --font-outfit: "Outfit", "Inter", "Segoe UI", system-ui, sans-serif;
+
+  /* Official Formed anchors */
+  --formed-blue: #327fef;
+  --augustine-blue: #0b1832;
+
+  /* Approved support palette */
+  --parchment: #f7f1e6;
+  --soft-slate: #d8e1ea;
+  --guild-gold: #d8b46a;
+  --deep-teal: #176c72;
+  --ink: #172033;
+
+  /* Derived surfaces */
+  --panel: #ffffff;
+  --panel-warm: #fffcf6;
+  --border: #e7dfce;
+  --border-strong: #d6cab2;
+
+  /* Derived text */
+  --ink-muted: #5f6879;
+  --ink-faint: #8c93a1;
+
+  /* Derived accents */
+  --formed-blue-hover: #1f63c9;
+  --formed-blue-soft: #e8f1fe;
+  --formed-blue-border: #cfe0fb;
+  --augustine-blue-raised: #1b2a48;
+  --guild-gold-soft: #fbf3e2;
+  --guild-gold-ink: #8a6a15;
+  --deep-teal-soft: #e4f0f0;
+  --danger: #a4343a;
+  --danger-soft: #f7e9ea;
+  --danger-border: #e8cfd3;
+
+  /* Legacy aliases still referenced across the app */
+  --surface: var(--panel);
+  --foreground: var(--ink);
+  --muted: var(--ink-muted);
+  --accent: var(--formed-blue);
+  --accent-light: #6fa5f5;
+  --success: var(--deep-teal);
+  --warning: var(--guild-gold);
+  --muted-surface: var(--panel-warm);
+
+  /*
+   * Categorical tone palette. These eight carry meaning (review statuses,
+   * roadmap categories, genres, formats) so they must stay distinguishable
+   * from one another. All are desaturated to sit on Parchment; blue is
+   * Formed Blue, cyan is Deep Teal and amber is Guild Gold, so brand
+   * colors do the work wherever a tone can be brand-anchored.
+   */
+  --tone-blue-bg: #e8f1fe;
+  --tone-blue-ink: #1f63c9;
+  --tone-blue-line: #327fef;
+  --tone-cyan-bg: #e4f0f0;
+  --tone-cyan-ink: #12585d;
+  --tone-cyan-line: #176c72;
+  --tone-green-bg: #e9f0e7;
+  --tone-green-ink: #3d6136;
+  --tone-green-line: #4e7a44;
+  --tone-amber-bg: #fbf3e2;
+  --tone-amber-ink: #8a6a15;
+  --tone-amber-line: #c79a3c;
+  --tone-orange-bg: #fbede4;
+  --tone-orange-ink: #9a5427;
+  --tone-orange-line: #c1703c;
+  --tone-red-bg: #f7e9ea;
+  --tone-red-ink: #8f2b31;
+  --tone-red-line: #a4343a;
+  --tone-purple-bg: #efeaf3;
+  --tone-purple-ink: #5b4270;
+  --tone-purple-line: #7a5c94;
+  --tone-slate-bg: #ece6da;
+  --tone-slate-ink: #5f6879;
+  --tone-slate-line: #b3a996;
+
+  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-manrope), "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -28,9 +102,11 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background: #ffffff;
-  color: var(--foreground);
-  font-family: var(--font-outfit), system-ui, sans-serif;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 button,
@@ -49,29 +125,55 @@ textarea {
 }
 
 :focus-visible {
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px var(--accent);
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 5px var(--formed-blue);
 }
 
 .font-display {
-  font-family: var(--font-outfit);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
-.soft-raised {
-}
+/*
+ * Surface primitives. These back <SoftSurface depth="..."> - they were
+ * previously empty rule bodies, which is why every card rendered invisible.
+ * They live in the components layer so a Tailwind background or border
+ * utility on the same element still wins (e.g. the Committed tile's
+ * bg-deep-teal fill).
+ */
+@layer components {
+  .soft-raised {
+    background: var(--panel);
+    border: 1px solid var(--border);
+  }
 
-.soft-raised-hover {
-}
+  .soft-raised-hover {
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
 
-.soft-raised-sm {
-}
+  .soft-raised-hover:hover {
+    border-color: var(--border-strong);
+  }
 
-.soft-inset {
-}
+  .soft-raised-sm {
+    background: var(--panel);
+    border: 1px solid var(--border);
+  }
 
-.soft-inset-deep {
-}
+  .soft-inset {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+  }
 
-.soft-inset-sm {
+  .soft-inset-deep {
+    background: var(--formed-blue-soft);
+    border: 1px solid var(--formed-blue-border);
+  }
+
+  .soft-inset-sm {
+    background: var(--panel-warm);
+    border: 1px solid var(--border);
+  }
 }
 
 @keyframes float {
