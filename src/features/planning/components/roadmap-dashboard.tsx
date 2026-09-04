@@ -66,6 +66,8 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
   const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
   const [isRoadmapFocus, setIsRoadmapFocus] = useState(false);
   const [activeRoadmapItemId, setActiveRoadmapItemId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "calendar">("cards");
+  const [calendarMonthKey, setCalendarMonthKey] = useState(() => parseMonthAnchor(null));
   const months = buildMonthWindow(startMonth, monthCount);
   const displayedMonths = focusedMonthKey ? months.filter((month) => month.key === focusedMonthKey) : months;
   const visibleKeys = new Set(months.map((month) => month.key));
@@ -106,29 +108,52 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
         })}
       </div>
       <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center gap-3.5">
-        <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
-          <Link className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground" href={href(shiftMonthAnchor(startMonth, -monthCount))}><ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />Previous</Link>
+        {viewMode === "cards" ? <>
+          <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
+            <Link className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground" href={href(shiftMonthAnchor(startMonth, -monthCount))}><ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />Previous</Link>
+            <span aria-hidden="true" className="w-px self-stretch bg-hairline" />
+            <Link className="inline-flex min-h-9 items-center bg-formed-blue-soft px-3 py-1.5 text-[13px] font-bold text-formed-blue" href={href(today)}>Today</Link>
+            <span aria-hidden="true" className="w-px self-stretch bg-hairline" />
+            <Link className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground" href={href(shiftMonthAnchor(startMonth, monthCount))}>Next<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+          </div>
+          <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
+            {([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-9 items-center px-3 py-1.5 text-[13px] transition-colors", monthCount === count ? "bg-augustine-blue font-bold text-white" : "font-semibold text-muted hover:bg-panel-warm hover:text-foreground")}>{count} months</Link>)}
+          </div>
+        </> : <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
+          <button type="button" aria-label="Previous month" onClick={() => setCalendarMonthKey((key) => shiftMonthAnchor(key, -1))} className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground"><ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />Previous</button>
           <span aria-hidden="true" className="w-px self-stretch bg-hairline" />
-          <Link className="inline-flex min-h-9 items-center bg-formed-blue-soft px-3 py-1.5 text-[13px] font-bold text-formed-blue" href={href(today)}>Today</Link>
+          <button type="button" onClick={() => setCalendarMonthKey(parseMonthAnchor(null))} className="inline-flex min-h-9 items-center bg-formed-blue-soft px-3 py-1.5 text-[13px] font-bold text-formed-blue">Today</button>
           <span aria-hidden="true" className="w-px self-stretch bg-hairline" />
-          <Link className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground" href={href(shiftMonthAnchor(startMonth, monthCount))}>Next<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
-        </div>
-        <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
-          {([6, 9, 12] as const).map((count) => <Link key={count} href={href(startMonth, count)} aria-current={monthCount === count ? "page" : undefined} className={cn("inline-flex min-h-9 items-center px-3 py-1.5 text-[13px] transition-colors", monthCount === count ? "bg-augustine-blue font-bold text-white" : "font-semibold text-muted hover:bg-panel-warm hover:text-foreground")}>{count} months</Link>)}
+          <button type="button" aria-label="Next month" onClick={() => setCalendarMonthKey((key) => shiftMonthAnchor(key, 1))} className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-panel-warm hover:text-foreground">Next<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+        </div>}
+        <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel" role="group" aria-label="Roadmap view">
+          <button type="button" aria-pressed={viewMode === "cards"} onClick={() => setViewMode("cards")} className={cn("inline-flex min-h-9 items-center px-3 py-1.5 text-[13px] transition-colors", viewMode === "cards" ? "bg-augustine-blue font-bold text-white" : "font-semibold text-muted hover:bg-panel-warm hover:text-foreground")}>Cards</button>
+          <span aria-hidden="true" className="w-px self-stretch bg-hairline" />
+          <button type="button" aria-pressed={viewMode === "calendar"} onClick={() => setViewMode("calendar")} className={cn("inline-flex min-h-9 items-center px-3 py-1.5 text-[13px] transition-colors", viewMode === "calendar" ? "bg-augustine-blue font-bold text-white" : "font-semibold text-muted hover:bg-panel-warm hover:text-foreground")}>Calendar</button>
         </div>
       </nav>
     </div> : null}
 
     {!isRoadmapFocus ? <RoadmapSummary summary={summary} /> : null}
 
-    <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div className="grid gap-0.5"><h2 className="font-display text-2xl">{months[0].label} – {months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
+    {viewMode === "cards" ? <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div className="grid gap-0.5"><h2 className="font-display text-2xl">{months[0].label} – {months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-3 overflow-x-auto overflow-y-visible", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
           const items = filteredItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key);
           return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-soft border border-hairline bg-panel-warm p-3.5", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[248px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2.5 grid w-full gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-panel"><h3 className="font-display text-lg">{month.label}</h3><p className="text-[11px] font-semibold text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-2.5 min-h-8 w-full justify-center border-dashed !border-hairline-strong bg-transparent px-2.5 py-1.5 text-xs !text-muted hover:!bg-panel hover:!text-foreground"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</div></article>;
         })}
       </div>
-    </section>
+    </section> : <RoadmapCalendar
+      monthKey={calendarMonthKey}
+      items={filteredItems}
+      categoryMap={categoryMap}
+      categories={categories}
+      fiscalYearId={fiscalYearId}
+      providerOptions={providerOptions}
+      isDemo={isDemo}
+      activeRoadmapItemId={activeRoadmapItemId}
+      setActiveRoadmapItemId={setActiveRoadmapItemId}
+    />}
 
     {!isRoadmapFocus ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
@@ -594,6 +619,93 @@ function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions
   return <EditRoadmapModal item={item} category={category} isDemo={isDemo} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
     <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} item={item} isDemo={isDemo} />
   </EditRoadmapModal>;
+}
+
+type RoadmapCalendarProps = {
+  monthKey: string;
+  items: RoadmapItem[];
+  categoryMap: Map<string, RoadmapCategory>;
+  categories: RoadmapCategory[];
+  fiscalYearId: string;
+  providerOptions: string[];
+  isDemo?: boolean;
+  activeRoadmapItemId: string | null;
+  setActiveRoadmapItemId: (updater: string | null | ((currentId: string | null) => string | null)) => void;
+};
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function RoadmapCalendar({ monthKey, items, categoryMap, categories, fiscalYearId, providerOptions, isDemo, activeRoadmapItemId, setActiveRoadmapItemId }: RoadmapCalendarProps) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const startWeekday = new Date(year, month - 1, 1).getDay();
+  const monthLabel = new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const byDay = useMemo(() => groupCalendarItemsByDay(items, monthKey), [items, monthKey]);
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month - 1;
+  const totalCount = items.filter((item) => getRoadmapMonthKey(item.releaseDate) === monthKey).length;
+  const trailing = (7 - ((startWeekday + daysInMonth) % 7)) % 7;
+
+  return <section className="min-w-0 rounded-soft border border-hairline bg-panel-warm p-3.5">
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+      <div className="grid gap-0.5">
+        <h2 className="font-display text-2xl">{monthLabel}</h2>
+        <p className="text-sm text-muted">{totalCount} {totalCount === 1 ? "release" : "releases"} this month. Month-TBD items sit on the 1st.</p>
+      </div>
+    </div>
+    <div className="mb-1.5 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted">
+      {WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}
+    </div>
+    <div className="grid grid-cols-7 gap-1.5">
+      {Array.from({ length: startWeekday }, (_, index) => <div key={`lead-${index}`} aria-hidden="true" />)}
+      {Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        return <RoadmapCalendarDay
+          key={day}
+          day={day}
+          isToday={isCurrentMonth && today.getDate() === day}
+          items={byDay.get(day) ?? []}
+          categoryMap={categoryMap}
+          categories={categories}
+          fiscalYearId={fiscalYearId}
+          providerOptions={providerOptions}
+          isDemo={isDemo}
+          activeRoadmapItemId={activeRoadmapItemId}
+          setActiveRoadmapItemId={setActiveRoadmapItemId}
+        />;
+      })}
+      {Array.from({ length: trailing }, (_, index) => <div key={`trail-${index}`} aria-hidden="true" />)}
+    </div>
+  </section>;
+}
+
+function groupCalendarItemsByDay(items: RoadmapItem[], monthKey: string) {
+  const byDay = new Map<number, RoadmapItem[]>();
+  for (const item of items) {
+    if (getRoadmapMonthKey(item.releaseDate) !== monthKey) continue;
+    const day = isExactRoadmapDate(item.releaseDate) ? Number(item.releaseDate!.slice(8, 10)) : 1;
+    byDay.set(day, [...(byDay.get(day) ?? []), item]);
+  }
+  return byDay;
+}
+
+const CALENDAR_VISIBLE_ITEM_LIMIT = 3;
+
+function RoadmapCalendarDay({ day, isToday, items, categoryMap, categories, fiscalYearId, providerOptions, isDemo, activeRoadmapItemId, setActiveRoadmapItemId }: { day: number; isToday: boolean } & Omit<RoadmapCalendarProps, "monthKey" | "items"> & { items: RoadmapItem[] }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const visibleItems = isExpanded ? items : items.slice(0, CALENDAR_VISIBLE_ITEM_LIMIT);
+  const hiddenCount = items.length - visibleItems.length;
+
+  return <div className={cn("flex min-h-28 flex-col gap-1 rounded-md border border-hairline bg-panel p-1.5", isToday && "border-formed-blue ring-1 ring-formed-blue")}>
+    <span className={cn("text-xs font-bold", isToday ? "text-formed-blue" : "text-muted")}>{day}</span>
+    <div className="flex min-w-0 flex-col gap-1">
+      {visibleItems.map((item) => <EditRoadmapModal key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} isDemo={isDemo} variant="chip" isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)}>
+        <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} item={item} isDemo={isDemo} />
+      </EditRoadmapModal>)}
+      {hiddenCount > 0 ? <button type="button" onClick={() => setIsExpanded(true)} className="w-fit rounded px-1 text-[10px] font-bold text-muted hover:text-foreground">+{hiddenCount} more</button> : null}
+      {isExpanded && items.length > CALENDAR_VISIBLE_ITEM_LIMIT ? <button type="button" onClick={() => setIsExpanded(false)} className="w-fit rounded px-1 text-[10px] font-bold text-muted hover:text-foreground">Show less</button> : null}
+    </div>
+  </div>;
 }
 
 function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo }: { fiscalYearId: string; monthKey: string; monthLabel: string; items: RoadmapItem[]; isDemo?: boolean }) {

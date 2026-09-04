@@ -15,10 +15,12 @@ type EditRoadmapModalProps = {
   isOpen?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
+  /** "card" (default) is the full backlog/month-column trigger; "chip" is a compact single-line trigger for calendar day cells. */
+  variant?: "card" | "chip";
   children: ReactNode;
 };
 
-export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsOpen, onOpen, onClose, children }: EditRoadmapModalProps) {
+export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsOpen, onOpen, onClose, variant = "card", children }: EditRoadmapModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
@@ -59,8 +61,19 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
     closeDialog();
   };
 
+  const isTbd = item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate);
+
   return <>
-    <button
+    {variant === "chip" ? <button
+      ref={triggerRef}
+      type="button"
+      onClick={openDialog}
+      aria-label={`Edit ${item.title}`}
+      title={item.title}
+      className={cn("block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold transition-colors hover:brightness-95", TONE_CLASSES[tone].chip, isTbd && "italic")}
+    >
+      {item.title}
+    </button> : <button
       ref={triggerRef}
       type="button"
       onClick={openDialog}
@@ -75,9 +88,9 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
         </span> : null}
         {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-semibold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
         {item.provider ? <span className="rounded-full bg-panel-warm px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
-        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", (item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate)) ? "bg-danger-soft text-danger" : "bg-panel-warm")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
+        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", isTbd ? "bg-danger-soft text-danger" : "bg-panel-warm")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
       </div>
-    </button>
+    </button>}
     {isOpen ? createPortal(<dialog
       ref={dialogRef}
       open={isOpen}
