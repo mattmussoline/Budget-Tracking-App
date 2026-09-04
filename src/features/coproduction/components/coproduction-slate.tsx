@@ -18,6 +18,8 @@ import {
 import type { CoproductionOpportunity, CoproductionStage } from "../coproduction-types";
 import { CoproductionCard } from "./coproduction-card";
 import { CoproductionDetailModal } from "./coproduction-detail-modal";
+import { CoproductionForm } from "./coproduction-form";
+import { CoproductionFormModal } from "./coproduction-form-modal";
 
 const TIER_BAR_CLASS: Record<string, string> = {
   A: "bg-tone-green-line",
@@ -29,6 +31,7 @@ const TIER_BAR_CLASS: Record<string, string> = {
 
 type CoproductionSlateProps = {
   opportunities: CoproductionOpportunity[];
+  fiscalYearId?: string;
   isDemo?: boolean;
 };
 
@@ -37,7 +40,8 @@ type CoproductionSlateProps = {
  * Clicking a card opens the detail as a pop-out over the slate, so the grid
  * behind keeps its position instead of reflowing around an expanded row.
  */
-export function CoproductionSlate({ opportunities, isDemo }: CoproductionSlateProps) {
+export function CoproductionSlate({ opportunities: initialOpportunities, fiscalYearId, isDemo }: CoproductionSlateProps) {
+  const [opportunities, setOpportunities] = useState(initialOpportunities);
   const [filters, setFilters] = useState<SlateFilters>(emptySlateFilters);
   const [sort, setSort] = useState<SlateSort>("grade");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -53,8 +57,29 @@ export function CoproductionSlate({ opportunities, isDemo }: CoproductionSlatePr
     setFilters((current) => ({ ...current, stage }));
   }
 
+  function handleAdded(opportunity: CoproductionOpportunity) {
+    setOpportunities((current) => [opportunity, ...current]);
+  }
+
+  function handleUpdated(opportunity: CoproductionOpportunity) {
+    setOpportunities((current) => current.map((existing) => existing.id === opportunity.id ? { ...opportunity, updates: existing.updates } : existing));
+  }
+
+  function handleDeleted(opportunityId: string) {
+    setOpportunities((current) => current.filter((existing) => existing.id !== opportunityId));
+    setSelectedId((current) => current === opportunityId ? null : current);
+  }
+
   return (
     <div className="grid gap-8">
+      {fiscalYearId && !isDemo ? (
+        <div className="flex justify-end">
+          <CoproductionFormModal eyebrow="Co-Production" heading="Add opportunity" triggerLabel="Add opportunity">
+            <CoproductionForm fiscalYearId={fiscalYearId} onSaved={handleAdded} />
+          </CoproductionFormModal>
+        </div>
+      ) : null}
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Pipeline summary">
         <div className="grid content-start gap-1.5 rounded-lg bg-white p-5 shadow-sm ring-1 ring-hairline">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Live opportunities</span>
@@ -209,7 +234,14 @@ export function CoproductionSlate({ opportunities, isDemo }: CoproductionSlatePr
       )}
 
       {selected ? (
-        <CoproductionDetailModal opportunity={selected} isDemo={isDemo} onClose={() => setSelectedId(null)} />
+        <CoproductionDetailModal
+          opportunity={selected}
+          fiscalYearId={fiscalYearId}
+          isDemo={isDemo}
+          onClose={() => setSelectedId(null)}
+          onUpdated={handleUpdated}
+          onDeleted={handleDeleted}
+        />
       ) : null}
     </div>
   );

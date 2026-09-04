@@ -1,22 +1,26 @@
 "use client";
 
-import { MessageSquarePlus, X } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, type SyntheticEvent, useCallback, useEffect, useRef, useState } from "react";
+import { MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
+import { type KeyboardEvent, type MouseEvent, type SyntheticEvent, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
 import { formatRelativeTime } from "@/features/planning/content-review-activity";
 import { TONE_CLASSES } from "@/features/planning/planning-constants";
 import { formatCurrencyWholeDollars } from "@/lib/currency";
+import { addCoproductionUpdate, changeCoproductionStage, deleteCoproductionUpdate } from "../coproduction-actions";
 import {
   BENCHMARK_VERDICT_LABEL,
   GRADE_TIER_TONE,
+  STAGE_OPTIONS,
   benchmarkVerdict,
   formatCompactCurrency,
   stageLabel,
   stageOption,
   type GradedOpportunity
 } from "../coproduction-model";
-import type { CoproductionUpdate, NoteBlock } from "../coproduction-types";
+import type { CoproductionOpportunity, CoproductionStage, CoproductionUpdate, NoteBlock } from "../coproduction-types";
+import { CoproductionForm } from "./coproduction-form";
+import { CoproductionFormModal } from "./coproduction-form-modal";
 import { CoproductionScorecard } from "./coproduction-scorecard";
 import { LikelihoodDial } from "./likelihood-dial";
 import { OpportunityArtPanel } from "./opportunity-art";
@@ -44,15 +48,26 @@ function NoteBlocks({ notes }: { notes: NoteBlock[] }) {
   );
 }
 
-function UpdateEntry({ update }: { update: CoproductionUpdate }) {
+function UpdateEntry({ update, isDemo, onDelete }: { update: CoproductionUpdate; isDemo?: boolean; onDelete?: (updateId: string) => void }) {
   const fromTone = update.fromStage ? TONE_CLASSES[stageOption(update.fromStage).tone].chip : "bg-panel-warm text-muted";
   const toTone = update.toStage ? TONE_CLASSES[stageOption(update.toStage).tone].chip : "bg-panel-warm text-muted";
 
   return (
-    <li className="grid gap-1.5 rounded-md bg-panel-warm px-3.5 py-2.5">
+    <li className="group/entry grid gap-1.5 rounded-md bg-panel-warm px-3.5 py-2.5">
       <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
         <span>{formatRelativeTime(update.createdAt)}</span>
         {update.authorEmail ? <span className="font-bold normal-case tracking-normal">{update.authorEmail}</span> : null}
+        {update.kind === "note" && onDelete ? (
+          <button
+            type="button"
+            aria-label={`Delete update from ${formatRelativeTime(update.createdAt)}`}
+            onClick={() => onDelete(update.id)}
+            disabled={isDemo}
+            className="ml-auto rounded p-1 text-muted opacity-0 transition hover:bg-hairline hover:text-danger focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-formed-blue group-hover/entry:opacity-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
 
       {update.kind === "stage_change" ? (
@@ -76,8 +91,11 @@ function UpdateEntry({ update }: { update: CoproductionUpdate }) {
 
 type CoproductionDetailModalProps = {
   opportunity: GradedOpportunity;
+  fiscalYearId?: string;
   isDemo?: boolean;
   onClose: () => void;
+  onUpdated?: (opportunity: CoproductionOpportunity) => void;
+  onDeleted?: (opportunityId: string) => void;
 };
 
 /**
@@ -86,12 +104,71 @@ type CoproductionDetailModalProps = {
  * in the grid. The header carries the glance-level figures; the panels below
  * carry the reasoning, the log, and the deal metadata.
  */
-export function CoproductionDetailModal({ opportunity, isDemo, onClose }: CoproductionDetailModalProps) {
+export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onClose, onUpdated, onDeleted }: CoproductionDetailModalProps) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const stage = stageOption(opportunity.stage);
   const gradeTone = TONE_CLASSES[GRADE_TIER_TONE[opportunity.tier]];
   const rate = opportunity.costPerHourCents;
+  const canEdit = Boolean(fiscalYearId) && !isDemo;
+
+  const [updates, setUpdates] = useState(opportunity.updates);
+  const [noteBody, setNoteBody] = useState("");
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => setUpdates(opportunity.updates), [opportunity.updates]);
+
+  function submitNote() {
+    const trimmed = noteBody.trim();
+    if (!canEdit || !fiscalYearId || !trimmed || isPending) return;
+    setNoteError(null);
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("opportunityId", opportunity.id);
+    formData.set("body", trimmed);
+    setNoteBody("");
+    startTransition(async () => {
+      try {
+        const created = await addCoproductionUpdate(formData);
+        setUpdates((current) => [created, ...current]);
+      } catch {
+        setNoteBody(trimmed);
+        setNoteError("Could not save that update.");
+      }
+    });
+  }
+
+  function deleteNote(updateId: string) {
+    if (!canEdit || !fiscalYearId || isPending) return;
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("updateId", updateId);
+    setUpdates((current) => current.filter((update) => update.id !== updateId));
+    startTransition(async () => {
+      try {
+        await deleteCoproductionUpdate(formData);
+      } catch {
+        setNoteError("Could not delete that update.");
+      }
+    });
+  }
+
+  function changeStage(nextStage: CoproductionStage) {
+    if (!canEdit || !fiscalYearId || isPending || nextStage === opportunity.stage) return;
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("opportunityId", opportunity.id);
+    formData.set("stage", nextStage);
+    startTransition(async () => {
+      try {
+        await changeCoproductionStage(formData);
+        onUpdated?.({ ...opportunity, stage: nextStage });
+      } catch {
+        setNoteError("Could not change the stage.");
+      }
+    });
+  }
 
   useEffect(() => setMounted(true), []);
 
@@ -152,16 +229,38 @@ export function CoproductionDetailModal({ opportunity, isDemo, onClose }: Coprod
         stage.tone === "slate" ? "border-hairline-strong" : TONE_CLASSES[stage.tone].accent
       )}
     >
-      <button
-        type="button"
-        onClick={close}
-        aria-label={`Close ${opportunity.title}`}
-        className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-md bg-panel-warm text-muted transition hover:bg-hairline hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
-      >
-        <X className="h-4 w-4" aria-hidden="true" />
-      </button>
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {canEdit && fiscalYearId ? (
+          <CoproductionFormModal
+            eyebrow="Co-Production"
+            heading={`Edit ${opportunity.title}`}
+            triggerLabel="Edit"
+            triggerAriaLabel={`Edit ${opportunity.title}`}
+            triggerIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+            triggerClassName="!min-h-9 !rounded-md !border-hairline !bg-panel-warm !px-3 !py-0 !text-muted hover:!bg-hairline hover:!text-foreground"
+          >
+            <CoproductionForm
+              fiscalYearId={fiscalYearId}
+              opportunity={opportunity}
+              onSaved={(saved) => onUpdated?.(saved)}
+              onDeleted={(deletedId) => {
+                onDeleted?.(deletedId);
+                close();
+              }}
+            />
+          </CoproductionFormModal>
+        ) : null}
+        <button
+          type="button"
+          onClick={close}
+          aria-label={`Close ${opportunity.title}`}
+          className="grid h-9 w-9 place-items-center rounded-md bg-panel-warm text-muted transition hover:bg-hairline hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
 
-      <header className="sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 border-b border-hairline bg-white p-5 pr-16 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-6">
+      <header className="sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 border-b border-hairline bg-white p-5 pr-28 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-6">
         <div className="aspect-[16/9] w-[8.5rem] overflow-hidden rounded-md ring-1 ring-hairline">
           <OpportunityArtPanel
             art={opportunity.art}
@@ -177,9 +276,24 @@ export function CoproductionDetailModal({ opportunity, isDemo, onClose }: Coprod
               {initials(opportunity.partner)}
             </span>
             <span className="truncate text-xs font-semibold text-muted">{opportunity.partner}</span>
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", TONE_CLASSES[stage.tone].chip)}>
-              {stage.label}
-            </span>
+            {canEdit ? (
+              <label className="sr-only" htmlFor="coproduction-stage-select">Stage</label>
+            ) : null}
+            {canEdit ? (
+              <select
+                id="coproduction-stage-select"
+                value={opportunity.stage}
+                disabled={isPending}
+                onChange={(event) => changeStage(event.target.value as CoproductionStage)}
+                className={cn("rounded-full border-0 py-0.5 pl-2 pr-6 text-[10px] font-semibold uppercase tracking-wide outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-60", TONE_CLASSES[stage.tone].chip)}
+              >
+                {STAGE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            ) : (
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", TONE_CLASSES[stage.tone].chip)}>
+                {stage.label}
+              </span>
+            )}
           </div>
 
           <h2 id="coproduction-detail-title" className="font-display text-2xl tracking-tight">
@@ -223,25 +337,34 @@ export function CoproductionDetailModal({ opportunity, isDemo, onClose }: Coprod
           >
             Notes &amp; update log
             <span className="text-[10px] font-semibold">
-              {opportunity.updates.length} {opportunity.updates.length === 1 ? "entry" : "entries"}
+              {updates.length} {updates.length === 1 ? "entry" : "entries"}
             </span>
           </h3>
 
-          <NoteBlocks notes={opportunity.notes} />
+          {opportunity.notes.length ? <NoteBlocks notes={opportunity.notes} /> : null}
 
           <div className="relative flex items-center">
             <MessageSquarePlus className="pointer-events-none absolute left-3 h-4 w-4 text-muted" aria-hidden="true" />
             <input
               type="text"
-              disabled={isDemo}
+              value={noteBody}
+              disabled={!canEdit || isPending}
               aria-label={`Log an update on ${opportunity.title}`}
               placeholder={isDemo ? "Updates are read-only in the demo" : "Type an update and press Enter"}
+              onChange={(event) => setNoteBody(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" || event.shiftKey) return;
+                event.preventDefault();
+                submitNote();
+              }}
               className="min-h-11 w-full rounded-md border-0 bg-panel-warm pl-9 pr-3 text-sm font-medium outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-60"
             />
           </div>
 
+          {noteError ? <p role="status" className="rounded-md bg-danger-soft px-3 py-2 text-xs font-bold text-danger">{noteError}</p> : null}
+
           <ul className="grid gap-2.5">
-            {opportunity.updates.map((update) => <UpdateEntry key={update.id} update={update} />)}
+            {updates.map((update) => <UpdateEntry key={update.id} update={update} isDemo={isDemo || !canEdit} onDelete={canEdit ? deleteNote : undefined} />)}
           </ul>
         </section>
 

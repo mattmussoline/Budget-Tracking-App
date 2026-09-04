@@ -30,7 +30,8 @@ describe("PlanningNavigation", () => {
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "Roadmap",
       "Licensing Summary",
-      "Content Review"
+      "Content Review",
+      "Co-Production"
     ]);
   });
 
@@ -39,6 +40,7 @@ describe("PlanningNavigation", () => {
 
     expect(prefetch).toHaveBeenCalledWith("/roadmap");
     expect(prefetch).toHaveBeenCalledWith("/content-review");
+    expect(prefetch).toHaveBeenCalledWith("/coproduction");
     expect(prefetch).not.toHaveBeenCalledWith("/dashboard");
   });
 
@@ -48,7 +50,9 @@ describe("PlanningNavigation", () => {
     expect(screen.getByRole("link", { name: "Licensing Summary" })).toHaveAttribute("href", "/demo/dashboard");
     expect(screen.getByRole("link", { name: "Roadmap" })).toHaveAttribute("href", "/demo/roadmap");
     expect(screen.getByRole("link", { name: "Content Review" })).toHaveAttribute("href", "/demo/content-review");
+    expect(screen.getByRole("link", { name: "Co-Production" })).toHaveAttribute("href", "/demo/coproduction");
     expect(prefetch).toHaveBeenCalledWith("/demo/roadmap");
     expect(prefetch).toHaveBeenCalledWith("/demo/content-review");
+    expect(prefetch).toHaveBeenCalledWith("/demo/coproduction");
   });
 });

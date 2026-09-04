@@ -15,21 +15,20 @@ type PlanningNavigationProps = {
 
 /**
  * Each section lists the path it has under every route prefix. A section with
- * no entry for a prefix has no page there and is left out of the navigation,
- * which is how Co-Production stays demo-only until the signed-in route exists
- * rather than offering a link that would 404.
+ * no entry for a prefix has no page there and is left out of the navigation.
  */
 const planningSections = [
   { label: "Roadmap", section: "roadmap", paths: { "": "/roadmap", "/demo": "/demo/roadmap" } },
   { label: "Licensing Summary", section: "dashboard", paths: { "": "/dashboard", "/demo": "/demo/dashboard" } },
   { label: "Content Review", section: "content-review", paths: { "": "/content-review", "/demo": "/demo/content-review" } },
-  { label: "Co-Production", section: "coproduction", paths: { "/demo": "/demo/coproduction" } }
+  { label: "Co-Production", section: "coproduction", paths: { "": "/coproduction", "/demo": "/demo/coproduction" } }
 ] as const;
 
 type PlanningRoute =
   | "/roadmap"
   | "/dashboard"
   | "/content-review"
+  | "/coproduction"
   | "/demo/roadmap"
   | "/demo/dashboard"
   | "/demo/content-review"
