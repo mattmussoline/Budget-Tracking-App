@@ -75,6 +75,7 @@ export function CoproductionCard({ opportunity, onOpen }: CoproductionCardProps)
           art={opportunity.art}
           title={opportunity.title}
           isMuted={opportunity.stage === "passed"}
+          imageUrl={opportunity.imageUrl}
         />
 
         <div className="grid gap-4 p-5">

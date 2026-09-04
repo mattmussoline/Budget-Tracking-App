@@ -22,6 +22,7 @@ export function mapCoproductionRow(row: Record<string, unknown>, updates: Coprod
     likelihoodRationale: (row.likelihood_rationale as string) ?? "",
     stage: row.stage as CoproductionStage,
     art: { from: "#0e3b4a", to: "#14607a", motif: "table" },
+    imageUrl: (row.image_url as string | null) ?? null,
     scores: Object.fromEntries(
       SCORE_DIMENSIONS.map((dimension) => [
         dimension,

@@ -21,7 +21,7 @@ export const metadata = {
 };
 
 const OPPORTUNITY_COLUMNS =
-  "id,title,partner,format,genre,episodes,ask_cents,likelihood,likelihood_rationale,stage,score_mission,score_mission_rationale,score_audience,score_audience_rationale,score_economics,score_economics_rationale,score_partner,score_partner_rationale,score_delivery,score_delivery_rationale,notes,graded_by,graded_at,updated_at";
+  "id,title,partner,format,genre,episodes,ask_cents,likelihood,likelihood_rationale,stage,score_mission,score_mission_rationale,score_audience,score_audience_rationale,score_economics,score_economics_rationale,score_partner,score_partner_rationale,score_delivery,score_delivery_rationale,notes,image_url,graded_by,graded_at,updated_at";
 
 export default async function CoproductionPage({ searchParams }: CoproductionPageProps) {
   const admin = createSupabaseAdminClient();

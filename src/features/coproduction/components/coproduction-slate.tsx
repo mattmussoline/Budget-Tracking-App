@@ -15,7 +15,7 @@ import {
   type SlateFilters,
   type SlateSort
 } from "../coproduction-model";
-import type { CoproductionOpportunity, CoproductionStage } from "../coproduction-types";
+import type { CoproductionOpportunity, CoproductionStage, CoproductionUpdate } from "../coproduction-types";
 import { CoproductionCard } from "./coproduction-card";
 import { CoproductionDetailModal } from "./coproduction-detail-modal";
 import { CoproductionForm } from "./coproduction-form";
@@ -63,6 +63,10 @@ export function CoproductionSlate({ opportunities: initialOpportunities, fiscalY
 
   function handleUpdated(opportunity: CoproductionOpportunity) {
     setOpportunities((current) => current.map((existing) => existing.id === opportunity.id ? { ...opportunity, updates: existing.updates } : existing));
+  }
+
+  function handleUpdatesChanged(opportunityId: string, updates: CoproductionUpdate[]) {
+    setOpportunities((current) => current.map((existing) => existing.id === opportunityId ? { ...existing, updates } : existing));
   }
 
   function handleDeleted(opportunityId: string) {
@@ -240,6 +244,7 @@ export function CoproductionSlate({ opportunities: initialOpportunities, fiscalY
           isDemo={isDemo}
           onClose={() => setSelectedId(null)}
           onUpdated={handleUpdated}
+          onUpdatesChanged={handleUpdatesChanged}
           onDeleted={handleDeleted}
         />
       ) : null}

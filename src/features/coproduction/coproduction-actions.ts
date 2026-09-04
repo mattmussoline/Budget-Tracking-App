@@ -67,7 +67,16 @@ const deleteOpportunityUpdateSchema = z.object({
 });
 
 const OPPORTUNITY_COLUMNS =
-  "id,title,partner,format,genre,episodes,ask_cents,likelihood,likelihood_rationale,stage,score_mission,score_mission_rationale,score_audience,score_audience_rationale,score_economics,score_economics_rationale,score_partner,score_partner_rationale,score_delivery,score_delivery_rationale,notes,graded_by,graded_at,updated_at";
+  "id,title,partner,format,genre,episodes,ask_cents,likelihood,likelihood_rationale,stage,score_mission,score_mission_rationale,score_audience,score_audience_rationale,score_economics,score_economics_rationale,score_partner,score_partner_rationale,score_delivery,score_delivery_rationale,notes,image_url,graded_by,graded_at,updated_at";
+
+const COPRODUCTION_IMAGE_BUCKET = "coproduction-images";
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+
+const opportunityImageSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  opportunityId: z.string().uuid()
+});
 
 async function requireCoproductionAdmin() {
   const admin = createSupabaseAdminClient();
@@ -347,6 +356,80 @@ export async function deleteCoproductionUpdate(formData: FormData) {
   }
 
   revalidateCoproduction();
+}
+
+export async function uploadCoproductionImage(formData: FormData) {
+  const parsed = opportunityImageSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid opportunity.");
+  }
+
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Choose an image to upload.");
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new Error("Upload a PNG, JPEG, WEBP, or GIF image.");
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("Images must be 5MB or smaller.");
+  }
+
+  const admin = await requireCoproductionAdmin();
+
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${parsed.data.opportunityId}/${Date.now()}.${extension}`;
+
+  const { error: uploadError } = await admin.storage
+    .from(COPRODUCTION_IMAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: true });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data: publicUrlData } = admin.storage.from(COPRODUCTION_IMAGE_BUCKET).getPublicUrl(path);
+
+  const { data, error } = await admin
+    .from("coproduction_opportunities")
+    .update({ image_url: publicUrlData.publicUrl })
+    .eq("id", parsed.data.opportunityId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .select(OPPORTUNITY_COLUMNS)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidateCoproduction();
+
+  return mapCoproductionRow(data);
+}
+
+export async function removeCoproductionImage(formData: FormData) {
+  const parsed = opportunityImageSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Choose a valid opportunity.");
+  }
+
+  const admin = await requireCoproductionAdmin();
+
+  const { data, error } = await admin
+    .from("coproduction_opportunities")
+    .update({ image_url: null })
+    .eq("id", parsed.data.opportunityId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId)
+    .select(OPPORTUNITY_COLUMNS)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidateCoproduction();
+
+  return mapCoproductionRow(data);
 }
 
 export async function fetchCoproductionUpdates(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, opportunityIds: string[]) {

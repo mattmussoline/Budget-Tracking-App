@@ -88,9 +88,11 @@ type OpportunityArtPanelProps = {
   /** "card" is the full slate banner; "thumb" is the small modal-header tile. */
   variant?: "card" | "thumb";
   isMuted?: boolean;
+  /** Uploaded key art or logo. When present it replaces the placeholder motif. */
+  imageUrl?: string | null;
 };
 
-export function OpportunityArtPanel({ art, title, variant = "card", isMuted }: OpportunityArtPanelProps) {
+export function OpportunityArtPanel({ art, title, variant = "card", isMuted, imageUrl }: OpportunityArtPanelProps) {
   return (
     <div
       className={cn(
@@ -98,26 +100,38 @@ export function OpportunityArtPanel({ art, title, variant = "card", isMuted }: O
         variant === "card" ? "aspect-[16/9]" : "h-full w-full",
         isMuted && "saturate-[0.35]"
       )}
-      style={{ backgroundImage: `linear-gradient(135deg, ${art.from} 0%, ${art.to} 100%)` }}
+      style={imageUrl ? undefined : { backgroundImage: `linear-gradient(135deg, ${art.from} 0%, ${art.to} 100%)` }}
     >
-      <svg
-        viewBox="0 0 160 90"
-        preserveAspectRatio="xMidYMid slice"
-        className="absolute inset-0 h-full w-full"
-        aria-hidden="true"
-      >
-        {MOTIFS[art.motif]}
-        <rect x={0} y={0} width={160} height={90} fill="#000000" fillOpacity={0.07} />
-      </svg>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={variant === "card" ? "" : `${title} key art`}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <svg
+          viewBox="0 0 160 90"
+          preserveAspectRatio="xMidYMid slice"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden="true"
+        >
+          {MOTIFS[art.motif]}
+          <rect x={0} y={0} width={160} height={90} fill="#000000" fillOpacity={0.07} />
+        </svg>
+      )}
 
       {variant === "card" ? (
         <>
+          {imageUrl ? <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" /> : null}
           <span className="relative z-10 px-7 text-center font-display text-2xl leading-tight tracking-tight text-white [text-shadow:0_1px_14px_rgba(0,0,0,0.3)]">
             {title}
           </span>
-          <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/35 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/90">
-            Placeholder key art
-          </span>
+          {!imageUrl ? (
+            <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/35 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/90">
+              Placeholder key art
+            </span>
+          ) : null}
         </>
       ) : null}
     </div>

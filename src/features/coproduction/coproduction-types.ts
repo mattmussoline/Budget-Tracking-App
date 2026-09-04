@@ -61,6 +61,8 @@ export type CoproductionOpportunity = {
   likelihoodRationale: string;
   stage: CoproductionStage;
   art: OpportunityArt;
+  /** Uploaded key art or logo, shown in place of the placeholder motif when present. */
+  imageUrl?: string | null;
   scores: Record<ScoreDimension, OpportunityScore>;
   gradedBy: string;
   gradedAt: string;

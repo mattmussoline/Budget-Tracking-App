@@ -1,13 +1,13 @@
 "use client";
 
-import { MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, type SyntheticEvent, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { ImagePlus, MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
+import { type ChangeEvent, type KeyboardEvent, type MouseEvent, type SyntheticEvent, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
 import { formatRelativeTime } from "@/features/planning/content-review-activity";
 import { TONE_CLASSES } from "@/features/planning/planning-constants";
 import { formatCurrencyWholeDollars } from "@/lib/currency";
-import { addCoproductionUpdate, changeCoproductionStage, deleteCoproductionUpdate } from "../coproduction-actions";
+import { addCoproductionUpdate, changeCoproductionStage, deleteCoproductionUpdate, removeCoproductionImage, uploadCoproductionImage } from "../coproduction-actions";
 import {
   BENCHMARK_VERDICT_LABEL,
   GRADE_TIER_TONE,
@@ -95,6 +95,7 @@ type CoproductionDetailModalProps = {
   isDemo?: boolean;
   onClose: () => void;
   onUpdated?: (opportunity: CoproductionOpportunity) => void;
+  onUpdatesChanged?: (opportunityId: string, updates: CoproductionUpdate[]) => void;
   onDeleted?: (opportunityId: string) => void;
 };
 
@@ -104,7 +105,7 @@ type CoproductionDetailModalProps = {
  * in the grid. The header carries the glance-level figures; the panels below
  * carry the reasoning, the log, and the deal metadata.
  */
-export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onClose, onUpdated, onDeleted }: CoproductionDetailModalProps) {
+export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onClose, onUpdated, onUpdatesChanged, onDeleted }: CoproductionDetailModalProps) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const stage = stageOption(opportunity.stage);
@@ -116,8 +117,47 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
   const [noteBody, setNoteBody] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isImagePending, startImageTransition] = useTransition();
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => setUpdates(opportunity.updates), [opportunity.updates]);
+
+  function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!canEdit || !fiscalYearId || !file || isImagePending) return;
+
+    setImageError(null);
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("opportunityId", opportunity.id);
+    formData.set("image", file);
+    startImageTransition(async () => {
+      try {
+        const updated = await uploadCoproductionImage(formData);
+        onUpdated?.(updated);
+      } catch {
+        setImageError("Could not upload that image.");
+      }
+    });
+  }
+
+  function removeImage() {
+    if (!canEdit || !fiscalYearId || isImagePending) return;
+    setImageError(null);
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("opportunityId", opportunity.id);
+    startImageTransition(async () => {
+      try {
+        const updated = await removeCoproductionImage(formData);
+        onUpdated?.(updated);
+      } catch {
+        setImageError("Could not remove that image.");
+      }
+    });
+  }
 
   function submitNote() {
     const trimmed = noteBody.trim();
@@ -131,7 +171,11 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
     startTransition(async () => {
       try {
         const created = await addCoproductionUpdate(formData);
-        setUpdates((current) => [created, ...current]);
+        setUpdates((current) => {
+          const next = [created, ...current];
+          onUpdatesChanged?.(opportunity.id, next);
+          return next;
+        });
       } catch {
         setNoteBody(trimmed);
         setNoteError("Could not save that update.");
@@ -144,7 +188,11 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
     const formData = new FormData();
     formData.set("fiscalYearId", fiscalYearId);
     formData.set("updateId", updateId);
-    setUpdates((current) => current.filter((update) => update.id !== updateId));
+    setUpdates((current) => {
+      const next = current.filter((update) => update.id !== updateId);
+      onUpdatesChanged?.(opportunity.id, next);
+      return next;
+    });
     startTransition(async () => {
       try {
         await deleteCoproductionUpdate(formData);
@@ -218,7 +266,6 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
   return createPortal(
     <dialog
       ref={dialogRef}
-      open
       style={{ display: "block", visibility: "visible" }}
       aria-labelledby="coproduction-detail-title"
       onClick={closeFromBackdrop}
@@ -261,13 +308,45 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
       </div>
 
       <header className="sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 border-b border-hairline bg-white p-5 pr-28 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-6">
-        <div className="aspect-[16/9] w-[8.5rem] overflow-hidden rounded-md ring-1 ring-hairline">
+        <div className="group/thumb relative aspect-[16/9] w-[8.5rem] overflow-hidden rounded-md ring-1 ring-hairline">
           <OpportunityArtPanel
             art={opportunity.art}
             title={opportunity.title}
             variant="thumb"
             isMuted={opportunity.stage === "passed"}
+            imageUrl={opportunity.imageUrl}
           />
+          {canEdit ? (
+            <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/0 opacity-0 transition group-hover/thumb:bg-black/45 group-hover/thumb:opacity-100 focus-within:bg-black/45 focus-within:opacity-100">
+              <label
+                htmlFor="coproduction-image-input"
+                aria-label={opportunity.imageUrl ? `Replace image for ${opportunity.title}` : `Upload an image for ${opportunity.title}`}
+                className="grid h-8 w-8 cursor-pointer place-items-center rounded-md bg-white/90 text-foreground transition hover:bg-white focus-within:outline-none focus-within:ring-2 focus-within:ring-formed-blue"
+              >
+                <ImagePlus className="h-4 w-4" aria-hidden="true" />
+                <input
+                  id="coproduction-image-input"
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  disabled={isImagePending}
+                  onChange={uploadImage}
+                  className="sr-only"
+                />
+              </label>
+              {opportunity.imageUrl ? (
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  disabled={isImagePending}
+                  aria-label={`Remove image from ${opportunity.title}`}
+                  className="grid h-8 w-8 place-items-center rounded-md bg-white/90 text-danger transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue disabled:opacity-60"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid min-w-0 gap-2">
@@ -327,6 +406,10 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
         </div>
       </header>
 
+      {imageError ? (
+        <p role="status" className="mx-5 mt-5 rounded-md bg-danger-soft px-3 py-2 text-xs font-bold text-danger lg:mx-7 lg:mt-7">{imageError}</p>
+      ) : null}
+
       <div className="grid gap-7 bg-panel-warm p-5 pb-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.3fr)_minmax(0,0.85fr)] lg:gap-8 lg:p-7">
         <CoproductionScorecard opportunity={opportunity} />
 
@@ -377,7 +460,7 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
             <MetadataRow label="Partner" value={opportunity.partner} />
             <MetadataRow label="Format" value={`${opportunity.format} · ${opportunity.episodes}`} />
             <MetadataRow label="Genre" value={opportunity.genre} />
-            <MetadataRow label="Key art" value="Placeholder — awaiting partner assets" />
+            <MetadataRow label="Key art" value={opportunity.imageUrl ? "Uploaded" : "Placeholder — awaiting partner assets"} />
             <MetadataRow label="Asking price" value={formatCurrencyWholeDollars(opportunity.askCents)} isNumeric />
             <MetadataRow
               label="Expected cost"
