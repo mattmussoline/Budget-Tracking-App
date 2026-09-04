@@ -60,6 +60,7 @@ type ContentReviewDashboardProps = {
   groupOrder?: ContentReviewGroupOrderRow[];
   updates?: ContentReviewUpdate[];
   isDemo?: boolean;
+  currentUserEmail?: string | null;
 };
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 type DragKind = "item" | "group";
@@ -95,7 +96,7 @@ const blankDraft = (): ContentReviewItem => ({
 
 const REVIEW_DESCRIPTION = "Work titles, proposed rates, provider fields, radar targets, and approval states in one queue.";
 
-export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescription = REVIEW_DESCRIPTION, fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo }: ContentReviewDashboardProps) {
+export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescription = REVIEW_DESCRIPTION, fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo, currentUserEmail }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
   const [selectedId, setSelectedId] = useState(() => items.find((item) => isDecisionQueueStatus(item.reviewStatus))?.id ?? items[0]?.id ?? "");
   const [draft, setDraft] = useState<ContentReviewItem | null>(null);
@@ -571,6 +572,7 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
       {isRecapOpen ? <ContentReviewRecapPanel
         items={records}
         updates={updateLog}
+        currentUserEmail={currentUserEmail}
         onClose={() => setIsRecapOpen(false)}
         onSelect={selectItemFromModal}
       /> : null}

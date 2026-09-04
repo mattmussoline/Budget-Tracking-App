@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRecapText, describeRecapEntry, formatDayLabel, formatRelativeTime, summarizeRecap } from "./content-review-activity";
+import { buildRecapText, describeRecapEntry, formatDayLabel, formatRelativeTime, summarizeMyNotes, summarizeRecap } from "./content-review-activity";
 import type { ContentReviewItem, ContentReviewUpdate } from "./planning-types";
 
 const now = new Date("2026-09-03T12:00:00.000Z");
@@ -76,6 +76,42 @@ describe("formatting helpers", () => {
     expect(formatRelativeTime(hoursAgo(0), now)).toBe("Just now");
     expect(formatRelativeTime(hoursAgo(2), now)).toBe("2 hours ago");
     expect(formatRelativeTime(hoursAgo(48), now)).toBe("2 days ago");
+  });
+});
+
+describe("summarizeMyNotes", () => {
+  const myNotes: ContentReviewUpdate[] = [
+    { id: "n1", itemId: "a", kind: "note", body: "Negotiating the rate, waiting on their reply.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(1) },
+    { id: "n2", itemId: "a", kind: "note", body: "Sent a follow-up email about the contract terms.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(3) },
+    { id: "n3", itemId: "b", kind: "note", body: "Watched the pilot episode, quality looks strong.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(5) },
+    { id: "n4", itemId: "a", kind: "note", body: "Someone else's note.", fromStatus: null, toStatus: null, authorEmail: "someone.else@example.com", createdAt: hoursAgo(2) },
+    { id: "n5", itemId: "b", kind: "note", body: "Old note from a month ago.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(30 * 24) }
+  ];
+
+  it("only counts the given author's notes in range", () => {
+    const overview = summarizeMyNotes(myNotes, items, 7, "matt@example.com", now);
+    expect(overview.noteCount).toBe(3);
+    expect(overview.itemsTouched).toBe(2);
+  });
+
+  it("surfaces the titles with the most notes", () => {
+    const overview = summarizeMyNotes(myNotes, items, 7, "matt@example.com", now);
+    expect(overview.topItems[0]).toEqual({ title: "The Chosen", count: 2 });
+  });
+
+  it("classifies notes into themes for the narrative overview", () => {
+    const overview = summarizeMyNotes(myNotes, items, 7, "matt@example.com", now);
+    const labels = overview.themes.map((theme) => theme.label);
+    expect(labels).toContain("rate & budget");
+    expect(labels).toContain("follow-up");
+    expect(labels).toContain("contract & legal");
+    expect(labels).toContain("content quality");
+    expect(overview.overviewText).toContain("3 notes across 2 titles");
+  });
+
+  it("says so when there is no matching author or no notes", () => {
+    expect(summarizeMyNotes(myNotes, items, 7, null, now).overviewText).toContain("You didn't log any notes");
+    expect(summarizeMyNotes(myNotes, items, 7, "nobody@example.com", now).noteCount).toBe(0);
   });
 });
 

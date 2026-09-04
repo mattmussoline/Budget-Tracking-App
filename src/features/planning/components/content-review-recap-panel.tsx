@@ -4,22 +4,27 @@ import { ClipboardCheck, Copy, X } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
-import { RECAP_RANGES, type RecapRange, buildRecapText, describeRecapEntry, summarizeRecap } from "../content-review-activity";
+import { RECAP_RANGES, type RecapRange, buildRecapText, describeRecapEntry, summarizeMyNotes, summarizeRecap } from "../content-review-activity";
 import { formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ContentReviewUpdate } from "../planning-types";
 
 type ContentReviewRecapPanelProps = {
   items: ContentReviewItem[];
   updates: ContentReviewUpdate[];
+  currentUserEmail?: string | null;
   onClose: () => void;
   onSelect: (itemId: string) => void;
 };
 
-export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: ContentReviewRecapPanelProps) {
+export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onClose, onSelect }: ContentReviewRecapPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [rangeDays, setRangeDays] = useState<RecapRange>(7);
   const [copied, setCopied] = useState(false);
   const summary = useMemo(() => summarizeRecap(updates, items, rangeDays), [updates, items, rangeDays]);
+  const myOverview = useMemo(
+    () => summarizeMyNotes(updates, items, rangeDays, currentUserEmail),
+    [updates, items, rangeDays, currentUserEmail]
+  );
   const titleId = "content-review-recap-title";
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: C
   }
 
   function copyRecap() {
-    const text = buildRecapText(summary);
+    const text = currentUserEmail ? `${myOverview.overviewText}\n\n${buildRecapText(summary)}` : buildRecapText(summary);
     navigator.clipboard?.writeText(text).then(
       () => {
         setCopied(true);
@@ -90,6 +95,22 @@ export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: C
       </header>
 
       <div data-testid="content-review-recap-content" className="grid min-h-0 gap-5 overflow-y-auto p-5 sm:p-7">
+        {currentUserEmail ? (
+          <div data-testid="content-review-my-notes-overview" className="grid gap-3 rounded-lg bg-formed-blue-soft p-4 ring-1 ring-formed-blue-border">
+            <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Your notes, at a glance</p>
+            <p className="text-sm font-medium text-augustine-blue">{myOverview.overviewText}</p>
+            {myOverview.themes.length > 0 ? (
+              <ul className="flex flex-wrap gap-2">
+                {myOverview.themes.map((theme) => (
+                  <li key={theme.label} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-foreground ring-1 ring-hairline" title={theme.itemTitles.join(", ")}>
+                    {theme.label} · {theme.count}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div role="group" aria-label="Recap range" className="flex gap-1 rounded-md bg-panel-warm p-1">
             {RECAP_RANGES.map((range) => (

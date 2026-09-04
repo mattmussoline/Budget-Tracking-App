@@ -1,6 +1,7 @@
 import { REVIEW_STATUSES } from "./planning-constants";
 import { formatOptionalCurrency } from "./planning-model";
 import type { ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "./planning-types";
+import { notesHtmlToPlainText } from "./rich-text";
 
 export const RECAP_RANGES = [7, 14, 30] as const;
 export type RecapRange = (typeof RECAP_RANGES)[number];
@@ -133,4 +134,110 @@ export function buildRecapText(summary: RecapSummary) {
   }
 
   return lines.join("\n").trimEnd();
+}
+
+const NOTE_THEMES: { label: string; pattern: RegExp }[] = [
+  { label: "rate & budget", pattern: /\b(rate|budget|price|pricing|cost|invoice|fee|\$)/i },
+  { label: "scheduling", pattern: /\b(schedule|scheduling|timeline|deadline|delay(ed)?|air date|release date)\b/i },
+  { label: "contract & legal", pattern: /\b(contract|legal|licens(e|ing)|rights|agreement|terms)\b/i },
+  { label: "follow-up", pattern: /\b(follow[- ]?up|waiting on|pending|reach(ed)? out|check(ed)? in|call(ed)?|email(ed)?)\b/i },
+  { label: "co-production", pattern: /\bco-?produc/i },
+  { label: "content quality", pattern: /\b(quality|episode|watch(ed|ing)?|screen(ed|ing)?|comparable)\b/i }
+];
+
+export type MyNotesTheme = { label: string; count: number; itemTitles: string[] };
+export type MyNotesOverview = {
+  rangeDays: RecapRange;
+  noteCount: number;
+  itemsTouched: number;
+  themes: MyNotesTheme[];
+  topItems: { title: string; count: number }[];
+  overviewText: string;
+};
+
+function classifyNote(text: string) {
+  return NOTE_THEMES.filter((theme) => theme.pattern.test(text)).map((theme) => theme.label);
+}
+
+/**
+ * Turns one author's raw notes into a narrative overview: what they mostly wrote about
+ * and which titles got the most attention, rather than just a chronological list.
+ */
+export function summarizeMyNotes(
+  updates: ContentReviewUpdate[],
+  items: ContentReviewItem[],
+  rangeDays: RecapRange,
+  authorEmail: string | null | undefined,
+  now: Date = new Date()
+): MyNotesOverview {
+  const cutoff = now.getTime() - rangeDays * DAY_MS;
+  const titleById = new Map(items.map((item) => [item.id, item.title]));
+
+  const myNotes = authorEmail
+    ? updates.filter((update) => {
+        if (update.kind !== "note" || update.authorEmail !== authorEmail) return false;
+        const time = new Date(update.createdAt).getTime();
+        return !Number.isNaN(time) && time >= cutoff;
+      })
+    : [];
+
+  const itemCounts = new Map<string, number>();
+  const themeCounts = new Map<string, { count: number; itemTitles: Set<string> }>();
+
+  for (const note of myNotes) {
+    const title = titleById.get(note.itemId) ?? "Deleted review";
+    itemCounts.set(title, (itemCounts.get(title) ?? 0) + 1);
+
+    const text = notesHtmlToPlainText(note.body);
+    for (const label of classifyNote(text)) {
+      const existing = themeCounts.get(label) ?? { count: 0, itemTitles: new Set<string>() };
+      existing.count += 1;
+      existing.itemTitles.add(title);
+      themeCounts.set(label, existing);
+    }
+  }
+
+  const topItems = [...itemCounts.entries()]
+    .map(([title, count]) => ({ title, count }))
+    .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title))
+    .slice(0, 3);
+
+  const themes = [...themeCounts.entries()]
+    .map(([label, { count, itemTitles }]) => ({ label, count, itemTitles: [...itemTitles].slice(0, 3) }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    rangeDays,
+    noteCount: myNotes.length,
+    itemsTouched: itemCounts.size,
+    themes,
+    topItems,
+    overviewText: buildMyNotesOverviewText(rangeDays, myNotes.length, itemCounts.size, themes, topItems)
+  };
+}
+
+function buildMyNotesOverviewText(
+  rangeDays: RecapRange,
+  noteCount: number,
+  itemsTouched: number,
+  themes: MyNotesTheme[],
+  topItems: { title: string; count: number }[]
+) {
+  if (noteCount === 0) return `You didn't log any notes in the last ${rangeDays} days.`;
+
+  const noteWord = noteCount === 1 ? "note" : "notes";
+  const titleWord = itemsTouched === 1 ? "title" : "titles";
+  const sentences = [`You logged ${noteCount} ${noteWord} across ${itemsTouched} ${titleWord} over the last ${rangeDays} days.`];
+
+  if (themes.length > 0) {
+    const leaders = themes.slice(0, 2);
+    const focus = leaders.map((theme) => `${theme.label} (${theme.count})`).join(" and ");
+    sentences.push(`Most of it centered on ${focus}.`);
+  }
+
+  if (topItems.length > 0 && topItems[0].count > 1) {
+    sentences.push(`${topItems[0].title} got the most attention, with ${topItems[0].count} notes.`);
+  }
+
+  return sentences.join(" ");
 }

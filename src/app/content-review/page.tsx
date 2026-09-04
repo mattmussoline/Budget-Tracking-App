@@ -32,7 +32,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
   const sessionPromise = requireInternalSession();
   const paramsPromise = searchParams;
 
-  const [{ data: fiscalYears, error: fiscalYearsError }, params] = await Promise.all([
+  const [{ data: fiscalYears, error: fiscalYearsError }, params, session] = await Promise.all([
     admin
       .from("fiscal_years")
       .select("id,label,fiscal_year,is_pinned")
@@ -131,7 +131,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
       activeSection="content-review"
       topBarRight={<TopBarChip>FY{String(activeFiscalYear.fiscal_year).slice(-2)}</TopBarChip>}
     >
-      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} groupOrder={groupOrder} updates={updates} />
+      <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} groupOrder={groupOrder} updates={updates} currentUserEmail={session.email} />
     </PlanningShell>
   );
 }
