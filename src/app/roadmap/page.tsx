@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
+import { TopBarChip } from "@/features/planning/components/app-top-bar";
 import { RoadmapDashboard } from "@/features/planning/components/roadmap-dashboard";
 import { normalizeMonthRange, parseMonthAnchor } from "@/features/planning/planning-model";
 import type { OngoingSeries, RoadmapCategory, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
@@ -26,12 +27,8 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
 
   if (!admin) {
     return (
-      <PlanningShell
-        title="Roadmap"
-        description="Add Supabase env vars to save roadmap and ongoing series changes."
-        activeSection="roadmap"
-      >
-        <RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000000" roadmapItems={[]} ongoingSeries={[]} categories={[]} fiscalYearStartMonth={parseMonthAnchor(null)} startMonth={parseMonthAnchor(null)} monthCount={6} isDemo />
+      <PlanningShell activeSection="roadmap">
+        <RoadmapDashboard pageTitle="Roadmap" pageDescription="Add Supabase env vars to save roadmap and ongoing series changes." fiscalYearId="00000000-0000-0000-0000-000000000000" roadmapItems={[]} ongoingSeries={[]} categories={[]} fiscalYearStartMonth={parseMonthAnchor(null)} startMonth={parseMonthAnchor(null)} monthCount={6} isDemo />
       </PlanningShell>
     );
   }
@@ -127,11 +124,10 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
 
   return (
     <PlanningShell
-      title="Roadmap"
-      description="Plan upcoming releases and keep ongoing series cadence in shared saved data."
       activeSection="roadmap"
+      topBarRight={<TopBarChip>FY{String(activeFiscalYear.fiscal_year).slice(-2)}</TopBarChip>}
     >
-      <RoadmapDashboard fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} />
+      <RoadmapDashboard pageTitle="Roadmap" pageDescription="Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp." fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} />
     </PlanningShell>
   );
 }

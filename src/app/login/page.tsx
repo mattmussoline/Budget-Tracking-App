@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   return (
     <main className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      <div className="hidden flex-col justify-between gap-10 bg-augustine-blue p-12 text-white lg:flex xl:p-16">
+      <div className="hidden flex-col justify-between gap-10 bg-augustine-blue p-14 text-white lg:flex xl:p-16">
         <span className="font-display text-2xl">Licensing</span>
         <div className="grid max-w-lg gap-5">
           <h1 className="font-display text-5xl leading-[1.06] xl:text-6xl">
@@ -23,7 +23,7 @@ export default function LoginPage() {
             people who actually make the decisions.
           </p>
         </div>
-        <p className="text-sm text-soft-slate/70">Augustine Institute &middot; Internal tool</p>
+        <p className="text-sm text-soft-slate">Augustine Institute &middot; Internal tool</p>
       </div>
 
       <div className="grid place-items-center bg-parchment px-6 py-12">
@@ -45,6 +45,7 @@ export default function LoginPage() {
               placeholder={`name${allowedEmailDomainText().split(" or ")[0]}`}
               autoComplete="email"
               required
+              className="min-h-[46px] rounded-[10px] text-[15px]"
             />
             <SoftInput
               label="Shared password"
@@ -53,16 +54,17 @@ export default function LoginPage() {
               surface="white"
               autoComplete="current-password"
               required
+              className="min-h-[46px] rounded-[10px] text-[15px] tracking-[0.22em]"
             />
-            <SoftButton type="submit" variant="primary" className="mt-1" disabled={isPending}>
+            <SoftButton type="submit" variant="primary" className="mt-1 min-h-12 rounded-[10px] text-[15px] font-bold" disabled={isPending}>
               <Mail className="h-4 w-4" aria-hidden="true" />
               {isPending ? "Signing in..." : "Sign in"}
             </SoftButton>
             {message ? <p className="text-center text-sm font-medium text-danger">{message}</p> : null}
           </form>
 
-          <p className="text-sm leading-6 text-faint">
-            Only <span className="font-semibold text-muted">{allowedEmailDomainText()}</span> addresses can sign in.
+          <p className="text-[13px] leading-6 text-faint [text-wrap:pretty]">
+            Only <span className="font-semibold text-muted">{allowedEmailDomainText()}</span> addresses can sign in. Ask Matt if you need the shared password.
           </p>
         </div>
       </div>

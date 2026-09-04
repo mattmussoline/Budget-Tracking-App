@@ -90,7 +90,7 @@ describe("ContentReviewDashboard", () => {
   it("renders the compact decision queue and selected detail editor", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
 
-    expect(screen.getByRole("heading", { name: "Decision Queue" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Decision queue" })).toBeVisible();
     expect(screen.getByLabelText("Detail Title")).toHaveValue("Aquinas 101");
     expect(screen.getByLabelText("Review Status")).toHaveValue("approved");
     expect(screen.getByLabelText("Proposed Yearly Rate")).toHaveValue("$12,000.00");
@@ -151,7 +151,7 @@ describe("ContentReviewDashboard", () => {
     notesBox.innerHTML = "<p>First note</p><p><strong>Second</strong> note</p><ul><li>Watch https://example.com/spacing</li></ul>";
     fireEvent.input(notesBox);
     fireEvent.blur(notesBox);
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
     const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
@@ -178,7 +178,7 @@ describe("ContentReviewDashboard", () => {
     notesBox.innerHTML = '<p onclick="steal()">Keep this</p><img src="x" onerror="steal()"><a href="javascript:steal()">bad link</a>';
     fireEvent.input(notesBox);
     fireEvent.blur(notesBox);
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
     const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
@@ -243,9 +243,9 @@ describe("ContentReviewDashboard", () => {
   it("opens a blank unsaved draft from Add Content", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Content" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
 
-    expect(screen.getByRole("heading", { name: "New Content Review" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "New content review" })).toBeVisible();
     expect(screen.getByLabelText("Detail Title")).toHaveValue("");
   });
 
@@ -280,15 +280,15 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
 
     expect(screen.getByText("1 On the Radar piece is waiting for follow-up. Open the list and decide who gets a next touch.")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View Items" }));
-    const radarDialog = screen.getByRole("dialog", { name: "On the Radar" });
+    fireEvent.click(screen.getByRole("button", { name: "View items" }));
+    const radarDialog = screen.getByRole("dialog", { name: "On the radar" });
     expect(within(within(radarDialog).getByTestId("content-review-radar-content")).getByDisplayValue("Long Shot Series")).toBeVisible();
-    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the Radar reviews" }));
+    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the radar reviews" }));
 
-    fireEvent.click(screen.getByRole("button", { name: /Active Decisions: 1/ }));
-    const activeDialog = screen.getByRole("dialog", { name: "Active Decisions" });
+    fireEvent.click(screen.getByRole("button", { name: /Active decisions: 1/ }));
+    const activeDialog = screen.getByRole("dialog", { name: "Active decisions" });
     expect(within(activeDialog).getByDisplayValue("Catholic Basics")).toBeVisible();
-    fireEvent.click(within(activeDialog).getByRole("button", { name: "Close Active Decisions reviews" }));
+    fireEvent.click(within(activeDialog).getByRole("button", { name: "Close Active decisions reviews" }));
 
     fireEvent.click(screen.getByRole("button", { name: /Approved: 1/ }));
     const approvedDialog = screen.getByRole("dialog", { name: "Approved" });
@@ -361,7 +361,7 @@ describe("ContentReviewDashboard", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
     fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "catholic" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add Content" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
 
     const notStartedGroup = within(screen.getByTestId("content-review-active-queue")).getByTestId("content-review-group-not-started");
     expect(within(notStartedGroup).getByLabelText("Summary Title")).toHaveValue("");
@@ -442,13 +442,13 @@ describe("ContentReviewDashboard", () => {
 
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Content" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
     fireEvent.change(screen.getByLabelText("Summary Title"), { target: { value: "New Review" } });
     fireEvent.blur(screen.getByLabelText("Summary Title"));
 
     expect(actionMocks.addContentReviewItem).not.toHaveBeenCalled();
 
-    const saveButton = screen.getByRole("button", { name: "Save Changes" });
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
     fireEvent.click(saveButton);
     fireEvent.click(saveButton);
 
@@ -457,20 +457,20 @@ describe("ContentReviewDashboard", () => {
     resolveSave?.({ ...item, id: "review-saved", title: "New Review" });
 
     expect(await screen.findByRole("heading", { name: "New Review" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "New Content Review" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "New content review" })).not.toBeInTheDocument();
   });
 
   it("lets approved reviews move forward to the roadmap", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
-    expect(screen.getByRole("button", { name: "Send to Roadmap" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeVisible();
   });
 
   it("confirms when an approved review is sent to the roadmap", async () => {
     actionMocks.sendReviewToRoadmap.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Send to Roadmap" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send to roadmap" }));
 
     await waitFor(() => expect(actionMocks.sendReviewToRoadmap).toHaveBeenCalledTimes(1));
     expect(screen.getByText("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.")).toBeVisible();
@@ -479,7 +479,7 @@ describe("ContentReviewDashboard", () => {
   it("does not offer roadmap sending for reviews that are not approved", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
-    expect(screen.queryByRole("button", { name: "Send to Roadmap" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send to roadmap" })).not.toBeInTheDocument();
   });
 
   it("sorts the queue by a column header and returns to the manual order", () => {
@@ -611,7 +611,7 @@ describe("ContentReviewDashboard", () => {
       ]}
     />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Weekly Recap" }));
+    fireEvent.click(screen.getByRole("button", { name: "Weekly recap" }));
 
     const recap = screen.getByTestId("content-review-recap-content");
     expect(within(recap).getByText("Reviews touched").nextSibling).toHaveTextContent("2");

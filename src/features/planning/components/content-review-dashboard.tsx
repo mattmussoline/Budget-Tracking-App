@@ -46,10 +46,14 @@ import { ContentReviewFocusFive } from "./content-review-focus-five";
 import { ContentReviewFocusPicker } from "./content-review-focus-picker";
 import { ContentReviewRecapPanel } from "./content-review-recap-panel";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
+import { PageHead } from "./planning-shell";
 import { ProviderCombobox } from "./provider-combobox";
 import { RichTextNotes } from "./rich-text-notes";
 
 type ContentReviewDashboardProps = {
+  /** Rendered here rather than by PlanningShell so the page actions can reach client state. */
+  pageTitle?: string;
+  pageDescription?: string;
   fiscalYearId: string;
   items: ContentReviewItem[];
   providerOptions?: string[];
@@ -89,7 +93,9 @@ const blankDraft = (): ContentReviewItem => ({
   priorityRank: null
 });
 
-export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo }: ContentReviewDashboardProps) {
+const REVIEW_DESCRIPTION = "Work titles, proposed rates, provider fields, radar targets, and approval states in one queue.";
+
+export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescription = REVIEW_DESCRIPTION, fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo }: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
   const [selectedId, setSelectedId] = useState(() => items.find((item) => isDecisionQueueStatus(item.reviewStatus))?.id ?? items[0]?.id ?? "");
   const [draft, setDraft] = useState<ContentReviewItem | null>(null);
@@ -431,17 +437,25 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
   };
 
   return (
-    <div className="grid gap-5">
-      <section aria-label="Review status summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatusCard label="Active Decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
+    <div className="grid min-w-0 gap-5">
+      <PageHead
+        title={pageTitle}
+        description={pageDescription}
+        actions={<>
+          <SoftButton type="button" variant="secondary" onClick={() => setIsRecapOpen(true)}><History className="h-4 w-4" />Weekly recap</SoftButton>
+          <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add content</SoftButton>
+        </>}
+      />
+      <section aria-label="Review status summary" className="grid min-w-0 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+        <StatusCard label="Active decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
         <StatusCard label="Co-productions" value={coproductionContent.length} helper="Potential partner projects" tone="coproduction" onClick={() => setOpenStatusModal("coproduction")} />
-        <StatusCard label="On the Radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
+        <StatusCard label="On the radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
         <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" tone="approved" onClick={() => setOpenStatusModal("approved")} />
         <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" tone="rejected" onClick={() => setOpenStatusModal("rejected")} />
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(600px,1.15fr)_minmax(520px,1fr)]">
-        <div className="grid gap-5">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,468px)]">
+        <div className="grid min-w-0 gap-4">
           <ContentReviewFocusFive
             items={focusFive}
             selectedId={selectedId}
@@ -456,32 +470,29 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
             onDragEnd={endDrag}
             onDrop={dropOnFocusRow}
           />
-          <section data-testid="content-review-decision-queue-block" className="rounded-lg bg-panel-warm p-4 md:p-6">
-            {radarContent.length > 0 ? (
-              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-guild-gold bg-gradient-to-r from-guild-gold-soft to-deep-teal-soft p-3 shadow-[0_8px_18px_rgba(245,158,11,0.12)] sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-guild-gold-soft text-guild-gold-ink">
-                    <Radar className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <p className="text-sm font-semibold leading-snug text-guild-gold-ink">
-                    {radarContent.length} On the Radar {radarContent.length === 1 ? "piece is" : "pieces are"} waiting for follow-up. Open the list and decide who gets a next touch.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOpenStatusModal("radar")}
-                  className="shrink-0 rounded-md bg-guild-gold px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-guild-gold-soft focus:outline-none focus:ring-2 focus:ring-formed-blue"
-                >
-                  View Items
-                </button>
+          {radarContent.length > 0 ? (
+            <div className="flex flex-col gap-3 rounded-soft border border-guild-gold bg-guild-gold-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-panel text-guild-gold-ink">
+                  <Radar className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <p className="text-[13px] font-semibold leading-snug text-guild-gold-ink">
+                  {radarContent.length} On the Radar {radarContent.length === 1 ? "piece is" : "pieces are"} waiting for follow-up. Open the list and decide who gets a next touch.
+                </p>
               </div>
-            ) : null}
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div><h2 className="font-display text-2xl">Decision Queue</h2><p className="text-sm text-muted">Drag to set your review order, or sort a column to look at the list another way.</p></div>
-              <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                <SoftButton type="button" variant="ghost" onClick={() => setIsRecapOpen(true)}><History className="h-4 w-4" />Weekly Recap</SoftButton>
-                <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add Content</SoftButton>
-              </div>
+              <button
+                type="button"
+                onClick={() => setOpenStatusModal("radar")}
+                className="shrink-0 rounded-lg border border-guild-gold bg-panel px-3 py-1.5 text-[13px] font-semibold text-guild-gold-ink transition-colors hover:bg-guild-gold-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
+              >
+                View items
+              </button>
+            </div>
+          ) : null}
+          <section data-testid="content-review-decision-queue-block" className="rounded-soft border border-hairline bg-panel-warm p-5">
+            <div className="mb-4 grid gap-0.5">
+              <h2 className="font-display text-lg">Decision queue</h2>
+              <p className="text-xs text-muted">Drag to set your review order, or sort a column to look at the list another way.</p>
             </div>
             <QueueFilterBar
               filters={filters}
@@ -531,7 +542,7 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
           </section>
         </div>
 
-        <section ref={editorSectionRef} tabIndex={-1} className="h-fit rounded-lg bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.12)] outline-none focus:ring-2 focus:ring-formed-blue md:p-7">
+        <section ref={editorSectionRef} tabIndex={-1} className="h-fit min-w-0 rounded-soft border border-hairline bg-panel-warm p-5 outline-none focus-visible:ring-2 focus-visible:ring-formed-blue">
           {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} updates={selectedUpdates} onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])} onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-semibold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
         </section>
       </div>
@@ -570,33 +581,30 @@ export function ContentReviewDashboard({ fiscalYearId, items, providerOptions = 
 type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "approved" | "rejected";
 type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "approved" | "rejected";
 
-const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; helper: string; icon: string; rail: string; value: string; Icon: typeof CheckCircle2 }> = {
-  neutral: { card: "bg-white text-foreground ring-hairline", label: "text-muted", helper: "text-muted", icon: "bg-panel-warm text-muted", rail: "bg-hairline-strong", value: "text-foreground", Icon: CheckCircle2 },
-  active: { card: "bg-guild-gold-soft text-guild-gold-ink ring-guild-gold", label: "text-guild-gold-ink", helper: "text-guild-gold-ink", icon: "bg-guild-gold-soft text-guild-gold-ink", rail: "bg-guild-gold", value: "text-guild-gold-ink", Icon: ArrowRight },
-  coproduction: { card: "bg-formed-blue-soft text-foreground ring-formed-blue-border", label: "text-formed-blue", helper: "text-muted", icon: "bg-white text-formed-blue ring-1 ring-formed-blue-border", rail: "bg-formed-blue", value: "text-foreground", Icon: Handshake },
-  radar: { card: "bg-guild-gold-soft text-guild-gold-ink ring-guild-gold", label: "text-guild-gold-ink", helper: "text-guild-gold-ink", icon: "bg-guild-gold-soft text-guild-gold-ink", rail: "bg-guild-gold", value: "text-guild-gold-ink", Icon: Radar },
-  approved: { card: "bg-deep-teal-soft text-deep-teal ring-deep-teal", label: "text-deep-teal", helper: "text-deep-teal", icon: "bg-deep-teal-soft text-deep-teal", rail: "bg-deep-teal", value: "text-deep-teal", Icon: CheckCircle2 },
-  rejected: { card: "bg-danger-soft text-danger ring-danger-border", label: "text-danger", helper: "text-danger", icon: "bg-white text-danger ring-1 ring-danger-border", rail: "bg-danger", value: "text-danger", Icon: XCircle }
+/**
+ * Only Active decisions carries a tint, so the tile you are meant to work from
+ * reads first; the rest stay flat and let their numbers do the work.
+ */
+const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; value: string; Icon: typeof CheckCircle2 }> = {
+  neutral: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: CheckCircle2 },
+  active: { card: "border-tone-cyan-line bg-deep-teal-soft", label: "text-deep-teal", value: "text-deep-teal", Icon: ArrowRight },
+  coproduction: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: Handshake },
+  radar: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: Radar },
+  approved: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: CheckCircle2 },
+  rejected: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: XCircle }
 };
 
 function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
   const toneClasses = STATUS_CARD_TONES[tone];
-  const Icon = toneClasses.Icon;
   const cardClass = cn(
-    "group relative min-h-28 overflow-hidden rounded-lg p-4 text-left shadow-sm ring-1 transition",
+    "grid min-w-0 content-start gap-1.5 rounded-soft border px-4 py-4 text-left transition-colors",
     toneClasses.card,
-    onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-formed-blue"
+    onClick && "cursor-pointer hover:border-hairline-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
   );
   const content = <>
-    <span aria-hidden="true" className={cn("absolute inset-x-0 bottom-0 h-1", toneClasses.rail)} />
-    <span className="flex items-start justify-between gap-3">
-      <span className={cn("text-xs font-semibold uppercase tracking-wide", toneClasses.label)}>{label}</span>
-      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md transition group-hover:scale-105", toneClasses.icon)}>
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </span>
-    </span>
-    <span className={cn("mt-1 block font-display text-3xl", toneClasses.value)}>{value}</span>
-    <span className={cn("mt-1 block max-w-56 text-xs font-bold leading-snug", toneClasses.helper)}>{helper}</span>
+    <span className={cn("text-xs font-semibold", toneClasses.label)}>{label}</span>
+    <span className={cn("font-display text-3xl leading-none", toneClasses.value)}>{value}</span>
+    <span className="text-xs leading-snug text-muted [text-wrap:pretty]">{helper}</span>
   </>;
 
   if (onClick) {
@@ -610,8 +618,8 @@ function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label
 
 const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string; eyebrow: string; description: string; empty: string; testId: string; tone: StatusCardTone }> = {
   active: {
-    title: "Active Decisions",
-    eyebrow: "Active Decision",
+    title: "Active decisions",
+    eyebrow: "Active decision",
     description: "Current reviews that are ready for a clear yes, no, or next-step decision.",
     empty: "No active decisions right now.",
     testId: "content-review-active-modal-content",
@@ -619,15 +627,15 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   },
   coproduction: {
     title: "Co-productions",
-    eyebrow: "Potential Co-production",
+    eyebrow: "Potential co-production",
     description: "Reviews flagged as possible partner projects rather than standard licensing decisions.",
     empty: "No potential co-productions yet.",
     testId: "content-review-coproduction-content",
     tone: "coproduction"
   },
   radar: {
-    title: "On the Radar",
-    eyebrow: "Radar Target",
+    title: "On the radar",
+    eyebrow: "Radar target",
     description: "Long shots, weak-contact targets, and pieces worth keeping warm.",
     empty: "No radar targets yet.",
     testId: "content-review-radar-content",
@@ -635,7 +643,7 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   },
   approved: {
     title: "Approved",
-    eyebrow: "Approved Review",
+    eyebrow: "Approved review",
     description: "Content that is cleared and ready for roadmap follow-up.",
     empty: "No approved reviews yet.",
     testId: "content-review-approved-modal-content",
@@ -643,7 +651,7 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
   },
   rejected: {
     title: "Rejected",
-    eyebrow: "Rejected Review",
+    eyebrow: "Rejected review",
     description: "Archived decisions that stay available without crowding active work.",
     empty: "No rejected reviews yet.",
     testId: "content-review-rejected-modal-content",
@@ -696,7 +704,7 @@ function ReviewStatusModal({ config, items, selectedId, isDemo, priorityById, on
         <div>
           <p className={cn("text-xs font-semibold uppercase tracking-wide", toneClasses.label)}>{items.length} {config.eyebrow}{items.length === 1 ? "" : "s"}</p>
           <h2 id={titleId} className="font-display text-3xl">{config.title}</h2>
-          <p className={cn("mt-1 text-sm font-medium", toneClasses.helper)}>{config.description}</p>
+          <p className="mt-1 text-sm font-medium text-muted">{config.description}</p>
         </div>
         <button type="button" onClick={closeDialog} aria-label={`Close ${config.title} reviews`} className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm">
           <X className="h-5 w-5" aria-hidden="true" />
@@ -850,9 +858,9 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
       onDragEnd={onDragEnd}
       onDragOver={onDrop ? allowDrop : undefined}
       onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
-      className={cn("relative grid overflow-hidden gap-2 rounded-lg border-l-4 border-y border-r border-y-gray-200 border-r-gray-200 bg-panel-warm p-4 transition", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "ring-2 ring-formed-blue", draggedItemId === item.id && "opacity-60")}
+      className={cn("relative grid gap-2 overflow-hidden rounded-lg border border-l-[3px] border-hairline bg-panel px-3 py-2.5 transition-colors", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "border-formed-blue bg-formed-blue-soft", draggedItemId === item.id && "opacity-60")}
     >
-      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-3 top-0 z-10 rounded-b-md bg-augustine-blue-raised px-2 py-1 text-[9px] font-semibold uppercase leading-none tracking-wide text-white shadow-sm">Co-prod</span> : null}
+      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-2 top-0 z-10 rounded-b-md bg-formed-blue-soft px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-formed-blue">Co-prod</span> : null}
       <PriorityCell
         item={item}
         position={priorityById.get(item.id) ?? null}
@@ -865,16 +873,16 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
         aria-label={`Select ${item.title || "Untitled review"}`}
         onClick={() => (onOpenDetail ?? onSelect)(item.id)}
         className={cn(
-          "min-h-10 rounded-md px-3 text-left text-xs font-semibold uppercase tracking-wide transition",
-          active ? "bg-formed-blue text-white" : "bg-augustine-blue text-white hover:bg-augustine-blue-raised"
+          "min-h-9 rounded-lg border px-2.5 text-left text-xs font-semibold transition-colors",
+          active ? "border-formed-blue bg-formed-blue text-white" : "border-hairline bg-panel-warm text-muted hover:border-hairline-strong hover:text-foreground"
         )}
       >
         Select
       </button>
-      <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-panel-warm px-3 text-sm font-semibold" />
-      <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-10 min-w-0 w-full rounded-md border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-      <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-panel-warm px-3 text-sm" />
-      <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "provider", event.target.value)} className="min-h-10 min-w-0 w-full rounded-md border-0 bg-formed-blue-soft px-3 text-sm font-bold text-formed-blue" />
+      <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-sm font-semibold focus:bg-panel-warm" />
+      <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-9 min-w-0 w-full rounded-lg border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+      <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-right text-sm tabular-nums focus:bg-panel-warm" />
+      <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "provider", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-[13px] text-muted focus:bg-panel-warm" />
     </div>
   );
 }
@@ -1017,12 +1025,12 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     });
   }
 
-  return <div className="grid gap-4">
-    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Selected Review</p><h2 className="font-display text-2xl">{item.id === "draft" ? "New Content Review" : item.title}</h2></div><span aria-live="polite" className="text-xs font-semibold uppercase text-muted">{saveState === "idle" ? "" : saveState}</span></div>
-    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-full bg-panel-warm px-3 py-1 text-xs font-semibold text-muted ring-1 ring-hairline">Potential co-production opportunity</p> : null}
+  return <div className="grid min-w-0 gap-3.5">
+    <div className="flex items-start justify-between gap-4"><div className="grid min-w-0 gap-1"><p className="text-xs font-semibold text-formed-blue">Selected review</p><h2 className="font-display text-2xl leading-tight">{item.id === "draft" ? "New content review" : item.title}</h2></div><span aria-live="polite" className="shrink-0 text-[11px] font-semibold text-faint">{saveState === "idle" ? "" : saveState}</span></div>
+    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-md bg-formed-blue-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-formed-blue">Potential co-production opportunity</p> : null}
     <div className="grid gap-1 border-y border-hairline">
-      <CompactField label="Detail Title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
-      <CompactField label="Proposed Yearly Rate"><CurrencyField label="Proposed Yearly Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Detail title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Proposed yearly rate"><CurrencyField label="Proposed Yearly Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
       <CompactField label="Provider">
         <ProviderCombobox
           id={`review-provider-${item.id}`}
@@ -1058,10 +1066,10 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
-        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-danger" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete Review</SoftButton></form> : null}
-        {item.id !== "draft" && item.reviewStatus === "approved" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to Roadmap"}</SoftButton> : null}
+        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-danger" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete review</SoftButton></form> : null}
+        {item.id !== "draft" && item.reviewStatus === "approved" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to roadmap"}</SoftButton> : null}
       </div>
-      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save Changes</SoftButton>
+      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save changes</SoftButton>
     </div>
     {pipelineMessage ? <p role="status" className="rounded-md bg-deep-teal-soft px-4 py-3 text-sm font-bold text-deep-teal">{pipelineMessage}</p> : null}
   </div>;
@@ -1069,7 +1077,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
 
 function CompactField({ label, children }: { label: string; children: ReactNode }) {
   return <div className="grid gap-3 border-t border-hairline py-2 first:border-t-0 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center">
-    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</span>
+    <span className="text-xs font-semibold text-muted">{label}</span>
     <div className="min-w-0">{children}</div>
   </div>;
 }

@@ -1,5 +1,6 @@
 import { demoRoadmapCategories, demoRoadmapItems, demoOngoingSeries } from "@/features/budget/demo-data";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
+import { TopBarChip, TopBarDivider } from "@/features/planning/components/app-top-bar";
 import { RoadmapDashboard } from "@/features/planning/components/roadmap-dashboard";
 import { normalizeMonthRange, parseMonthAnchor } from "@/features/planning/planning-model";
 
@@ -22,12 +23,17 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
 
   return (
     <PlanningShell
-      title="Roadmap Demo"
-      description="Explore a fake content roadmap with expandable summary rankings for audiences, providers, genres, formats, plus Licensing Summary and ClickUp handoff controls."
       activeSection="roadmap"
       routePrefix="/demo"
+      topBarRight={<>
+        <TopBarChip>FY26</TopBarChip>
+        <TopBarDivider />
+        <span className="text-[13px] font-semibold text-formed-blue">Public demo. Sample data only.</span>
+      </>}
     >
       <RoadmapDashboard
+        pageTitle="Roadmap Demo"
+        pageDescription="Explore a fake content roadmap with expandable summary rankings for audiences, providers, genres, formats, plus Licensing Summary and ClickUp handoff controls."
         fiscalYearId="demo-fy26"
         roadmapItems={demoRoadmapItems}
         ongoingSeries={demoOngoingSeries}

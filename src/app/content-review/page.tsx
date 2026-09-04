@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import { ContentReviewDashboard } from "@/features/planning/components/content-review-dashboard";
 import { PlanningShell } from "@/features/planning/components/planning-shell";
+import { TopBarChip } from "@/features/planning/components/app-top-bar";
 import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "@/features/planning/planning-types";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -22,12 +23,8 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
 
   if (!admin) {
     return (
-      <PlanningShell
-        title="Content Review"
-        description="Add Supabase env vars to save content review changes."
-        activeSection="content-review"
-      >
-        <ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000000" items={[]} isDemo />
+      <PlanningShell activeSection="content-review">
+        <ContentReviewDashboard pageDescription="Add Supabase env vars to save content review changes." fiscalYearId="00000000-0000-0000-0000-000000000000" items={[]} isDemo />
       </PlanningShell>
     );
   }
@@ -131,9 +128,8 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
 
   return (
     <PlanningShell
-      title="Content Review"
-      description="Track possible titles before they move to the roadmap or budget."
       activeSection="content-review"
+      topBarRight={<TopBarChip>FY{String(activeFiscalYear.fiscal_year).slice(-2)}</TopBarChip>}
     >
       <ContentReviewDashboard fiscalYearId={activeFiscalYear.id} items={items} providerOptions={providerOptions} groupOrder={groupOrder} updates={updates} />
     </PlanningShell>

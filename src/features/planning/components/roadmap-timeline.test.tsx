@@ -93,7 +93,7 @@ describe("RoadmapDashboard", () => {
     const summary = screen.getByTestId("roadmap-summary");
 
     expect(summary).not.toHaveAttribute("open");
-    expect(summary).toHaveClass("bg-formed-blue-soft");
+    expect(summary).toHaveClass("bg-panel-warm");
     expect(within(summary).getByRole("heading", { name: "Fiscal year at a glance" })).toBeVisible();
     expect(within(summary).getByText("2 released")).not.toBeVisible();
 
@@ -276,7 +276,7 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     expect(screen.getByRole("button", { name: "Manage key" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Ongoing Series Cadence" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Ongoing series cadence" })).toBeVisible();
     expect(screen.getByText("Practicing Catholic")).toBeVisible();
   });
 
@@ -309,7 +309,7 @@ describe("RoadmapDashboard", () => {
 
     const januaryAddButton = screen.getByRole("button", { name: "Add item to January 2027" });
     expect(januaryAddButton).toHaveTextContent("Add item");
-    expect(januaryAddButton).toHaveClass("!text-formed-blue");
+    expect(januaryAddButton).toHaveClass("!text-muted");
 
     fireEvent.click(januaryAddButton);
 
@@ -623,25 +623,27 @@ describe("RoadmapDashboard", () => {
     const timeline = screen.getByTestId("roadmap-month-scroll");
     expect(timeline).toHaveClass("overflow-x-auto");
     expect(timeline).not.toHaveClass("h-[70vh]", "md:h-[600px]");
-    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[320px]");
+    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[248px]");
 
     fireEvent.click(screen.getByRole("button", { name: "Expand roadmap" }));
 
     expect(screen.getByRole("heading", { name: "January 2027" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "February 2027" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Ongoing Series Cadence" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ongoing series cadence" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Exit focus view" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Exit focus view" }));
 
-    expect(screen.getByRole("heading", { name: "Ongoing Series Cadence" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Ongoing series cadence" })).toBeVisible();
   });
 
-  it("alternates ongoing series rows between white and light orange", () => {
+  it("separates ongoing series rows with a hairline instead of zebra fills", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
-    expect(screen.getByTestId("series-row-series-1")).toHaveClass("bg-white");
-    expect(screen.getByTestId("series-row-series-2")).toHaveClass("bg-guild-gold-soft");
+    for (const id of ["series-row-series-1", "series-row-series-2"]) {
+      expect(screen.getByTestId(id)).toHaveClass("border-b", "border-hairline", "last:border-b-0");
+      expect(screen.getByTestId(id)).not.toHaveClass("bg-guild-gold-soft");
+    }
   });
 
   it("opens Manage Key as a modal with stable name and color fields only", async () => {
