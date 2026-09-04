@@ -59,14 +59,14 @@ export function FiscalYearManager({
   }, []);
 
   return (
-    <div ref={managerRef} className="mt-5 grid gap-4">
+    <div ref={managerRef} className="relative flex min-w-0 items-center">
       <nav className="flex flex-wrap items-center gap-2" aria-label="Fiscal year budgets">
         {fiscalYears.map((year) => {
           const isActive = year.id === activeFiscalYearId;
           const isMenuOpen = year.id === menuFiscalYearId;
 
           return (
-            <div key={year.id} className="relative flex items-stretch rounded-md bg-formed-blue">
+            <div key={year.id} className="relative flex items-stretch overflow-visible rounded-lg border border-hairline bg-panel">
               <Link
                 href={`${routePrefix}/dashboard?fy=${year.id}`}
                 aria-current={isActive ? "page" : undefined}
@@ -74,8 +74,8 @@ export function FiscalYearManager({
                   event.preventDefault();
                   setMenuFiscalYearId(year.id);
                 }}
-                className={`flex min-h-11 items-center gap-1.5 rounded-l-md px-3 py-2 text-sm font-semibold transition ${
-                  isActive ? "bg-white text-formed-blue" : "text-white hover:bg-white/20"
+                className={`flex min-h-9 items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                  isActive ? "bg-formed-blue-soft text-formed-blue" : "text-muted hover:bg-panel-warm hover:text-foreground"
                 }`}
               >
                 {year.is_pinned ? <Pin className="h-3.5 w-3.5" aria-label="Pinned default" /> : null}
@@ -91,10 +91,8 @@ export function FiscalYearManager({
                   event.preventDefault();
                   setMenuFiscalYearId(year.id);
                 }}
-                className={`grid min-h-11 w-11 place-items-center rounded-r-md border-l transition ${
-                  isActive
-                    ? "border-formed-blue-border bg-white text-formed-blue hover:bg-formed-blue-soft"
-                    : "border-white/20 text-white hover:bg-white/20"
+                className={`grid min-h-9 w-8 place-items-center rounded-r-lg border-l border-hairline transition-colors ${
+                  isActive ? "bg-formed-blue-soft text-formed-blue" : "text-muted hover:bg-panel-warm hover:text-foreground"
                 }`}
               >
                 <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -103,7 +101,7 @@ export function FiscalYearManager({
               {isMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full z-30 mt-2 grid min-w-56 gap-1 rounded-lg border border-hairline bg-white p-2 text-foreground shadow-xl"
+                  className="absolute right-0 top-full z-40 mt-2 grid min-w-56 gap-1 rounded-soft border border-hairline bg-panel p-2 text-foreground shadow-xl"
                 >
                   <form action={pinAction}>
                     <input type="hidden" name="fiscalYearId" value={year.id} />
@@ -150,7 +148,7 @@ export function FiscalYearManager({
           type="button"
           disabled={isDemo}
           onClick={() => setIsCreateOpen((isOpen) => !isOpen)}
-          className="flex min-h-11 items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-formed-blue transition hover:bg-formed-blue-soft disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-9 items-center gap-1.5 rounded-lg border border-hairline bg-panel px-3 py-1.5 text-[13px] font-semibold text-foreground transition-colors hover:border-hairline-strong disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add fiscal year
@@ -158,12 +156,12 @@ export function FiscalYearManager({
       </nav>
 
       {isCreateOpen ? (
-        <div className="relative text-foreground">
+        <div className="absolute right-0 top-full z-40 mt-2 w-[min(30rem,calc(100vw-2.5rem))] text-foreground">
           <button
             type="button"
             aria-label="Cancel adding fiscal year"
             onClick={() => setIsCreateOpen(false)}
-            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-md bg-white text-muted shadow-sm transition hover:bg-panel-warm"
+            className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg border border-hairline bg-panel text-muted transition-colors hover:border-hairline-strong"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

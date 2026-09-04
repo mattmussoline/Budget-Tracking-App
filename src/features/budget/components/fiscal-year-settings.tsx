@@ -1,4 +1,3 @@
-import { CalendarDays } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -37,21 +36,14 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
   const isEditing = Boolean(fiscalYear);
 
   return (
-    <SoftSurface className="bg-panel-warm p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-formed-blue">
-          <CalendarDays className="h-5 w-5 text-white" aria-hidden="true" />
-        </div>
-        <div>
-          <h2 className="font-display text-2xl tracking-tight">
-            {isEditing ? "Edit Fiscal Year" : "Start a Fiscal Year"}
-          </h2>
-          <p className="text-sm font-medium text-muted">
-            {isEditing ? "Update the label, fiscal calendar, or total budget." : "Set the budget, then add titles as they come in."}
-          </p>
-        </div>
+    <SoftSurface className="bg-panel-warm p-5">
+      <div className="mb-3.5 grid gap-0.5">
+        <h2 className="font-display text-lg">{isEditing ? "Edit fiscal year" : "Start a fiscal year"}</h2>
+        <p className="text-xs text-muted">
+          {isEditing ? "Update the label, fiscal calendar, or total budget." : "Set the budget, then add titles as they come in."}
+        </p>
       </div>
-      <form action={isEditing ? updateFiscalYear : createFiscalYear} className="grid gap-4 md:grid-cols-2">
+      <form action={isEditing ? updateFiscalYear : createFiscalYear} className="grid gap-2.5 sm:grid-cols-2">
         {fiscalYear ? <input type="hidden" name="fiscalYearId" value={fiscalYear.id} /> : null}
         <SoftInput
           label="Label"
@@ -87,7 +79,7 @@ export function FiscalYearSettings({ isDemo, defaultFiscalYear = 2026, fiscalYea
           disabled={isDemo}
           surface="white"
         />
-        <SoftButton type="submit" variant="primary" className="md:col-span-2" disabled={isDemo}>
+        <SoftButton type="submit" variant="secondary" className="mt-1 w-full sm:col-span-2" disabled={isDemo}>
           {isEditing ? "Save budget settings" : "Create budget"}
         </SoftButton>
       </form>

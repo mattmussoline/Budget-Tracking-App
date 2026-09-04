@@ -12,6 +12,8 @@ type DashboardPopoutProps = {
   toneClassName?: string;
   triggerClassName: string;
   trigger: ReactNode;
+  /** Off for triggers that carry their own affordance, such as the collapsible strips. */
+  showExpandIcon?: boolean;
   children: ReactNode;
 };
 
@@ -22,6 +24,7 @@ export function DashboardPopout({
   toneClassName = "bg-panel-warm text-foreground",
   triggerClassName,
   trigger,
+  showExpandIcon = true,
   children
 }: DashboardPopoutProps) {
   const [open, setOpen] = useState(false);
@@ -84,14 +87,14 @@ export function DashboardPopout({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Open ${title}`}
-        className={cn("soft-raised group relative min-w-0 rounded-lg text-left shadow-none transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue focus-visible:ring-offset-2", triggerClassName)}
+        className={cn("soft-raised group relative min-w-0 rounded-soft text-left shadow-none transition-colors hover:border-hairline-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue focus-visible:ring-offset-2", triggerClassName)}
       >
         <div key="trigger" className="contents">
           {trigger}
         </div>
-        <span key="expand-icon" className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-md bg-white/80 text-current opacity-0 shadow-sm ring-1 ring-black/5 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+        {showExpandIcon ? <span key="expand-icon" className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-lg border border-hairline bg-panel text-muted opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
           <Maximize2 className="h-4 w-4" aria-hidden="true" />
-        </span>
+        </span> : null}
       </button>
 
       {mounted && open

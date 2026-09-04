@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -28,17 +27,12 @@ export function ContentLicenseForm({
   }));
 
   return (
-    <SoftSurface className="bg-formed-blue-soft p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-formed-blue">
-          <Plus className="h-5 w-5 text-white" aria-hidden="true" />
-        </div>
-        <div>
-          <h2 className="font-display text-2xl tracking-tight">Add Content</h2>
-          <p className="text-sm font-medium text-muted">The first quarterly payment is prorated automatically.</p>
-        </div>
+    <SoftSurface className="bg-panel-warm p-5">
+      <div className="mb-3.5 grid gap-0.5">
+        <h2 className="font-display text-lg">Add content</h2>
+        <p className="text-xs text-muted">The first quarterly payment is prorated automatically.</p>
       </div>
-      <form action={addContentLicense} className="grid gap-4">
+      <form action={addContentLicense} className="grid gap-2.5">
         <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
         <SoftInput label="Title" name="title" placeholder="Jesus Thirsts" required disabled={isDemo} surface="white" />
         <SoftInput label="Provider" name="provider" list="provider-options" placeholder="Provider name" required disabled={isDemo} surface="white" />
@@ -47,7 +41,7 @@ export function ContentLicenseForm({
             <option key={provider} value={provider} />
           ))}
         </datalist>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           <SoftInput label="Payment amount" name="installment" inputMode="decimal" placeholder="1200" required disabled={isDemo} surface="white" />
           <SoftSelect
             label="Cadence"
@@ -62,6 +56,8 @@ export function ContentLicenseForm({
               { label: "Yearly", value: "yearly" }
             ]}
           />
+        </div>
+        <div className="grid gap-2.5 sm:grid-cols-2">
           <SoftSelect
             label="Added month"
             name="addedFiscalMonth"
@@ -72,18 +68,18 @@ export function ContentLicenseForm({
             disabled={isDemo}
             surface="white"
           />
+          <SoftSelect
+            label="Budget source"
+            name="budgetSource"
+            defaultValue="misc_licensing"
+            options={[...budgetSourceOptions]}
+            required
+            disabled={isDemo}
+            surface="white"
+          />
         </div>
-        <SoftSelect
-          label="Budget source"
-          name="budgetSource"
-          defaultValue="misc_licensing"
-          options={[...budgetSourceOptions]}
-          required
-          disabled={isDemo}
-          surface="white"
-        />
         <SoftInput label="Notes" name="notes" placeholder="Optional context" disabled={isDemo} surface="white" />
-        <SoftButton type="submit" variant="primary" disabled={isDemo}>
+        <SoftButton type="submit" variant="primary" className="mt-1 w-full" disabled={isDemo}>
           Add title
         </SoftButton>
       </form>

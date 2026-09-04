@@ -28,7 +28,6 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     return (
       <PlanningShell
         title="Roadmap"
-        eyebrow="Internal Licensing"
         description="Add Supabase env vars to save roadmap and ongoing series changes."
         activeSection="roadmap"
       >
@@ -129,7 +128,6 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   return (
     <PlanningShell
       title="Roadmap"
-      eyebrow="Internal Licensing"
       description="Plan upcoming releases and keep ongoing series cadence in shared saved data."
       activeSection="roadmap"
     >

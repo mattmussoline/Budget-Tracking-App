@@ -19,7 +19,7 @@ export function SoftSelect({ label, options, placeholder, error, surface = "mute
       <select
         id={fieldId}
         className={cn(
-          "min-h-11 w-full rounded-lg border border-hairline px-3 text-base font-normal text-foreground transition-colors hover:border-hairline-strong focus:border-formed-blue focus:bg-panel disabled:cursor-not-allowed disabled:opacity-70",
+          "min-h-10 w-full rounded-lg border border-hairline px-3 text-sm font-normal text-foreground transition-colors hover:border-hairline-strong focus:border-formed-blue focus:bg-panel disabled:cursor-not-allowed disabled:opacity-70",
           surface === "white" ? "bg-panel" : "bg-panel-warm",
           error && "border-danger",
           className

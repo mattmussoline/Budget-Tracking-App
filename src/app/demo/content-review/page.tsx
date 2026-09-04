@@ -16,7 +16,6 @@ export default function DemoContentReviewPage() {
   return (
     <PlanningShell
       title="Content Review Demo"
-      eyebrow="Public Sample"
       description="Review fake titles, proposed rates, provider fields, radar targets, approval states, and expandable status cards without exposing real partners."
       activeSection="content-review"
       routePrefix="/demo"

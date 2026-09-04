@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #2f5d4f; text-decoration: none; } a:hover { color: #1e4034; }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .ser { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .card { background: #fffdf9; border: 1px solid #e4ddd0; border-radius: 12px; }
+    .chip { font-size: 12px; font-weight: 600; border-radius: 7px; padding: 5px 10px; }
+    .btn { font-family: Manrope, sans-serif; font-size: 13px; font-weight: 600; height: 36px; padding: 0 14px; border: 1px solid #e4ddd0; background: #ffffff; border-radius: 8px; color: #23201c; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+    .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; border-radius: 5px; padding: 2px 6px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1180px; background: #f7f4ee; color: #23201c; display: flex; flex-direction: column;">
+
+  <!-- top bar -->
+  <div style="height: 62px; flex-shrink: 0; background: #fffdf9; border-bottom: 1px solid #e4ddd0; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <span class="ser" style="font-size: 20px; letter-spacing: -0.01em;">Licensing</span>
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 14px;">
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Licensing Summary</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; background: #e3ede8; color: #2f5d4f; font-weight: 600;">Roadmap</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Content Review</a>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="num" style="font-size: 13px; font-weight: 600; border: 1px solid #e4ddd0; border-radius: 8px; padding: 7px 12px; background: #ffffff;">FY26</span>
+      <span style="width: 1px; height: 22px; background: #e4ddd0;"></span>
+      <span style="font-size: 13px; color: #6f675c;">matt.mussoline@augustineinstitute.org</span>
+    </div>
+  </div>
+
+  <div style="padding: 32px 40px 40px; display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- page head -->
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+      <div style="display: flex; flex-direction: column; gap: 6px; max-width: 700px;">
+        <h1 class="ser" style="margin: 0; font-size: 40px; line-height: 1.05; letter-spacing: -0.01em;">Roadmap</h1>
+        <p style="margin: 0; font-size: 14px; color: #6f675c; text-wrap: pretty;">Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="btn">Manage key</button>
+        <button class="btn" style="border-color: #2f5d4f; background: #2f5d4f; color: #fffdf9;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add roadmap item
+        </button>
+      </div>
+    </div>
+
+    <!-- controls -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: #6f675c; margin-right: 4px;">Key</span>
+        <span class="chip" style="background: #e3ede8; color: #2f5d4f;">Adult Faith</span>
+        <span class="chip" style="background: #e6ecdf; color: #4a6234;">Family</span>
+        <span class="chip" style="background: #e8e4f0; color: #55458a;">Youth</span>
+        <span class="chip" style="background: #f6ecdb; color: #8a6320;">Seasonal</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; align-items: center; border: 1px solid #e4ddd0; border-radius: 8px; overflow: hidden; background: #ffffff;">
+          <span style="font-size: 13px; font-weight: 600; padding: 8px 12px; color: #55504a;">Previous</span>
+          <span style="width: 1px; align-self: stretch; background: #e4ddd0;"></span>
+          <span style="font-size: 13px; font-weight: 700; padding: 8px 12px; background: #e3ede8; color: #2f5d4f;">Today</span>
+          <span style="width: 1px; align-self: stretch; background: #e4ddd0;"></span>
+          <span style="font-size: 13px; font-weight: 600; padding: 8px 12px; color: #55504a;">Next</span>
+        </div>
+        <div style="display: flex; align-items: center; border: 1px solid #e4ddd0; border-radius: 8px; overflow: hidden; background: #ffffff;">
+          <span style="font-size: 13px; font-weight: 700; padding: 8px 12px; background: #23201c; color: #fffdf9;">6 months</span>
+          <span style="font-size: 13px; font-weight: 600; padding: 8px 12px; color: #55504a;">9 months</span>
+          <span style="font-size: 13px; font-weight: 600; padding: 8px 12px; color: #55504a;">12 months</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- fiscal year at a glance -->
+    <div class="card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span class="ser" style="font-size: 21px;">Fiscal year at a glance</span>
+        <span style="font-size: 12px; color: #6f675c;">July &ndash; June roadmap snapshot. Expand for audience, provider, genre, and format rankings.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+        <span class="num chip" style="background: #f0ebe1; color: #6f675c;">6 titles</span>
+        <span class="chip" style="background: #e3ede8; color: #2f5d4f;">Next up</span>
+        <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- timeline header -->
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <h2 class="ser" style="margin: 0; font-size: 27px;">July 2026 &ndash; December 2026</h2>
+        <span style="font-size: 13px; color: #6f675c;">Scroll through the roadmap, or click a month to see it at a glance.</span>
+      </div>
+      <button class="btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+        Expand roadmap
+      </button>
+    </div>
+
+    <!-- months -->
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; align-items: start;">
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">July 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #6f675c;">1 release</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center;">Push 1 to ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">Pilgrim Road</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #f6ecdb; color: #8a6320;">SPOTLIGHT</span>
+            <span class="tag" style="background: #e3ede8; color: #2f5d4f;">ADULT FAITH</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Lantern House</span>
+          <span class="num" style="font-size: 11px; color: #a09786;">July 21, 2026</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">August 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #6f675c;">1 release</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center;">Push 1 to ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">The Quiet Chapel</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #e3ede8; color: #2f5d4f;">ADULT FAITH</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Harbor Light Media</span>
+          <span class="num" style="font-size: 11px; color: #a09786;">August 18, 2026</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">September 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #6f675c;">1 release</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center;">Push 1 to ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">Story Time Saints</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #e6ecdf; color: #4a6234;">FAMILY</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Bluebird Learning</span>
+          <span class="num" style="font-size: 11px; color: #a09786;">September 8, 2026</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px; border-color: #cbdcd4;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">October 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 700; color: #2f5d4f;">2 releases</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center; border-color: #2f5d4f; background: #2f5d4f; color: #fffdf9;">Push 2 to ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">Campus Conversations</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #e8e4f0; color: #55458a;">YOUTH</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Harbor Light Media</span>
+          <span class="num" style="font-size: 11px; color: #8a3a46; font-weight: 700;">TBD</span>
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">Scripture in Seven Minutes</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #f6ecdb; color: #8a6320;">SPOTLIGHT</span>
+            <span class="tag" style="background: #e3ede8; color: #2f5d4f;">ADULT FAITH</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Lantern House</span>
+          <span class="num" style="font-size: 11px; color: #a09786;">October 6, 2026</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">November 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #6f675c;">1 release</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center;">Push 1 to ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 9px; padding: 11px; background: #ffffff; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 13px; font-weight: 700; line-height: 1.25;">Advent Workshop</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="tag" style="background: #f6ecdb; color: #8a6320;">SPOTLIGHT</span>
+            <span class="tag" style="background: #f6ecdb; color: #8a6320;">SEASONAL</span>
+          </div>
+          <span style="font-size: 11px; color: #6f675c;">Northstar Studios</span>
+          <span class="num" style="font-size: 11px; color: #a09786;">November 17, 2026</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="ser" style="font-size: 18px;">December 2026</span>
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #a09786;">0 releases</span>
+        </div>
+        <button class="btn" style="height: 30px; font-size: 12px; padding: 0 10px; justify-content: center;">Check ClickUp</button>
+        <div style="border: 1px dashed #ddd4c4; border-radius: 9px; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6f675c;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add item
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #a09786; text-align: center; padding: 12px 4px; text-wrap: pretty;">Nothing scheduled yet.</p>
+      </div>
+    </div>
+
+    <!-- bottom row -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start;">
+
+      <div class="card" style="overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid #efe9de;">
+          <span class="ser" style="font-size: 21px;">Ongoing series cadence</span>
+          <span style="font-size: 12px;"><a href="#">+ Add ongoing series</a></span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.7fr) 52px; gap: 14px; padding: 9px 20px; background: #faf7f1; border-bottom: 1px solid #efe9de; font-size: 11px; font-weight: 600; color: #6f675c;">
+          <span>Series</span><span>Cadence</span><span>Notes</span><span></span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.7fr) 52px; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+          <span style="font-weight: 600;">Weekly Witness</span><span style="color: #55504a;">Every Friday</span><span style="color: #6f675c; font-size: 13px;">Short-form release cadence.</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.7fr) 52px; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+          <span style="font-weight: 600;">Family Feature Night</span><span style="color: #55504a;">Monthly</span><span style="color: #6f675c; font-size: 13px;">Monthly family programming block.</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.7fr) 52px; gap: 14px; padding: 12px 20px; font-size: 14px; align-items: center;">
+          <span style="font-weight: 600;">Seasonal Retreats</span><span style="color: #55504a;">Quarterly</span><span style="color: #6f675c; font-size: 13px;">Tied to liturgical seasons.</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="ser" style="font-size: 21px;">Backlog</span>
+            <span style="font-size: 12px; color: #6f675c; text-wrap: pretty;">Undated items and releases outside this visible window.</span>
+          </div>
+          <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff; flex-shrink: 0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          </span>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: #a09786; padding: 8px 0;">No backlog items.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

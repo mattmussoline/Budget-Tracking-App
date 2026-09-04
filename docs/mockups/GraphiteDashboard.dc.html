@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Instrument Sans", "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #1c1c1a; text-decoration: none; border-bottom: 1px solid #c8c8c2; } a:hover { border-bottom-color: #1c1c1a; }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #7a7a73; }
+    .fld { min-height: 38px; border: 1px solid #e6e6e3; border-radius: 4px; background: #ffffff; display: flex; align-items: center; padding: 0 11px; font-size: 14px; color: #1c1c1a; }
+    .btn { font-family: "Instrument Sans", sans-serif; font-size: 13px; font-weight: 500; height: 36px; padding: 0 14px; border: 1px solid #d4d4d0; background: #ffffff; border-radius: 4px; color: #1c1c1a; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+    .sec { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid #1c1c1a; padding-bottom: 8px; }
+    .h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.005em; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1440px; background: #ffffff; color: #1c1c1a; display: flex; flex-direction: column;">
+
+  <!-- top bar -->
+  <div style="border-bottom: 1px solid #e6e6e3; padding: 0 48px; display: flex; align-items: center; justify-content: space-between; gap: 32px; height: 56px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 34px;">
+      <span style="font-size: 14px; font-weight: 600; letter-spacing: 0.01em;">Licensing</span>
+      <div style="display: flex; align-items: center; gap: 24px; font-size: 13px;">
+        <a href="#" style="font-weight: 600; border-bottom: none;">Licensing Summary</a>
+        <a href="#" style="color: #7a7a73; border-bottom: none;">Roadmap</a>
+        <a href="#" style="color: #7a7a73; border-bottom: none;">Content Review</a>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <span class="num" style="font-size: 12px; font-weight: 500;">FY26</span>
+      <span style="font-size: 12px; color: #a8a8a1;">Jul 2025 &ndash; Jun 2026</span>
+      <span style="width: 1px; height: 18px; background: #e6e6e3;"></span>
+      <span style="font-size: 12px; color: #7a7a73;">matt.mussoline@augustineinstitute.org</span>
+    </div>
+  </div>
+
+  <div style="padding: 40px 48px 48px; display: flex; flex-direction: column; gap: 34px;">
+
+    <!-- head -->
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px;">
+      <div style="display: flex; flex-direction: column; gap: 8px; max-width: 660px;">
+        <span class="lbl">Fiscal year 2026</span>
+        <h1 style="margin: 0; font-size: 33px; font-weight: 600; line-height: 1.1; letter-spacing: -0.025em;">Licensing Budget</h1>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #7a7a73; text-wrap: pretty;">Titles, providers, payment cadence, quarter proration, committed spend, and remaining budget.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <button class="btn">Add fiscal year</button>
+        <button class="btn">Export CSV</button>
+        <button class="btn" style="border-color: #1c1c1a; background: #1c1c1a; color: #ffffff;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add title
+        </button>
+      </div>
+    </div>
+
+    <!-- figures: ruled band, no fills -->
+    <div style="display: flex; flex-direction: column; gap: 0;">
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #1c1c1a; border-bottom: 1px solid #e6e6e3;">
+        <div style="padding: 20px 28px 20px 0; display: flex; flex-direction: column; gap: 7px;">
+          <span class="lbl">Total budget</span>
+          <span class="num" style="font-size: 34px; font-weight: 500; line-height: 1; letter-spacing: -0.03em;">$84,000</span>
+        </div>
+        <div style="padding: 20px 28px; border-left: 1px solid #e6e6e3; display: flex; flex-direction: column; gap: 7px;">
+          <span class="lbl">Committed</span>
+          <span class="num" style="font-size: 34px; font-weight: 600; line-height: 1; letter-spacing: -0.03em;">$24,867</span>
+        </div>
+        <div style="padding: 20px 28px; border-left: 1px solid #e6e6e3; display: flex; flex-direction: column; gap: 7px;">
+          <span class="lbl">Other budgets</span>
+          <span class="num" style="font-size: 34px; font-weight: 500; line-height: 1; letter-spacing: -0.03em;">$26,150</span>
+        </div>
+        <div style="padding: 20px 0 20px 28px; border-left: 1px solid #e6e6e3; display: flex; flex-direction: column; gap: 7px;">
+          <span class="lbl">Remaining</span>
+          <span class="num" style="font-size: 34px; font-weight: 500; line-height: 1; letter-spacing: -0.03em;">$59,133</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 16px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; font-size: 12px;">
+          <span style="color: #7a7a73;">Fiscal year health &mdash; <span style="color: #1c1c1a; font-weight: 500;">30% used</span>, on track</span>
+          <span class="num" style="color: #a8a8a1;">$24,867 committed &middot; $26,150 other &middot; $32,983 unallocated</span>
+        </div>
+        <div style="height: 4px; background: #f0f0ed; display: flex; gap: 1px;">
+          <div style="width: 29.6%; background: #1c1c1a;"></div>
+          <div style="width: 31.1%; background: #9d9d96;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- signals -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="sec">
+        <h2 class="h2">Licensing summary</h2>
+        <span style="font-size: 12px; color: #a8a8a1;">Quick signals for how the licensing year is taking shape.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Content pieces</span>
+          <span class="num" style="font-size: 26px; font-weight: 500; line-height: 1;">6</span>
+          <span style="font-size: 12px; color: #a8a8a1;">3 quarterly &middot; 3 yearly</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Average rate</span>
+          <span class="num" style="font-size: 26px; font-weight: 500; line-height: 1;">$4,750.00</span>
+          <span style="font-size: 12px; color: #a8a8a1;">Average installment amount</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Cadence mix</span>
+          <span class="num" style="font-size: 26px; font-weight: 500; line-height: 1;">3 / 3</span>
+          <span class="num" style="font-size: 12px; color: #a8a8a1;">$32,516.67 quarterly &middot; $18,500.00 yearly</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+            <span class="lbl">Active providers</span>
+            <span class="num" style="font-size: 13px; font-weight: 500;">4 &middot; 6 titles</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 12px; width: 132px; flex-shrink: 0;">Harbor Light Media</span>
+              <div style="flex-grow: 1; height: 5px; background: #f0f0ed; display: flex;"><div style="width: 50%; background: #1c1c1a;"></div></div>
+              <span class="num" style="font-size: 12px; color: #7a7a73; width: 30px; text-align: right;">50%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 12px; width: 132px; flex-shrink: 0;">Bluebird Learning</span>
+              <div style="flex-grow: 1; height: 5px; background: #f0f0ed; display: flex;"><div style="width: 17%; background: #55554f;"></div></div>
+              <span class="num" style="font-size: 12px; color: #7a7a73; width: 30px; text-align: right;">17%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 12px; width: 132px; flex-shrink: 0;">Lantern House</span>
+              <div style="flex-grow: 1; height: 5px; background: #f0f0ed; display: flex;"><div style="width: 17%; background: #7a7a73;"></div></div>
+              <span class="num" style="font-size: 12px; color: #7a7a73; width: 30px; text-align: right;">17%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 12px; width: 132px; flex-shrink: 0;">Northstar Studios</span>
+              <div style="flex-grow: 1; height: 5px; background: #f0f0ed; display: flex;"><div style="width: 17%; background: #9d9d96;"></div></div>
+              <span class="num" style="font-size: 12px; color: #7a7a73; width: 30px; text-align: right;">17%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- strips -->
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px;">
+      <div style="border-top: 1px solid #e6e6e3; padding-top: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Budget sources</span>
+          <span style="font-size: 12px; color: #7a7a73; text-wrap: pretty;">Content counted across budget items, roadmap titles, and content reviews.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+          <span class="num" style="font-size: 12px; font-weight: 500;">17 tracked</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7a73" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #a16207; padding-top: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Needs attention</span>
+          <span style="font-size: 12px; color: #7a7a73; text-wrap: pretty;">Items that are blocked, undated, approved, released, or close to budget limits.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+          <span class="num" style="font-size: 11px; font-weight: 600; color: #a16207; background: #fdf8ec; border-radius: 3px; padding: 3px 7px;">4 open</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a16207" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- quarters -->
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div class="sec">
+        <h2 class="h2">Committed by quarter</h2>
+        <span style="font-size: 12px; color: #a8a8a1;">6 content titles tracked. Click a quarter to expand its months.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; align-items: end; height: 176px;">
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 9px; height: 100%;">
+          <span class="num" style="font-size: 17px; font-weight: 500;">$13,750.00</span>
+          <div style="height: 72%; background: #d4d4d0;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #1c1c1a; padding-top: 7px;">
+            <span style="font-size: 12px; color: #7a7a73;">Q1 &middot; Jul&ndash;Sep</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 9px; height: 100%;">
+          <span class="num" style="font-size: 17px; font-weight: 500;">$8,266.67</span>
+          <div style="height: 43%; background: #d4d4d0;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #1c1c1a; padding-top: 7px;">
+            <span style="font-size: 12px; color: #7a7a73;">Q2 &middot; Oct&ndash;Dec</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 9px; height: 100%;">
+          <span class="num" style="font-size: 17px; font-weight: 600;">$19,000.00</span>
+          <div style="height: 100%; background: #1c1c1a;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #1c1c1a; padding-top: 7px;">
+            <span style="font-size: 12px; font-weight: 600;">Q3 &middot; Jan&ndash;Mar</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 9px; height: 100%;">
+          <span class="num" style="font-size: 17px; font-weight: 500;">$10,000.00</span>
+          <div style="height: 53%; background: #d4d4d0;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #1c1c1a; padding-top: 7px;">
+            <span style="font-size: 12px; color: #7a7a73;">Q4 &middot; Apr&ndash;Jun</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- content + forms -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 44px; align-items: start;">
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="sec">
+          <h2 class="h2">Edit content</h2>
+          <span style="font-size: 12px; color: #a8a8a1;">Adjust titles, providers, payment amounts, cadence, or added month.</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 0 0 8px; border-bottom: 1px solid #d4d4d0;" class="lbl">
+            <span>Title</span><span>Provider</span><span style="text-align: right;">Installment</span><span>Cadence</span><span>Added</span><span></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #f0f0ed; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">The Carpenter&rsquo;s Table</span><span style="color: #55554f;">Harbor Light Media</span><span class="num" style="text-align: right;">$4,250.00</span><span style="color: #7a7a73; font-size: 13px;">Quarterly</span><span style="color: #7a7a73; font-size: 13px;">Jul</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #f0f0ed; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">Saints in the City</span><span style="color: #55554f;">Lantern House</span><span class="num" style="text-align: right;">$9,500.00</span><span style="color: #7a7a73; font-size: 13px;">Yearly</span><span style="color: #7a7a73; font-size: 13px;">Aug</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #f0f0ed; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">Little Way Adventures</span><span style="color: #55554f;">Bluebird Learning</span><span class="num" style="text-align: right;">$3,150.00</span><span style="color: #7a7a73; font-size: 13px;">Quarterly</span><span style="color: #7a7a73; font-size: 13px;">Oct</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #f0f0ed; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">Desert Fathers</span><span style="color: #55554f;">Harbor Light Media</span><span class="num" style="text-align: right;">$2,600.00</span><span style="color: #7a7a73; font-size: 13px;">Quarterly</span><span style="color: #7a7a73; font-size: 13px;">Dec</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #f0f0ed; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">Parish Kitchen</span><span style="color: #55554f;">Northstar Studios</span><span class="num" style="text-align: right;">$7,200.00</span><span style="color: #7a7a73; font-size: 13px;">Yearly</span><span style="color: #7a7a73; font-size: 13px;">Feb</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 88px 68px 44px; gap: 16px; padding: 13px 0; border-bottom: 1px solid #d4d4d0; font-size: 14px; align-items: baseline;">
+            <span style="font-weight: 500;">Harbor Catechism Minutes</span><span style="color: #55554f;">Harbor Light Media</span><span class="num" style="text-align: right;">$1,800.00</span><span style="color: #7a7a73; font-size: 13px;">Yearly</span><span style="color: #7a7a73; font-size: 13px;">Mar</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 30px;">
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <div style="border-bottom: 1px solid #1c1c1a; padding-bottom: 8px; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 14px; font-weight: 600;">Edit fiscal year</span>
+            <span style="font-size: 12px; color: #7a7a73;">Update the label, fiscal calendar, or total budget.</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px;">
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Label</span><span class="fld" style="font-size: 13px;">FY26 Licensing&hellip;</span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Fiscal year</span><span class="fld num">2026</span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Starts in</span><span class="fld" style="justify-content: space-between;">July <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Budget</span><span class="fld num">84000</span></label>
+          </div>
+          <button class="btn" style="justify-content: center;">Save budget settings</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <div style="border-bottom: 1px solid #1c1c1a; padding-bottom: 8px; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 14px; font-weight: 600;">Add content</span>
+            <span style="font-size: 12px; color: #7a7a73;">The first quarterly payment is prorated automatically.</span>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Title</span><span class="fld" style="color: #a8a8a1;">Jesus Thirsts</span></label>
+          <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Provider</span><span class="fld" style="color: #a8a8a1;">Provider name</span></label>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px;">
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Amount</span><span class="fld num" style="color: #a8a8a1;">1200</span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Cadence</span><span class="fld" style="justify-content: space-between; color: #a8a8a1;">Select <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px;">
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Added month</span><span class="fld" style="justify-content: space-between; color: #a8a8a1;">Select <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Source</span><span class="fld" style="justify-content: space-between; font-size: 12px;">Misc licensing <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a8a1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 4px;"><span class="lbl">Notes</span><span class="fld" style="min-height: 54px; align-items: flex-start; padding-top: 10px; color: #a8a8a1;">Optional context</span></label>
+          <button class="btn" style="justify-content: center; border-color: #1c1c1a; background: #1c1c1a; color: #ffffff;">Add title</button>
+        </div>
+
+        <div style="border-top: 1px solid #e6e6e3; padding-top: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+            <span style="font-size: 14px; font-weight: 600;">Collaborators</span>
+            <span style="font-size: 12px; color: #7a7a73;">Connect Supabase to manage who can sign in.</span>
+          </div>
+          <span class="num" style="font-size: 12px; font-weight: 500; flex-shrink: 0;">0 people</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

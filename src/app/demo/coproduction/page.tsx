@@ -11,7 +11,6 @@ export default function DemoCoproductionPage() {
   return (
     <PlanningShell
       title="Co-Production Demo"
-      eyebrow="Public Sample"
       description="Grade fake co-production opportunities on mission fit, audience, economics, partner strength, and deliverability, then open any card for the reasoning, update log, and deal metadata."
       activeSection="coproduction"
       routePrefix="/demo"

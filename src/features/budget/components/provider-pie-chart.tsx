@@ -20,9 +20,10 @@ type ProviderPieChartProps = {
   strokeWidth: number;
   providerCount: number;
   centerClassName?: string;
+  centerTextClassName?: string;
 };
 
-export function ProviderPieChart({ slices, size, center, radius, strokeWidth, providerCount, centerClassName = "bg-guild-gold-soft" }: ProviderPieChartProps) {
+export function ProviderPieChart({ slices, size, center, radius, strokeWidth, providerCount, centerClassName = "bg-panel-warm", centerTextClassName = "font-display text-3xl md:text-4xl" }: ProviderPieChartProps) {
   const [activeSlice, setActiveSlice] = useState<ProviderPieSlice | null>(null);
 
   function showSlice(slice: ProviderPieSlice) {
@@ -86,7 +87,7 @@ export function ProviderPieChart({ slices, size, center, radius, strokeWidth, pr
         className={`pointer-events-none absolute grid place-items-center rounded-full text-center ${centerClassName}`}
         style={{ inset: Math.max(20, Math.round(strokeWidth * 0.62)) }}
       >
-        <span className="font-display text-3xl md:text-4xl">{providerCount}</span>
+        <span className={centerTextClassName}>{providerCount}</span>
       </div>
       {activeSlice ? (
         <div

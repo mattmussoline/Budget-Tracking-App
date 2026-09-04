@@ -23,7 +23,6 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
   return (
     <PlanningShell
       title="Roadmap Demo"
-      eyebrow="Public Sample"
       description="Explore a fake content roadmap with expandable summary rankings for audiences, providers, genres, formats, plus Licensing Summary and ClickUp handoff controls."
       activeSection="roadmap"
       routePrefix="/demo"

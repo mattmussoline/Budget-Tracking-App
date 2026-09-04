@@ -96,8 +96,8 @@ function renderDashboard(options: { needsAttention?: NeedsAttentionItem[] } = {}
 describe("BudgetDashboard", () => {
   it("does not stretch the edit content panel to match the sidebar height", () => {
     const { container } = renderDashboard();
-    const editContentManager = screen.getByText("Edit Content").closest("details");
-    const editContentPanel = screen.getByText("Edit Content").closest(".content-start");
+    const editContentManager = screen.getByText("Edit content").closest("details");
+    const editContentPanel = screen.getByText("Edit content").closest(".content-start");
 
     expect(editContentPanel).toBeInTheDocument();
     expect(editContentPanel).toContainElement(container.querySelector("[data-testid='quarter-1']"));
@@ -112,14 +112,17 @@ describe("BudgetDashboard", () => {
     expect(duplicateIds).toEqual([]);
   });
 
-  it("uses the standardized page header scale", () => {
+  it("puts account controls in the slim top bar and the budget label in the page head", () => {
     renderDashboard();
 
-    expect(screen.getByRole("banner")).toHaveClass("h-80", "md:h-80", "p-6", "md:p-8");
-    expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("text-4xl", "md:text-6xl");
-    expect(screen.getByRole("navigation", { name: "Planning sections" }).parentElement).toHaveClass("self-end");
-    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("navigation", { name: "Fiscal year budgets" }));
-    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("button", { name: "Logout" }).closest("form"));
+    const topBar = screen.getByRole("banner");
+
+    expect(topBar).toContainElement(screen.getByRole("navigation", { name: "Planning sections" }));
+    expect(topBar).toContainElement(screen.getByRole("navigation", { name: "Fiscal year budgets" }));
+    expect(topBar).toContainElement(screen.getByRole("button", { name: "Logout" }).closest("form"));
+    expect(topBar).not.toContainElement(screen.getByRole("heading", { name: "FY2027" }));
+    expect(screen.getByRole("heading", { name: "FY2027" })).toHaveClass("font-display", "md:text-[2.5rem]");
+    expect(screen.getByText("July 2026 – June 2027")).toBeVisible();
   });
 
   it("uses white fields inside the fiscal year and add content forms", () => {
@@ -135,7 +138,7 @@ describe("BudgetDashboard", () => {
 
   it("uses short placeholder text for add content dropdowns", () => {
     const { container } = renderDashboard();
-    const addContentForm = screen.getByText("Add Content").closest("div")?.parentElement?.nextElementSibling;
+    const addContentForm = screen.getByText("Add content").closest("div")?.nextElementSibling;
     const addContentSelectPlaceholders = Array.from(addContentForm?.querySelectorAll("option[value='']") ?? []).map(
       (option) => option.textContent
     );
@@ -151,8 +154,8 @@ describe("BudgetDashboard", () => {
     expect(screen.getByText("Cadence mix")).toBeInTheDocument();
     expect(screen.getByText("$48,000.00 quarterly")).toBeInTheDocument();
     expect(screen.getByText("$6,000.00 yearly")).toBeInTheDocument();
-    expect(container.querySelector(".bg-deep-teal-soft")).toHaveTextContent("Cadence mix");
-    expect(container.querySelector("[data-testid='needs-attention-panel'] .bg-danger-soft")).not.toBeInTheDocument();
+    expect(screen.getByText("Cadence mix").closest("button")).toHaveTextContent("Cadence mix");
+    expect(container.querySelector("[data-testid='needs-attention-panel'] [data-tone='red']")).not.toBeInTheDocument();
   });
 
   it("keeps dashboard insight text contained at narrower desktop widths", () => {
@@ -163,7 +166,7 @@ describe("BudgetDashboard", () => {
 
     expect(insightsGrid).toHaveClass("md:grid-cols-2", "xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)]");
     expect(averageRateCard).toHaveClass("min-w-0");
-    expect(averageRateValue).toHaveClass("break-words", "text-2xl", "xl:text-3xl");
+    expect(averageRateValue).toHaveClass("break-words", "text-2xl", "xl:text-[1.875rem]");
     expect(averageRateValue.parentElement).toHaveClass("overflow-hidden");
   });
 
@@ -181,7 +184,7 @@ describe("BudgetDashboard", () => {
 
   it("shows non-misc spending as a separate top-line data point", () => {
     renderDashboard();
-    const otherBudgetsLabel = screen.getByText("Other Budgets");
+    const otherBudgetsLabel = screen.getByText("Other budgets");
     const otherBudgetsCard = otherBudgetsLabel.closest(".soft-raised");
 
     expect(otherBudgetsCard).toBeInTheDocument();
@@ -196,10 +199,10 @@ describe("BudgetDashboard", () => {
 
     const panel = screen.getByTestId("needs-attention-panel");
 
-    expect(screen.queryByRole("dialog", { name: "Needs Attention" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Needs Attention" })).toBeVisible();
-    fireEvent.click(within(panel).getByRole("button", { name: "Open Needs Attention" }));
-    const dialog = screen.getByRole("dialog", { name: "Needs Attention" });
+    expect(screen.queryByRole("dialog", { name: "Needs attention" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+    fireEvent.click(within(panel).getByRole("button", { name: "Open Needs attention" }));
+    const dialog = screen.getByRole("dialog", { name: "Needs attention" });
     expect(within(dialog).getByText("Approved Review")).toBeVisible();
     expect(within(dialog).getByText("Approved review is ready to send to the roadmap.")).toBeVisible();
     expect(within(dialog).getByRole("link", { name: "Open Approved Review" })).toHaveAttribute("href", "/content-review");
@@ -210,10 +213,10 @@ describe("BudgetDashboard", () => {
     renderDashboard();
     const panel = screen.getByTestId("budget-sources-panel");
 
-    expect(screen.queryByRole("dialog", { name: "Budget Sources" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Budget Sources" })).toBeVisible();
-    fireEvent.click(within(panel).getByRole("button", { name: "Open Budget Sources" }));
-    const dialog = screen.getByRole("dialog", { name: "Budget Sources" });
+    expect(screen.queryByRole("dialog", { name: "Budget sources" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Budget sources" })).toBeVisible();
+    fireEvent.click(within(panel).getByRole("button", { name: "Open Budget sources" }));
+    const dialog = screen.getByRole("dialog", { name: "Budget sources" });
     expect(within(dialog).getByText("Misc licensing budget")).toBeVisible();
     expect(within(dialog).getByText("Internal production")).toBeVisible();
     expect(within(dialog).getByText("Donor-funded budget")).toBeVisible();

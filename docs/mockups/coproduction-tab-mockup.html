@@ -1,0 +1,1911 @@
+<title>Co-Production Slate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap">
+<style>
+  /* ---------------------------------------------------------------
+     Tokens mirrored from the Budget Tracking App (src/app/globals.css
+     plus the Tailwind values used across src/features/planning).
+     The app declares color-scheme: light, so this mockup commits to
+     the same single light world and paints every color explicitly.
+     --------------------------------------------------------------- */
+  :root {
+    color-scheme: light;
+
+    --surface: #ffffff;
+    --foreground: #111827;
+    --muted: #6b7280;
+    --muted-surface: #f3f4f6;
+    --border: #e5e7eb;
+    --hairline: #f1f3f6;
+
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --accent-deep: #1d4ed8;
+    --accent-ink: #1e40af;
+    --accent-wash: #eff6ff;
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+
+    --font-outfit: "Outfit", "Inter", "Segoe UI", system-ui, sans-serif;
+
+    --radius: 0.5rem;
+    --ring: 0 0 0 1px var(--border);
+    --lift: 0 1px 2px rgba(17, 24, 39, 0.06);
+    --lift-open: 0 14px 36px -14px rgba(17, 24, 39, 0.24);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--foreground);
+    font-family: var(--font-outfit);
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  button { font: inherit; color: inherit; }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px var(--accent);
+  }
+
+  .shell {
+    max-width: 82rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem;
+    display: grid;
+    gap: 2.25rem;
+  }
+  @media (min-width: 768px) { .shell { padding: 1.5rem 2rem 4.5rem; } }
+
+  /* ---------------- Hero (matches PlanningHeader) ---------------- */
+
+  .hero {
+    position: relative;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #ffffff;
+    padding: 1.75rem;
+    min-height: 18rem;
+    display: grid;
+    align-content: end;
+    gap: 1.25rem;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) { .hero { padding: 2.25rem; min-height: 20rem; } }
+
+  .hero-decor { position: absolute; inset: 0; pointer-events: none; }
+  .hero-decor span { position: absolute; background: rgba(255, 255, 255, 0.1); display: block; }
+  .hero-decor .orb { right: -1rem; top: -6rem; height: 15rem; width: 15rem; border-radius: 999px; }
+  .hero-decor .tile { right: 7rem; bottom: 1.5rem; height: 5rem; width: 5rem; transform: rotate(12deg); }
+
+  .hero-body { position: relative; z-index: 1; display: grid; gap: 1.75rem; align-items: end; }
+  @media (min-width: 900px) {
+    .hero-body { grid-template-columns: minmax(0, 1fr) minmax(22rem, 31rem); gap: 2.5rem; }
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .hero .eyebrow { color: #dbeafe; margin-bottom: 0.5rem; }
+
+  .hero h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+  @media (min-width: 768px) { .hero h1 { font-size: 3rem; } }
+
+  .hero-lede { font-size: 1rem; font-weight: 600; line-height: 1.65; color: #eff6ff; }
+
+  .mock-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.375rem;
+    background: var(--accent-light);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  .tab:hover { background: rgba(255, 255, 255, 0.24); }
+  .tab[aria-current="page"] { background: #ffffff; color: #1d4ed8; }
+  .tab .tab-new {
+    margin-left: 0.45rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+    padding: 0.1rem 0.32rem;
+    border-radius: 0.25rem;
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  /* ---------------- Pipeline tiles ---------------- */
+
+  .tiles { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 980px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .tile-card {
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring);
+    padding: 1.25rem 1.375rem;
+    display: grid;
+    gap: 0.4rem;
+    align-content: start;
+  }
+  .tile-head { display: flex; align-items: center; gap: 0.4rem; }
+  .tile-card .label {
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .tile-card .value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .tile-card .foot { font-size: 0.75rem; font-weight: 600; color: var(--muted); line-height: 1.5; }
+  .tile-card.is-accent { background: var(--accent-wash); box-shadow: 0 0 0 1px #bfdbfe; }
+  .tile-card.is-accent .value { color: var(--accent-ink); }
+
+  .grade-spread { display: flex; gap: 0.4rem; align-items: flex-end; padding-top: 0.35rem; }
+  .grade-spread div { flex: 1; display: grid; gap: 0.3rem; justify-items: center; }
+  .grade-spread .stack { width: 100%; border-radius: 0.2rem; min-height: 0.25rem; }
+  .grade-spread .tick { font-size: 0.5625rem; font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
+
+  /* ---------------- Info buttons and definitions ---------------- */
+
+  .info {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    height: 1.125rem;
+    width: 1.125rem;
+    border: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    background: var(--muted-surface);
+    color: var(--muted);
+    font-size: 0.625rem;
+    font-weight: 800;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .info:hover { background: #dbeafe; color: var(--accent-ink); }
+  .info[aria-expanded="true"] { background: var(--accent); color: #ffffff; }
+
+  .definition {
+    display: none;
+    border-radius: 0.375rem;
+    background: var(--accent-wash);
+    box-shadow: 0 0 0 1px #bfdbfe;
+    padding: 0.75rem 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #1f2937;
+  }
+  .definition.is-shown { display: grid; gap: 0.5rem; }
+  .definition .what { font-weight: 700; }
+  .definition dl { margin: 0; display: grid; gap: 0.3rem; }
+  .definition dl > div { display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); gap: 0.5rem; }
+  .definition dt {
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: var(--accent-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .definition dd { margin: 0; }
+
+  /* ---------------- Toolbar ---------------- */
+
+  .toolbar { display: grid; gap: 1rem; }
+  @media (min-width: 980px) {
+    .toolbar { grid-template-columns: minmax(0, 19rem) minmax(0, 1fr) auto; align-items: center; gap: 1.25rem; }
+  }
+
+  .field { position: relative; display: flex; align-items: center; }
+  .field svg {
+    position: absolute;
+    left: 0.8rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .field input {
+    width: 100%;
+    min-height: 2.875rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: var(--muted-surface);
+    padding: 0 0.875rem 0 2.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .field input::placeholder { color: var(--muted); font-weight: 600; }
+  .field input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-light); }
+
+  .stage-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .stage-filters button {
+    border: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: var(--muted-surface);
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .stage-filters button:hover { background: #e5e7eb; color: var(--foreground); }
+  .stage-filters button[aria-pressed="true"] { background: #111827; color: #ffffff; }
+  .stage-filters .count { opacity: 0.7; margin-left: 0.35rem; }
+
+  .sorter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .sorter select {
+    font: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--foreground);
+    border: 0;
+    border-radius: 0.375rem;
+    background: var(--muted-surface);
+    min-height: 2.625rem;
+    padding: 0 0.7rem;
+  }
+
+  /* ---------------- Slate ---------------- */
+
+  .slate {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(23rem, 1fr));
+    align-items: start;
+  }
+
+  .card {
+    position: relative;
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring), var(--lift);
+    border-left: 4px solid var(--stage-accent, var(--border));
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+  }
+  .card:hover { box-shadow: var(--ring), 0 8px 22px -10px rgba(17, 24, 39, 0.2); }
+
+  .card-face { display: grid; cursor: pointer; }
+
+  /* --- key art panel --- */
+
+  .art {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, var(--art-from) 0%, var(--art-to) 100%);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .card.is-passed .art { filter: saturate(0.35); }
+  .art svg.motif { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .art .wordmark {
+    position: relative;
+    z-index: 1;
+    padding: 0 1.75rem;
+    text-align: center;
+    color: var(--art-ink, #ffffff);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-shadow: 0 1px 14px rgba(0, 0, 0, 0.3);
+  }
+  .art .art-note {
+    position: absolute;
+    z-index: 2;
+    bottom: 0.55rem;
+    right: 0.6rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.34);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .face-body { display: grid; gap: 1.125rem; padding: 1.375rem; }
+
+  .face-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+
+  .partner { display: grid; gap: 0.5rem; min-width: 0; }
+  .partner-row { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+  .avatar {
+    display: grid;
+    place-items: center;
+    height: 1.875rem;
+    width: 1.875rem;
+    flex: 0 0 auto;
+    border-radius: 0.375rem;
+    background: var(--muted-surface);
+    color: var(--muted);
+    font-size: 0.625rem;
+    font-weight: 800;
+  }
+  .partner-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .grade {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    height: 3.5rem;
+    width: 3.5rem;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    font-size: 1.625rem;
+    line-height: 1;
+  }
+  .grade small {
+    display: block;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    font-weight: 800;
+    opacity: 0.75;
+    margin-top: 0.2rem;
+    text-align: center;
+  }
+
+  .card h3 { font-size: 1.3125rem; font-weight: 800; letter-spacing: -0.015em; line-height: 1.2; }
+  .card .form-line { font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-top: 0.35rem; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    padding: 1.125rem 0;
+  }
+  .ask .label, .comb .label {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .ask .amount {
+    font-size: 1.625rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    margin-top: 0.15rem;
+  }
+  .ask .per-unit { font-size: 0.6875rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ask .per-unit b { font-weight: 800; }
+  .ask .per-unit .under { color: #047857; }
+  .ask .per-unit .at { color: #92400e; }
+  .ask .per-unit .over { color: #b45309; }
+
+  .dial { display: grid; justify-items: center; gap: 0.35rem; }
+  .dial-svg { display: block; }
+  .dial-track { fill: none; stroke: var(--hairline); stroke-width: 6; }
+  .dial-arc { fill: none; stroke-width: 6; stroke-linecap: round; }
+  .dial-value { font-size: 0.875rem; font-weight: 800; font-variant-numeric: tabular-nums; fill: var(--foreground); }
+  .dial-caption {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+
+  .comb { display: grid; gap: 0.45rem; }
+  .comb-bars { display: flex; align-items: flex-end; gap: 0.3rem; height: 2.5rem; }
+  .comb-bars div {
+    flex: 1;
+    background: var(--muted-surface);
+    border-radius: 0.15rem;
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    overflow: hidden;
+  }
+  .comb-bars span { display: block; width: 100%; background: var(--accent-light); border-radius: 0.15rem; }
+  .comb-bars div:first-child span { background: var(--accent-deep); }
+  .comb-legend {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .comb-legend b { color: var(--foreground); font-variant-numeric: tabular-nums; }
+
+  .face-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .face-foot .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-ink);
+  }
+  .face-foot .more svg { width: 0.875rem; height: 0.875rem; transition: transform 0.2s ease; }
+  .card-face:hover .more svg { transform: translateX(2px); }
+
+  /* ---------------- Detail modal ---------------- */
+
+  body.is-locked { overflow: hidden; }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: rgba(17, 24, 39, 0.5);
+    backdrop-filter: blur(7px);
+    animation: scrim-in 0.18s ease both;
+  }
+  .scrim[hidden] { display: none; }
+  /* Browsers without backdrop-filter get the blur on the page itself. */
+  @supports not (backdrop-filter: blur(1px)) {
+    body.is-locked .shell { filter: blur(3px); }
+  }
+  @keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    position: relative;
+    width: min(72rem, 100%);
+    max-height: min(88vh, 62rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 0.75rem;
+    background: var(--surface);
+    border-left: 5px solid var(--stage-accent, var(--border));
+    box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.5);
+    animation: modal-in 0.22s ease both;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 3;
+    height: 2.25rem;
+    width: 2.25rem;
+    display: grid;
+    place-items: center;
+    border: 0;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    background: var(--muted-surface);
+    color: var(--muted);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .modal-close:hover { background: #e5e7eb; color: var(--foreground); }
+  .modal-close svg { width: 1.05rem; height: 1.05rem; }
+
+  .modal-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1.25rem 4rem 1.25rem 1.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  @media (max-width: 820px) {
+    .modal-head { grid-template-columns: auto minmax(0, 1fr); gap: 1rem; }
+    .modal-figures { grid-column: 1 / -1; }
+  }
+
+  .modal-art {
+    width: 8.5rem;
+    aspect-ratio: 16 / 9;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    box-shadow: var(--ring);
+  }
+  .modal-art .art { width: 100%; height: 100%; aspect-ratio: auto; }
+
+  .modal-ident { display: grid; gap: 0.5rem; min-width: 0; }
+  .modal-ident .ident-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+  .modal-ident h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+  .modal-ident .form-line { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+
+  .modal-figures { display: flex; align-items: center; gap: 1.75rem; }
+  .modal-figures .ask .amount { font-size: 1.375rem; margin-top: 0.1rem; }
+  .modal-ident .form-line .under { color: #047857; }
+  .modal-ident .form-line .at { color: #92400e; }
+  .modal-ident .form-line .over { color: #b45309; }
+
+  .detail {
+    display: grid;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 6rem);
+    padding: 1.75rem 1.5rem 2rem;
+    gap: 1.75rem;
+  }
+  @media (min-width: 1060px) {
+    .detail {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.3fr) minmax(0, 0.85fr);
+      gap: 2rem;
+    }
+  }
+
+  .panel { display: grid; gap: 1rem; align-content: start; min-width: 0; }
+  .panel > h4 {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .panel > h4 em { font-style: normal; font-size: 0.625rem; font-weight: 800; opacity: 0.85; }
+
+  .scorecard {
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring);
+    padding: 1.25rem;
+    display: grid;
+    gap: 1.125rem;
+  }
+  .score-row { display: grid; gap: 0.4rem; }
+  .score-head { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; font-weight: 700; }
+  .score-head .name { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+  .score-head .weight {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: var(--muted-surface);
+    border-radius: 999px;
+    padding: 0.12rem 0.4rem;
+  }
+  .score-head b { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 0.9375rem; }
+  .meter { height: 0.4rem; border-radius: 999px; background: var(--muted-surface); overflow: hidden; }
+  .meter span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .why { font-size: 0.75rem; font-weight: 500; line-height: 1.55; color: #374151; }
+  .why::before {
+    content: "Why";
+    display: inline-block;
+    margin-right: 0.4rem;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .rollup {
+    border-top: 1px solid var(--hairline);
+    padding-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .rollup .sum { display: grid; gap: 0.15rem; }
+  .rollup .sum .label {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .rollup .sum .num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .rollup .sum .num small { font-size: 0.8125rem; font-weight: 700; color: var(--muted); }
+
+  .grader { font-size: 0.6875rem; font-weight: 600; color: var(--muted); line-height: 1.6; }
+  .grader b { color: var(--foreground); font-weight: 800; }
+
+  .likelihood-block {
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring);
+    padding: 1rem 1.125rem;
+    display: grid;
+    gap: 0.55rem;
+  }
+  .likelihood-head { display: flex; align-items: center; gap: 0.5rem; }
+  .likelihood-head .label {
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .likelihood-head b { margin-left: auto; font-size: 1.125rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .notes {
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring);
+    padding: 1.125rem 1.25rem;
+    display: grid;
+    gap: 0.8rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.7;
+    max-width: 66ch;
+  }
+  .notes strong { font-weight: 800; }
+  .notes ul { margin: 0; padding-left: 1.15rem; display: grid; gap: 0.35rem; }
+
+  .log-input { position: relative; display: flex; align-items: center; }
+  .log-input svg { position: absolute; left: 0.8rem; width: 1rem; height: 1rem; color: var(--muted); }
+  .log-input input {
+    width: 100%;
+    min-height: 2.875rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: var(--muted-surface);
+    padding: 0 0.875rem 0 2.4rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .log-input input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-light); }
+
+  .log { display: grid; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
+  .log li { border-radius: 0.375rem; background: #f9fafb; padding: 0.7rem 0.875rem; display: grid; gap: 0.35rem; }
+  .log .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .log .meta .who { text-transform: none; letter-spacing: normal; font-weight: 700; }
+  .log .body { font-size: 0.875rem; font-weight: 500; line-height: 1.6; }
+  .log .transition { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; font-size: 0.8125rem; font-weight: 700; }
+  .log .arrow { color: var(--muted); }
+
+  .meta-list {
+    margin: 0;
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--ring);
+    padding: 0.5rem 1.125rem;
+    display: grid;
+  }
+  .meta-list > div {
+    display: grid;
+    grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--hairline);
+    align-items: baseline;
+  }
+  .meta-list > div:last-child { border-bottom: 0; }
+  .meta-list dt {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+  .meta-list dd { margin: 0; font-size: 0.8125rem; font-weight: 700; overflow-wrap: anywhere; line-height: 1.45; }
+  .meta-list dd a { color: var(--accent-ink); font-weight: 800; }
+  .meta-list dd.num { font-variant-numeric: tabular-nums; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 0.625rem; }
+  .btn {
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.625rem;
+    border-radius: 0.375rem;
+    padding: 0 0.95rem;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #ffffff; }
+  .btn-primary:hover { background: var(--accent-deep); }
+  .btn-secondary { background: var(--muted-surface); color: var(--foreground); }
+  .btn-secondary:hover { background: #e5e7eb; }
+  .btn svg { width: 0.9rem; height: 0.9rem; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translate(-50%, 1rem);
+    z-index: 40;
+    background: #111827;
+    color: #ffffff;
+    border-radius: 0.375rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+  .empty {
+    grid-column: 1 / -1;
+    border-radius: var(--radius);
+    background: #f9fafb;
+    padding: 2.5rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .page-foot {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+    max-width: 66ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="shell">
+  <header class="hero">
+    <div class="hero-decor" aria-hidden="true">
+      <span class="orb"></span>
+      <span class="tile"></span>
+    </div>
+    <div class="hero-body">
+      <div>
+        <p class="eyebrow">Formed Licensing</p>
+        <h1>Co-Production</h1>
+        <span class="mock-flag">Design mockup &middot; sample data</span>
+      </div>
+      <div>
+        <p class="hero-lede">
+          Every co-production opportunity on one slate. Grade the ones worth chasing,
+          price the ones worth funding, and keep the reasoning attached to the title.
+        </p>
+        <nav class="tabs" aria-label="Planning sections">
+          <a class="tab" href="#">Roadmap</a>
+          <a class="tab" href="#">Licensing Summary</a>
+          <a class="tab" href="#">Content Review</a>
+          <a class="tab" href="#" aria-current="page">Co-Production<span class="tab-new">New</span></a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <section class="tiles" aria-label="Pipeline summary">
+    <div class="tile-card">
+      <div class="tile-head"><span class="label">Live opportunities</span></div>
+      <span class="value" id="tile-count">&mdash;</span>
+      <span class="foot" id="tile-count-foot">&mdash;</span>
+    </div>
+    <div class="tile-card">
+      <div class="tile-head"><span class="label">If we said yes to everything</span></div>
+      <span class="value" id="tile-ask">&mdash;</span>
+      <span class="foot">Every asking price added up, passed titles excluded</span>
+    </div>
+    <div class="tile-card is-accent">
+      <div class="tile-head">
+        <span class="label">What to actually reserve</span>
+        <button class="info" type="button" aria-expanded="false" data-info="tile-expected" aria-label="How the reserve figure is calculated">i</button>
+      </div>
+      <span class="value" id="tile-weighted">&mdash;</span>
+      <span class="foot">Each asking price &times; its likelihood, added up</span>
+      <div class="definition" id="def-tile-expected">
+        <p class="what">Expected cost, not committed cost.</p>
+        <p>
+          We will not win every one of these, so reserving the full asking total would lock up money
+          we never spend. Multiplying each asking price by its likelihood and adding the results gives
+          a realistic FY27 number: a $1M title at 25% contributes $250,000 to the reserve.
+        </p>
+        <p>It is a planning figure for the budget line, never a number to quote to a partner.</p>
+      </div>
+    </div>
+    <div class="tile-card">
+      <div class="tile-head"><span class="label">Grade spread</span></div>
+      <div class="grade-spread" id="tile-spread"></div>
+      <span class="foot" id="tile-spread-foot">&mdash;</span>
+    </div>
+  </section>
+
+  <section class="toolbar" aria-label="Slate controls">
+    <label class="field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input id="search" type="search" placeholder="Search title or partner" aria-label="Search opportunities">
+    </label>
+    <div class="stage-filters" id="stage-filters" role="group" aria-label="Filter by stage"></div>
+    <label class="sorter">
+      Sort
+      <select id="sort" aria-label="Sort opportunities">
+        <option value="grade">Opportunity rating</option>
+        <option value="likelihood">Likelihood</option>
+        <option value="ask-desc">Asking price, high to low</option>
+        <option value="ask-asc">Asking price, low to high</option>
+        <option value="weighted">Expected cost</option>
+        <option value="updated">Recently updated</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="slate" id="slate" aria-label="Co-production slate"></section>
+
+  <p class="page-foot">
+    Mockup only &mdash; nothing here is wired to Supabase. Titles, partners, prices, and grades are
+    invented for layout review, and the key art is placeholder. Grades are computed live from the five
+    sub-scores using the weights shown in each scorecard, so the letter always matches the math.
+  </p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  /* Benchmark used by the Economics rubric and the per-hour line on each card. */
+  const HOUR_BENCHMARK_CENTS = 12500000;
+
+  const WEIGHTS = [
+    {
+      key: "mission",
+      label: "Mission fit",
+      weight: 0.30,
+      what: "Does this advance Catholic formation, and does it fill a gap we actually have?",
+      bands: [
+        ["90–100", "Lands on a named FY pillar we are thin on, and is catechetically sound with no review risk."],
+        ["75–89", "Clearly on-mission, but overlaps content already in the catalog."],
+        ["60–74", "Adjacent to the mission. Needs a host or framing to make the connection land."],
+        ["Under 60", "Faith-adjacent at best, or it raises doctrinal review concerns."]
+      ]
+    },
+    {
+      key: "audience",
+      label: "Audience demand",
+      weight: 0.25,
+      what: "Is there evidence our subscribers will actually watch this?",
+      bands: [
+        ["90–100", "Comparable titles sit in our top decile for first-week views and completion."],
+        ["75–89", "Solid comparables. Predictable mid-tier performance."],
+        ["60–74", "The format performs modestly for us — steady accumulation, no launch spike."],
+        ["Under 60", "No comparable has worked for us, or the audience sits outside our base."]
+      ]
+    },
+    {
+      key: "economics",
+      label: "Economics",
+      weight: 0.20,
+      what: "Is the price right for what we get — measured per finished hour, against the rights term and our share?",
+      bands: [
+        ["90–100", "At or below the $125K per-finished-hour benchmark, long or perpetual rights, partner carrying real cost."],
+        ["75–89", "Fair price. Term or revenue share slightly worse than benchmark."],
+        ["60–74", "Above benchmark, or a theatrical/PVOD window defers our value by a year or more."],
+        ["Under 60", "The ask is a material share of the whole line for a minority position."]
+      ]
+    },
+    {
+      key: "partner",
+      label: "Partner strength",
+      weight: 0.15,
+      what: "Can we rely on this partner to deliver, and do we want the relationship after this title?",
+      bands: [
+        ["90–100", "Delivered for us before, on time, clean paperwork. We want their next one."],
+        ["75–89", "Established shop with good references, but first time working with us."],
+        ["60–74", "Credible, but unproven at this scale or this volume."],
+        ["Under 60", "No track record, or a prior delivery went badly."]
+      ]
+    },
+    {
+      key: "delivery",
+      label: "Deliverability",
+      weight: 0.10,
+      what: "Will it actually arrive, in the window, at spec?",
+      bands: [
+        ["90–100", "Locked schedule, crew and locations secured, pilot or footage already in hand."],
+        ["75–89", "Realistic schedule carrying normal production risk."],
+        ["60–74", "Optimistic for the partner's capacity, or key permits and talent still open."],
+        ["Under 60", "No credible path to the delivery date."]
+      ]
+    }
+  ];
+
+  const LIKELIHOOD_DEF = {
+    what: "The chance this title ends up in the catalog on terms we would accept.",
+    bands: [
+      ["70–100", "Terms substantially agreed. What is left is paperwork or a delivery date."],
+      ["40–69", "Real negotiation still open on price, length, rights, or window."],
+      ["10–39", "We are far apart on something structural, or waiting on the partner's financing."],
+      ["Under 10", "Effectively closed. Kept on the slate as the record of the decision."]
+    ]
+  };
+
+  const STAGES = {
+    inbound:     { label: "Inbound",     accent: "#06b6d4", chip: "background:#cffafe;color:#164e63" },
+    in_review:   { label: "In Review",   accent: "#8b5cf6", chip: "background:#ede9fe;color:#5b21b6" },
+    negotiating: { label: "Negotiating", accent: "#f59e0b", chip: "background:#fef3c7;color:#78350f" },
+    greenlit:    { label: "Greenlit",    accent: "#10b981", chip: "background:#d1fae5;color:#065f46" },
+    passed:      { label: "Passed",      accent: "#64748b", chip: "background:#e2e8f0;color:#1e293b" }
+  };
+
+  const GRADE_TIERS = [
+    { min: 97, letter: "A+" }, { min: 93, letter: "A" },  { min: 90, letter: "A-" },
+    { min: 87, letter: "B+" }, { min: 83, letter: "B" },  { min: 80, letter: "B-" },
+    { min: 77, letter: "C+" }, { min: 73, letter: "C" },  { min: 70, letter: "C-" },
+    { min: 67, letter: "D+" }, { min: 63, letter: "D" },  { min: 60, letter: "D-" },
+    { min: -1, letter: "F" }
+  ];
+
+  const TIER_STYLE = {
+    A: "background:#d1fae5;color:#065f46",
+    B: "background:#dbeafe;color:#1e40af",
+    C: "background:#fef3c7;color:#78350f",
+    D: "background:#ffedd5;color:#7c2d12",
+    F: "background:#fee2e2;color:#991b1b"
+  };
+
+  const TIER_BAR = { A: "#10b981", B: "#3b82f6", C: "#f59e0b", D: "#f97316", F: "#ef4444" };
+
+  /* Placeholder key art: geometric motifs keyed to each title's subject.
+     In the real tab this slot holds the partner's logo or the title thumbnail. */
+  const MOTIFS = {
+    ripples: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">'
+      + '<circle cx="80" cy="86" r="18"></circle><circle cx="80" cy="86" r="32"></circle>'
+      + '<circle cx="80" cy="86" r="46"></circle><circle cx="80" cy="86" r="60"></circle>'
+      + '<circle cx="80" cy="86" r="74"></circle></g>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.06"></rect></svg>',
+    flame: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<circle cx="80" cy="52" r="34" fill="#ffffff" fill-opacity="0.09"></circle>'
+      + '<circle cx="80" cy="40" r="20" fill="#ffffff" fill-opacity="0.1"></circle>'
+      + '<polygon points="80,4 104,52 56,52" fill="#ffffff" fill-opacity="0.08"></polygon>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.08"></rect></svg>',
+    table: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<g fill="#ffffff" fill-opacity="0.09">'
+      + '<rect x="26" y="58" width="108" height="5" rx="2"></rect>'
+      + '<rect x="40" y="63" width="6" height="22" rx="2"></rect>'
+      + '<rect x="114" y="63" width="6" height="22" rx="2"></rect>'
+      + '<circle cx="80" cy="30" r="19"></circle></g>'
+      + '<g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"><circle cx="80" cy="30" r="27"></circle></g>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.06"></rect></svg>',
+    rays: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<g stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">'
+      + '<line x1="80" y1="14" x2="20" y2="90"></line><line x1="80" y1="14" x2="50" y2="90"></line>'
+      + '<line x1="80" y1="14" x2="80" y2="90"></line><line x1="80" y1="14" x2="110" y2="90"></line>'
+      + '<line x1="80" y1="14" x2="140" y2="90"></line></g>'
+      + '<circle cx="80" cy="14" r="9" fill="#ffffff" fill-opacity="0.22"></circle>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.07"></rect></svg>',
+    path: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<polygon points="0,90 46,34 92,90" fill="#ffffff" fill-opacity="0.08"></polygon>'
+      + '<polygon points="62,90 110,26 160,90" fill="#ffffff" fill-opacity="0.11"></polygon>'
+      + '<circle cx="132" cy="22" r="10" fill="#ffffff" fill-opacity="0.18"></circle>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.06"></rect></svg>',
+    bloom: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<g fill="#ffffff" fill-opacity="0.12">'
+      + '<circle cx="80" cy="26" r="15"></circle><circle cx="80" cy="64" r="15"></circle>'
+      + '<circle cx="47" cy="45" r="15"></circle><circle cx="113" cy="45" r="15"></circle>'
+      + '<circle cx="56" cy="27" r="13"></circle><circle cx="104" cy="63" r="13"></circle></g>'
+      + '<circle cx="80" cy="45" r="10" fill="#ffffff" fill-opacity="0.28"></circle>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.05"></rect></svg>',
+    hours: '<svg class="motif" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<g fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2">'
+      + '<circle cx="80" cy="45" r="30"></circle><circle cx="80" cy="45" r="40"></circle></g>'
+      + '<g stroke="#ffffff" stroke-opacity="0.3" stroke-width="3" stroke-linecap="round">'
+      + '<line x1="80" y1="45" x2="80" y2="24"></line><line x1="80" y1="45" x2="97" y2="55"></line></g>'
+      + '<rect x="0" y="0" width="160" height="90" fill="#000000" fill-opacity="0.1"></rect></svg>'
+  };
+
+  const OPPORTUNITIES = [
+    {
+      id: "the-well",
+      title: "The Well",
+      partner: "Northlight Pictures",
+      format: "Docu-Series",
+      genre: "Scripture",
+      episodes: "8 × 26 min",
+      askCents: 45000000,
+      likelihood: 72,
+      likelihoodWhy: "They already conceded on price and folded in the Spanish dub. What is left is the rights term, and legal has a fallback we can live with.",
+      stage: "negotiating",
+      art: { from: "#0e3b4a", to: "#14607a", motif: "ripples" },
+      scores: {
+        mission: { value: 97, why: "The only Scripture project on the slate, and Scripture is our thinnest FY27 pillar." },
+        audience: { value: 94, why: "Scripture series are our strongest format on both first-week views and completion." },
+        economics: { value: 90, why: "$130K per finished hour, right at the $125K benchmark — and Northlight carries 40% of the negative cost." },
+        partner: { value: 94, why: "Northlight delivered two series for us on time, and their own post house absorbs finishing cost." },
+        delivery: { value: 88, why: "Two blocks shoot in Jordan and the second block has no permit yet." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Aug 27, 2026",
+      updatedDays: 2,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "60% of negative cost",
+        "Rights": "Worldwide SVOD, 7 years",
+        "Territory": "Global, English + Spanish",
+        "Delivery window": "Q3 FY27 (Feb – Apr 2027)",
+        "Decision due": "Sep 18, 2026",
+        "Comparable": "Bible in a Year visual companion",
+        "Screener": "northlight.example/the-well",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>The strongest thing on the slate.</strong> Eight episodes walking the wells of Scripture — Jacob, Moses, the Samaritan woman — shot on location. It is the only inbound project that lands squarely on the pillar we are thinnest on for FY27.",
+        "Northlight is bringing 40% of the negative cost and their own post house, which is what holds the economics score up despite the size of the ask. We hold worldwide SVOD for seven years with a Spanish dub included in delivery.",
+        "<ul><li>Deliverability is the one soft spot: two shooting blocks are in Jordan and the second has no permit yet.</li><li>Their director wants an on-camera host. We should push for a Formed-side host to keep brand continuity.</li></ul>"
+      ],
+      log: [
+        { when: "2 days ago", who: "matt.mussoline", kind: "note", body: "Northlight came back at $450K flat with the Spanish dub folded in. That is a real concession — previously $475K plus dub at cost." },
+        { when: "6 days ago", who: "matt.mussoline", kind: "status", from: "in_review", to: "negotiating" },
+        { when: "12 days ago", who: "matt.mussoline", kind: "note", body: "Legal flagged the 7-year term as long for a co-pro. Asked for 5 years with an option to extend." },
+        { when: "Aug 27, 2026", who: "matt.mussoline", kind: "note", body: "Graded. Mission fit is as high as anything we have looked at this year." },
+        { when: "Aug 21, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "ember-and-ash",
+      title: "Ember & Ash",
+      partner: "Cana Film Co.",
+      format: "Movie",
+      genre: "Saints",
+      episodes: "1 × 104 min",
+      askCents: 120000000,
+      likelihood: 38,
+      likelihoodWhy: "We are not far apart on the film, we are far apart on the money. This only moves if Cana lands a third equity partner.",
+      stage: "in_review",
+      art: { from: "#3a1a2b", to: "#7c3b2c", motif: "flame" },
+      scores: {
+        mission: { value: 96, why: "A feature on Saint Clare's early years. Saints are a proven pillar and this is the best script we have read this year." },
+        audience: { value: 93, why: "Saint biopics are second only to Scripture for us, and a name director widens the reach." },
+        economics: { value: 72, why: "Features do not price per hour. The problem is $1.2M for a 35% minority position, with theatrical and PVOD deferring our window 15 months." },
+        partner: { value: 88, why: "Cana is an established shop with good references, but this would be our first project together." },
+        delivery: { value: 78, why: "Financing is not closed, so the schedule is real but not yet locked." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Aug 24, 2026",
+      updatedDays: 5,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "35% of negative cost",
+        "Rights": "SVOD after 90-day theatrical",
+        "Territory": "North America",
+        "Delivery window": "Q1 FY28",
+        "Decision due": "Oct 2, 2026",
+        "Comparable": "Feature-length saint biopic, festival route",
+        "Screener": "canafilm.example/ember-ash-lookbook",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>The best script on the slate and the hardest number to justify.</strong> A feature on Saint Clare's early years, written to travel a festival circuit before it reaches us. Cana has a name director attached.",
+        "At $1.2M for a 35% position this is nearly a third of the FY27 co-production line for one title, and the theatrical hold means it does not appear on Formed for at least fifteen months. That is the whole story of the economics score.",
+        "Recommendation: keep it warm, do not commit. If Cana closes another equity partner the ask drops and this becomes a very different conversation."
+      ],
+      log: [
+        { when: "5 days ago", who: "matt.mussoline", kind: "note", body: "Cana is still hunting a third equity partner. Our exposure drops to roughly $780K if they land it." },
+        { when: "9 days ago", who: "matt.mussoline", kind: "note", body: "The 90-day theatrical window is the sticking point, not the price." },
+        { when: "Aug 24, 2026", who: "matt.mussoline", kind: "status", from: "inbound", to: "in_review" },
+        { when: "Aug 19, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "table-of-kings",
+      title: "Table of Kings",
+      partner: "Sycamore Studios",
+      format: "Formation Series",
+      genre: "Sacraments",
+      episodes: "6 × 22 min",
+      askCents: 26000000,
+      likelihood: 61,
+      likelihoodWhy: "No open issues on our side. We are waiting on their board to approve the 50/50 split.",
+      stage: "in_review",
+      art: { from: "#1e2a5c", to: "#2f4c92", motif: "table" },
+      scores: {
+        mission: { value: 93, why: "Sacraments content built for parish small groups, with a leader guide and workbook already drafted." },
+        audience: { value: 88, why: "Catechetical series index lower on first-week views than saints or Scripture, but completion rates stay high." },
+        economics: { value: 92, why: "$118K per finished hour, just under benchmark, for perpetual worldwide rights. Best value on the slate." },
+        partner: { value: 90, why: "Sycamore has delivered twice for us on schedule, and their paperwork is always clean." },
+        delivery: { value: 90, why: "Two weeks on one stage with no location risk." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Aug 29, 2026",
+      updatedDays: 1,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "50% of negative cost",
+        "Rights": "Worldwide, perpetual",
+        "Territory": "Global, English",
+        "Delivery window": "Q2 FY27 (Nov 2026 – Jan 2027)",
+        "Decision due": "Sep 30, 2026",
+        "Comparable": "Small-group Eucharist study",
+        "Screener": "sycamore.example/table-of-kings",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>The efficient one.</strong> Six episodes on the Eucharist built for parish small groups, with a leader guide and a workbook already drafted. Perpetual worldwide rights at $260K is the best price per finished hour on the slate.",
+        "Sycamore delivered on time twice before, and the whole shoot is two weeks on one stage — which is why deliverability grades at 90.",
+        "The only reason this is not graded higher is audience: catechetical series index lower on first-week views than saints or Scripture, even when completion rates are strong."
+      ],
+      log: [
+        { when: "Yesterday", who: "matt.mussoline", kind: "note", body: "Workbook draft came in. Genuinely good — this could anchor a Lent 2027 parish push." },
+        { when: "4 days ago", who: "matt.mussoline", kind: "status", from: "inbound", to: "in_review" },
+        { when: "Aug 25, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "advent-in-assisi",
+      title: "Advent in Assisi",
+      partner: "Pellegrino Media",
+      format: "Reflection",
+      genre: "Liturgical Seasons",
+      episodes: "24 × 8 min",
+      askCents: 9500000,
+      likelihood: 84,
+      likelihoodWhy: "Approved and in production. The only thing that could still stop it landing is the hard November delivery date.",
+      stage: "greenlit",
+      art: { from: "#2b1e4d", to: "#5c3d8a", motif: "rays" },
+      scores: {
+        mission: { value: 88, why: "Fills the Advent slot with new formation content instead of a re-run, though it is devotional rather than catechetical." },
+        audience: { value: 74, why: "Daily reflections do not spike, they accumulate. We are buying a durable seasonal anchor, not a launch moment." },
+        economics: { value: 95, why: "$30K per finished hour for 24 evergreen pieces we can re-run every Advent. Nothing else on the slate is close." },
+        partner: { value: 82, why: "Pellegrino is small but delivered one series for us, and the Assisi access is theirs alone." },
+        delivery: { value: 96, why: "Pilot is cut, the shoot is done, and Nov 14 is contractual." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Aug 12, 2026",
+      updatedDays: 8,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "70% of negative cost",
+        "Rights": "Worldwide, perpetual",
+        "Territory": "Global, English + Italian",
+        "Delivery window": "Nov 14, 2026 (hard date)",
+        "Decision due": "Closed &mdash; approved Aug 30",
+        "Comparable": "Daily seasonal reflection series",
+        "Screener": "pellegrino.example/assisi-pilot",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>Approved.</strong> Twenty-four daily reflections shot in Assisi, delivered as a seasonal block. Small ask, hard delivery date, already in production.",
+        "Economics and deliverability are the two highest scores on the slate: $95K for 24 pieces of evergreen seasonal content we can re-run every Advent, with the pilot already cut.",
+        "The audience score is the honest limiter. Daily reflections do not spike, they accumulate — we are buying a durable Advent anchor."
+      ],
+      log: [
+        { when: "8 days ago", who: "matt.mussoline", kind: "status", from: "negotiating", to: "greenlit" },
+        { when: "11 days ago", who: "matt.mussoline", kind: "note", body: "Approved at $95K. Nov 14 delivery is contractual — if it slips we lose the whole Advent window." },
+        { when: "Aug 12, 2026", who: "matt.mussoline", kind: "note", body: "Pilot reflection is lovely. The cinematography carries it." },
+        { when: "Aug 4, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "rule-of-life",
+      title: "Rule of Life",
+      partner: "Broadstone Collective",
+      format: "Docu-Series",
+      genre: "Christian Living",
+      episodes: "10 × 30 min",
+      askCents: 78000000,
+      likelihood: 22,
+      likelihoodWhy: "We are apart on both length and price, and they say the abbeys are already committed to a ten-part arc.",
+      stage: "in_review",
+      art: { from: "#20302a", to: "#3f5b4a", motif: "path" },
+      scores: {
+        mission: { value: 86, why: "Contemplative communities are genuinely on-mission, but Christian Living is our best-covered pillar already." },
+        audience: { value: 72, why: "Monastic documentary is a niche within a niche — strong with existing subscribers, weak at acquisition." },
+        economics: { value: 70, why: "$156K per finished hour, above benchmark, and they will not cut below eight episodes to bring it down." },
+        partner: { value: 80, why: "Broadstone is credible and well-reviewed, but has never delivered ten episodes for anyone." },
+        delivery: { value: 76, why: "Ten abbeys across three countries on an eleven-month schedule." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Aug 18, 2026",
+      updatedDays: 14,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "45% of negative cost",
+        "Rights": "Worldwide SVOD, 5 years",
+        "Territory": "Global, English",
+        "Delivery window": "Q4 FY27",
+        "Decision due": "Nov 1, 2026",
+        "Comparable": "Monastic-life documentary series",
+        "Screener": "broadstone.example/rule-of-life",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>Good idea, wrong shape.</strong> Ten half-hours inside contemplative communities. The concept is strong but ten episodes at $780K for a 45% position is more series than the topic supports for us.",
+        "Broadstone will not cut it below eight episodes, which is where the economics score sits. Likelihood is 22% because we are far apart on both length and price, not because the project is weak.",
+        "If they came back at four episodes for $300K this would grade around a B+ and we would probably do it."
+      ],
+      log: [
+        { when: "14 days ago", who: "matt.mussoline", kind: "note", body: "Floated a 4-episode version at $300K. They said the abbeys already committed to a 10-part arc." },
+        { when: "Aug 18, 2026", who: "matt.mussoline", kind: "status", from: "inbound", to: "in_review" },
+        { when: "Aug 14, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "little-flowers",
+      title: "Little Flowers",
+      partner: "Wheat & Tares Animation",
+      format: "Kids Show",
+      genre: "Saints",
+      episodes: "13 × 11 min",
+      askCents: 54000000,
+      likelihood: 45,
+      likelihoodWhy: "They want it and we want it. The open question is whether they can build it, which is why we are proposing a four-episode first order.",
+      stage: "inbound",
+      art: { from: "#7a2b4a", to: "#c2606a", motif: "bloom" },
+      scores: {
+        mission: { value: 90, why: "Kids is the single largest hole in the catalog, and child saints is the right entry point." },
+        audience: { value: 86, why: "Kids content has no comparable in our catalog, but parent demand shows up in every survey we run." },
+        economics: { value: 72, why: "$227K per finished hour is high, but animation always is, and the merchandising option offsets some of it." },
+        partner: { value: 76, why: "Charming test reel from a nine-person shop that has never delivered a full season." },
+        delivery: { value: 64, why: "Eighteen months for thirteen animated episodes is optimistic for their crew size." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Sep 1, 2026",
+      updatedDays: 3,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "55% of negative cost",
+        "Rights": "Worldwide, perpetual + merch option",
+        "Territory": "Global, English + Spanish",
+        "Delivery window": "Q2 FY28",
+        "Decision due": "Oct 15, 2026",
+        "Comparable": "Animated saints anthology, ages 5–9",
+        "Screener": "wheatandtares.example/little-flowers-reel",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>The kids gap, at animation prices.</strong> Thirteen animated shorts on child saints. Kids is the largest hole in the FORMED catalog and the animation test reel is charming.",
+        "Deliverability is the low score and it is the real risk: Wheat &amp; Tares is a nine-person shop that has never delivered thirteen episodes of anything. An 18-month schedule on a 13-episode animated order is optimistic.",
+        "Suggest a 4-episode first order with an option on the remaining nine. That converts a deliverability risk into a paced commitment."
+      ],
+      log: [
+        { when: "3 days ago", who: "matt.mussoline", kind: "note", body: "Asked for their pipeline plan and crew ramp. If they cannot show 13 episodes of capacity, we split the order." },
+        { when: "Sep 1, 2026", who: "matt.mussoline", kind: "note", body: "Graded. Mission and audience are strong; the whole question is whether they can build it." },
+        { when: "Aug 30, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    },
+    {
+      id: "the-ninth-hour",
+      title: "The Ninth Hour",
+      partner: "Kestrel House",
+      format: "Movie",
+      genre: "Fiction",
+      episodes: "1 × 118 min",
+      askCents: 210000000,
+      likelihood: 9,
+      likelihoodWhy: "Passed. Kept on the slate as the record of why.",
+      stage: "passed",
+      art: { from: "#181d23", to: "#3a4551", motif: "hours" },
+      scores: {
+        mission: { value: 82, why: "Well-made and faith-adjacent, but it is a drama first and formation a distant second." },
+        audience: { value: 70, why: "Prestige drama draws press, not subscribers. No comparable in our catalog has converted." },
+        economics: { value: 50, why: "$2.1M for a 30% position on a title we would not be able to stream for two years." },
+        partner: { value: 72, why: "Kestrel is a serious production company, and worth staying close to for their next one." },
+        delivery: { value: 60, why: "Financing incomplete and no cast attached." }
+      },
+      grader: "Matt Mussoline",
+      gradedAt: "Jul 30, 2026",
+      updatedDays: 21,
+      meta: {
+        "Budget source": "Co-Production (FY27)",
+        "Our share": "30% of negative cost",
+        "Rights": "SVOD after theatrical + PVOD",
+        "Territory": "North America",
+        "Delivery window": "Q3 FY28",
+        "Decision due": "Closed &mdash; passed Aug 13",
+        "Comparable": "Faith-adjacent prestige drama",
+        "Screener": "kestrelhouse.example/ninth-hour",
+        "Added by": "matt.mussoline@augustineinstitute.org"
+      },
+      notes: [
+        "<strong>Passed.</strong> A $2.1M ask for a 30% position on a prestige drama that reaches Formed two years out, behind both a theatrical and a PVOD window.",
+        "Kept on the slate on purpose. The grade and the reasoning are the record of why we said no, and Kestrel will be back with something else."
+      ],
+      log: [
+        { when: "21 days ago", who: "matt.mussoline", kind: "status", from: "in_review", to: "passed" },
+        { when: "Aug 13, 2026", who: "matt.mussoline", kind: "note", body: "Passed. Price and window both wrong for us. Told Kestrel we want to see their next one earlier." },
+        { when: "Jul 30, 2026", who: "matt.mussoline", kind: "created" }
+      ]
+    }
+  ];
+
+  /* ------------------------- model ------------------------- */
+
+  function weightedScore(scores) {
+    return WEIGHTS.reduce((total, { key, weight }) => total + scores[key].value * weight, 0);
+  }
+
+  function gradeFor(score) {
+    return GRADE_TIERS.find((tier) => score >= tier.min).letter;
+  }
+
+  function money(cents) {
+    return "$" + Math.round(cents / 100).toLocaleString("en-US");
+  }
+
+  function compactMoney(cents) {
+    const dollars = cents / 100;
+    if (dollars >= 1000000) return "$" + (dollars / 1000000).toFixed(dollars >= 10000000 ? 1 : 2) + "M";
+    return "$" + Math.round(dollars / 1000) + "K";
+  }
+
+  function finishedHours(episodes) {
+    const parts = episodes.match(/(\d+)\s*(?:×|x)\s*(\d+)/);
+    return parts ? (Number(parts[1]) * Number(parts[2])) / 60 : null;
+  }
+
+  function perHour(item) {
+    const hours = finishedHours(item.episodes);
+    if (!hours) return null;
+    const rate = item.askCents / hours;
+    const ratio = rate / HOUR_BENCHMARK_CENTS;
+    const verdict = ratio <= 0.9 ? ["under", "under benchmark"]
+      : ratio <= 1.1 ? ["at", "at benchmark"]
+      : ["over", "over benchmark"];
+    return '<b>' + compactMoney(rate) + '</b> per finished hour &middot; <span class="' + verdict[0] + '">' + verdict[1] + '</span>';
+  }
+
+  function likelihoodColor(value) {
+    if (value >= 65) return "#10b981";
+    if (value >= 40) return "#f59e0b";
+    return "#f97316";
+  }
+
+  function relative(days) {
+    if (days <= 1) return "Updated yesterday";
+    if (days < 14) return "Updated " + days + " days ago";
+    return "Updated " + Math.round(days / 7) + " weeks ago";
+  }
+
+  const enriched = OPPORTUNITIES.map((item) => {
+    const score = weightedScore(item.scores);
+    const letter = gradeFor(score);
+    return {
+      ...item,
+      score,
+      letter,
+      tier: letter.charAt(0),
+      weightedCents: item.askCents * (item.likelihood / 100)
+    };
+  });
+
+  /* ------------------------- state ------------------------- */
+
+  const state = {
+    query: "",
+    stage: "all",
+    sort: "grade",
+    openId: null,
+    openInfo: new Set()
+  };
+
+  function visibleItems() {
+    const query = state.query.trim().toLowerCase();
+    const rows = enriched.filter((item) => {
+      const matchesStage = state.stage === "all" || item.stage === state.stage;
+      const matchesQuery = !query
+        || item.title.toLowerCase().includes(query)
+        || item.partner.toLowerCase().includes(query);
+      return matchesStage && matchesQuery;
+    });
+
+    const sorters = {
+      grade: (a, b) => b.score - a.score,
+      likelihood: (a, b) => b.likelihood - a.likelihood,
+      "ask-desc": (a, b) => b.askCents - a.askCents,
+      "ask-asc": (a, b) => a.askCents - b.askCents,
+      weighted: (a, b) => b.weightedCents - a.weightedCents,
+      updated: (a, b) => a.updatedDays - b.updatedDays
+    };
+    return rows.sort(sorters[state.sort]);
+  }
+
+  /* ------------------------- views ------------------------- */
+
+  function definitionBlock(id, what, bands) {
+    const rows = bands.map(([range, text]) => '<div><dt>' + range + '</dt><dd>' + text + '</dd></div>').join("");
+    return '<div class="definition' + (state.openInfo.has(id) ? " is-shown" : "") + '" id="def-' + id + '">'
+      + '<p class="what">' + what + '</p>'
+      + '<dl>' + rows + '</dl></div>';
+  }
+
+  function infoButton(id, label) {
+    return '<button class="info" type="button" aria-expanded="' + state.openInfo.has(id)
+      + '" data-info="' + id + '" aria-label="' + label + '">i</button>';
+  }
+
+  function dial(value) {
+    const radius = 22;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference * (1 - value / 100);
+    return '<div class="dial">'
+      + '<svg class="dial-svg" width="60" height="60" viewBox="0 0 60 60" role="img" aria-label="Likelihood ' + value + ' percent">'
+      + '<circle class="dial-track" cx="30" cy="30" r="' + radius + '"></circle>'
+      + '<circle class="dial-arc" cx="30" cy="30" r="' + radius + '" stroke="' + likelihoodColor(value) + '"'
+      + ' stroke-dasharray="' + circumference.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"'
+      + ' transform="rotate(-90 30 30)"></circle>'
+      + '<text class="dial-value" x="30" y="35" text-anchor="middle">' + value + '%</text>'
+      + '</svg>'
+      + '<span class="dial-caption">Likelihood</span>'
+      + '</div>';
+  }
+
+  function comb(item) {
+    const bars = WEIGHTS.map(({ key, label }) => {
+      const value = item.scores[key].value;
+      return '<div title="' + label + ': ' + value + '"><span style="height:' + value + '%"></span></div>';
+    }).join("");
+    return '<div class="comb">'
+      + '<div class="comb-bars" role="img" aria-label="Sub-scores: '
+      + WEIGHTS.map(({ key, label }) => label + " " + item.scores[key].value).join(", ") + '">' + bars + '</div>'
+      + '<div class="comb-legend"><span>Mission &middot; Audience &middot; Econ &middot; Partner &middot; Delivery</span>'
+      + '<span><b>' + item.score.toFixed(1) + '</b>/100</span></div>'
+      + '</div>';
+  }
+
+  function initials(name) {
+    return name.split(/\s+/).filter((word) => /[A-Za-z]/.test(word)).slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase()).join("");
+  }
+
+  /* size "sm" is the modal-header thumbnail: motif only, no wordmark or caption. */
+  function artPanel(item, size) {
+    return '<div class="art" style="--art-from:' + item.art.from + ';--art-to:' + item.art.to + '">'
+      + MOTIFS[item.art.motif]
+      + (size === "sm" ? "" : '<span class="wordmark">' + item.title + '</span>'
+        + '<span class="art-note">Placeholder key art</span>')
+      + '</div>';
+  }
+
+  function scorecard(item) {
+    const rows = WEIGHTS.map(({ key, label, weight, what, bands }) => {
+      const entry = item.scores[key];
+      const infoId = item.id + "-" + key;
+      return '<div class="score-row">'
+        + '<div class="score-head"><span class="name">' + label
+        + '<span class="weight">' + Math.round(weight * 100) + '%</span>'
+        + infoButton(infoId, "What we evaluate for " + label) + '</span>'
+        + '<b>' + entry.value + '</b></div>'
+        + '<div class="meter"><span style="width:' + entry.value + '%"></span></div>'
+        + '<p class="why">' + entry.why + '</p>'
+        + definitionBlock(infoId, what, bands)
+        + '</div>';
+    }).join("");
+
+    const likelihoodId = item.id + "-likelihood";
+
+    return '<div class="panel">'
+      + '<h4>Opportunity rating<em>Weighted roll-up</em></h4>'
+      + '<div class="scorecard">' + rows
+      + '<div class="rollup">'
+      + '<div class="sum"><span class="label">Weighted score</span>'
+      + '<span class="num">' + item.score.toFixed(1) + '<small> / 100</small></span></div>'
+      + '<div class="grade" style="' + TIER_STYLE[item.tier] + '">' + item.letter + '<small>Rating</small></div>'
+      + '</div>'
+      + '<p class="grader">Graded by <b>' + item.grader + '</b> on ' + item.gradedAt
+      + '. Change any sub-score and the letter recomputes &mdash; no one sets the grade by hand.</p>'
+      + '</div>'
+      + '<div class="likelihood-block">'
+      + '<div class="likelihood-head"><span class="label">Likelihood</span>'
+      + infoButton(likelihoodId, "What likelihood measures")
+      + '<b>' + item.likelihood + '%</b></div>'
+      + '<p class="why">' + item.likelihoodWhy + '</p>'
+      + definitionBlock(likelihoodId, LIKELIHOOD_DEF.what, LIKELIHOOD_DEF.bands)
+      + '</div>'
+      + '</div>';
+  }
+
+  function logEntry(entry) {
+    const meta = '<div class="meta"><span>' + entry.when + '</span>'
+      + (entry.who ? '<span class="who">' + entry.who + '</span>' : "") + '</div>';
+
+    if (entry.kind === "status") {
+      const from = STAGES[entry.from];
+      const to = STAGES[entry.to];
+      return '<li>' + meta + '<p class="transition">'
+        + '<span class="chip" style="' + from.chip + '">' + from.label + '</span>'
+        + '<span class="arrow" aria-hidden="true">&rarr;</span>'
+        + '<span class="chip" style="' + to.chip + '">' + to.label + '</span></p></li>';
+    }
+    if (entry.kind === "created") {
+      return '<li>' + meta + '<p class="body" style="color:var(--muted);font-weight:700">Added to the co-production slate</p></li>';
+    }
+    return '<li>' + meta + '<p class="body">' + entry.body + '</p></li>';
+  }
+
+  function notesPanel(item) {
+    return '<div class="panel">'
+      + '<h4>Notes &amp; update log<em>' + item.log.length + ' entries</em></h4>'
+      + '<div class="notes">' + item.notes.map((paragraph) => '<p>' + paragraph + '</p>').join("") + '</div>'
+      + '<label class="log-input">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 8v6M9 11h6"></path></svg>'
+      + '<input type="text" placeholder="Type an update and press Enter" aria-label="Log an update on ' + item.title + '" data-log-input="' + item.id + '">'
+      + '</label>'
+      + '<ul class="log">' + item.log.map(logEntry).join("") + '</ul>'
+      + '</div>';
+  }
+
+  function metaPanel(item) {
+    const rows = Object.entries(item.meta).map(([term, value]) => {
+      const isLink = /\.example\//.test(value);
+      const rendered = isLink
+        ? '<a href="#" data-mock-action="screener links open in a new tab in the real app">' + value + '</a>'
+        : value;
+      const numeric = /%|\$|\d{4}/.test(value) ? "num" : "";
+      return '<div><dt>' + term + '</dt><dd class="' + numeric + '">' + rendered + '</dd></div>';
+    }).join("");
+
+    return '<div class="panel">'
+      + '<h4>Metadata</h4>'
+      + '<dl class="meta-list">'
+      + '<div><dt>Partner</dt><dd>' + item.partner + '</dd></div>'
+      + '<div><dt>Format</dt><dd>' + item.format + ' &middot; ' + item.episodes + '</dd></div>'
+      + '<div><dt>Genre</dt><dd>' + item.genre + '</dd></div>'
+      + '<div><dt>Key art</dt><dd>Placeholder &mdash; awaiting partner assets</dd></div>'
+      + '<div><dt>Asking price</dt><dd class="num">' + money(item.askCents) + '</dd></div>'
+      + '<div><dt>Expected cost</dt><dd class="num">' + money(item.weightedCents)
+      + ' <span style="font-weight:600;color:var(--muted)">(ask &times; ' + item.likelihood + '%)</span></dd></div>'
+      + rows
+      + '</dl>'
+      + '<div class="actions">'
+      + '<button class="btn btn-primary" data-mock-action="this would push the title into Content Review">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'
+      + 'Send to Content Review</button>'
+      + '<button class="btn btn-secondary" data-mock-action="this would open the roadmap entry">Open in Roadmap</button>'
+      + '</div></div>';
+  }
+
+  function card(item) {
+    const stage = STAGES[item.stage];
+    const rate = perHour(item);
+
+    return '<article class="card' + (item.stage === "passed" ? " is-passed" : "")
+      + '" style="--stage-accent:' + stage.accent + '" data-id="' + item.id + '">'
+      + '<div class="card-face" role="button" tabindex="0" aria-haspopup="dialog" data-toggle="' + item.id + '">'
+      + artPanel(item)
+      + '<div class="face-body">'
+      + '<div class="face-top">'
+      + '<div class="partner">'
+      + '<div class="partner-row"><span class="avatar" aria-hidden="true">' + initials(item.partner) + '</span>'
+      + '<span class="partner-name">' + item.partner + '</span></div>'
+      + '<span class="chip" style="' + stage.chip + '">' + stage.label + '</span>'
+      + '</div>'
+      + '<div class="grade" style="' + TIER_STYLE[item.tier] + '">' + item.letter + '<small>Rating</small></div>'
+      + '</div>'
+      + '<div><h3>' + item.title + '</h3>'
+      + '<p class="form-line">' + item.format + ' &middot; ' + item.genre + ' &middot; ' + item.episodes + '</p></div>'
+      + '<div class="metrics">'
+      + '<div class="ask"><span class="label">Asking price</span>'
+      + '<div class="amount">' + money(item.askCents) + '</div>'
+      + (rate ? '<div class="per-unit">' + rate + '</div>' : "")
+      + '</div>'
+      + dial(item.likelihood)
+      + '</div>'
+      + comb(item)
+      + '<div class="face-foot"><span>' + relative(item.updatedDays) + ' &middot; ' + item.log.length + ' log entries</span>'
+      + '<span class="more">Open details'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></div>'
+      + '</div></div>'
+      + '</article>';
+  }
+
+  function modal(item) {
+    const stage = STAGES[item.stage];
+    const rate = perHour(item);
+
+    return '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"'
+      + ' style="--stage-accent:' + stage.accent + '">'
+      + '<button class="modal-close" type="button" data-close aria-label="Close details">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>'
+      + '</button>'
+      + '<header class="modal-head">'
+      + '<div class="modal-art">' + artPanel(item, "sm") + '</div>'
+      + '<div class="modal-ident">'
+      + '<div class="ident-row">'
+      + '<span class="avatar" aria-hidden="true">' + initials(item.partner) + '</span>'
+      + '<span class="partner-name">' + item.partner + '</span>'
+      + '<span class="chip" style="' + stage.chip + '">' + stage.label + '</span>'
+      + '</div>'
+      + '<h2 id="modal-title">' + item.title + '</h2>'
+      + '<p class="form-line">' + item.format + ' &middot; ' + item.genre + ' &middot; ' + item.episodes
+      + (rate ? ' &middot; ' + rate : "") + '</p>'
+      + '</div>'
+      + '<div class="modal-figures">'
+      + '<div class="ask"><span class="label">Asking price</span>'
+      + '<div class="amount">' + money(item.askCents) + '</div></div>'
+      + dial(item.likelihood)
+      + '<div class="grade" style="' + TIER_STYLE[item.tier] + '">' + item.letter + '<small>Rating</small></div>'
+      + '</div>'
+      + '</header>'
+      + '<div class="detail">' + scorecard(item) + notesPanel(item) + metaPanel(item) + '</div>'
+      + '</div>';
+  }
+
+  /* ------------------------- render ------------------------- */
+
+  const slate = document.getElementById("slate");
+  const scrim = document.getElementById("scrim");
+  const toast = document.getElementById("toast");
+  let lastFocused = null;
+
+  function renderTiles() {
+    const active = enriched.filter((item) => item.stage !== "passed");
+    const totalAsk = active.reduce((sum, item) => sum + item.askCents, 0);
+    const weighted = active.reduce((sum, item) => sum + item.weightedCents, 0);
+
+    document.getElementById("tile-count").textContent = active.length;
+    document.getElementById("tile-count-foot").textContent =
+      enriched.length - active.length + " passed, kept for the record";
+    document.getElementById("tile-ask").textContent = compactMoney(totalAsk);
+    document.getElementById("tile-weighted").textContent = compactMoney(weighted);
+
+    const tiers = ["A", "B", "C", "D", "F"];
+    const counts = tiers.map((tier) => enriched.filter((item) => item.tier === tier).length);
+    const peak = Math.max(1, ...counts);
+    document.getElementById("tile-spread").innerHTML = tiers.map((tier, index) => {
+      const height = 2.5 * (counts[index] / peak);
+      return '<div><span class="stack" style="height:' + Math.max(height, 0.15).toFixed(2)
+        + 'rem;background:' + (counts[index] ? TIER_BAR[tier] : "#e5e7eb") + '"></span>'
+        + '<span class="tick">' + tier + '</span></div>';
+    }).join("");
+    document.getElementById("tile-spread-foot").textContent =
+      (counts[0] + counts[1]) + " of " + enriched.length + " rated B− or better";
+  }
+
+  function renderFilters() {
+    const entries = [["all", { label: "All" }]].concat(Object.entries(STAGES));
+    document.getElementById("stage-filters").innerHTML = entries.map(([key, stage]) => {
+      const count = key === "all" ? enriched.length : enriched.filter((item) => item.stage === key).length;
+      return '<button type="button" data-stage="' + key + '" aria-pressed="' + (state.stage === key) + '">'
+        + stage.label + '<span class="count">' + count + '</span></button>';
+    }).join("");
+  }
+
+  function render() {
+    const rows = visibleItems();
+    slate.innerHTML = rows.length
+      ? rows.map(card).join("")
+      : '<p class="empty">Nothing matches that filter. Clear the search or pick another stage.</p>';
+    renderFilters();
+  }
+
+  let toastTimer;
+  function flash(message) {
+    toast.textContent = message;
+    toast.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  }
+
+  function toggleInfo(id) {
+    if (state.openInfo.has(id)) state.openInfo.delete(id);
+    else state.openInfo.add(id);
+  }
+
+  /* The tile explainer sits outside the slate, so it toggles directly. */
+  document.querySelector('[data-info="tile-expected"]').addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const panel = document.getElementById("def-tile-expected");
+    const open = panel.classList.toggle("is-shown");
+    button.setAttribute("aria-expanded", String(open));
+  });
+
+  function renderModal() {
+    const item = enriched.find((row) => row.id === state.openId);
+
+    if (!item) {
+      scrim.innerHTML = "";
+      scrim.hidden = true;
+      document.body.classList.remove("is-locked");
+      return;
+    }
+
+    scrim.innerHTML = modal(item);
+    scrim.hidden = false;
+    document.body.classList.add("is-locked");
+  }
+
+  function openDetails(id) {
+    lastFocused = document.activeElement;
+    state.openId = id;
+    state.openInfo.clear();
+    renderModal();
+    const close = scrim.querySelector("[data-close]");
+    if (close) close.focus({ preventScroll: true });
+  }
+
+  function closeDetails() {
+    const id = state.openId;
+    state.openId = null;
+    renderModal();
+    const returnTo = lastFocused && lastFocused.isConnected
+      ? lastFocused
+      : slate.querySelector('[data-id="' + id + '"] .card-face');
+    if (returnTo) returnTo.focus({ preventScroll: true });
+    lastFocused = null;
+  }
+
+  slate.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-toggle]");
+    if (toggle) openDetails(toggle.dataset.toggle);
+  });
+
+  slate.addEventListener("keydown", (event) => {
+    const face = event.target.closest("[data-toggle]");
+    if (face && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      openDetails(face.dataset.toggle);
+    }
+  });
+
+  scrim.addEventListener("click", (event) => {
+    if (event.target === scrim || event.target.closest("[data-close]")) {
+      closeDetails();
+      return;
+    }
+
+    const info = event.target.closest("[data-info]");
+    if (info) {
+      const id = info.dataset.info;
+      const scrollTop = scrim.querySelector(".modal").scrollTop;
+      toggleInfo(id);
+      renderModal();
+      const restored = scrim.querySelector('[data-info="' + id + '"]');
+      scrim.querySelector(".modal").scrollTop = scrollTop;
+      if (restored) restored.focus({ preventScroll: true });
+      return;
+    }
+
+    const mock = event.target.closest("[data-mock-action]");
+    if (mock) {
+      event.preventDefault();
+      flash("Mockup — " + mock.dataset.mockAction + ".");
+    }
+  });
+
+  scrim.addEventListener("keydown", (event) => {
+    const input = event.target.closest("[data-log-input]");
+    if (input && event.key === "Enter" && input.value.trim()) {
+      event.preventDefault();
+      input.value = "";
+      flash("Mockup — updates are not saved yet.");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.openId) closeDetails();
+  });
+
+  document.getElementById("search").addEventListener("input", (event) => {
+    state.query = event.target.value;
+    render();
+  });
+
+  document.getElementById("sort").addEventListener("change", (event) => {
+    state.sort = event.target.value;
+    render();
+  });
+
+  document.getElementById("stage-filters").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-stage]");
+    if (!button) return;
+    state.stage = button.dataset.stage;
+    render();
+  });
+
+  renderTiles();
+  render();
+</script>

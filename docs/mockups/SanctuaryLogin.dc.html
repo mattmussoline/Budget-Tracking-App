@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #2f5d4f; text-decoration: none; } a:hover { color: #1e4034; }
+    .ser { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 860px; background: #f7f4ee; color: #23201c; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch;">
+
+  <!-- left: brand panel -->
+  <div style="background: #2f5d4f; color: #f2f8f5; padding: 56px 60px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px;">
+    <span class="ser" style="font-size: 24px; letter-spacing: -0.01em;">Licensing</span>
+    <div style="display: flex; flex-direction: column; gap: 20px; max-width: 460px;">
+      <h1 class="ser" style="margin: 0; font-size: 52px; line-height: 1.06; letter-spacing: -0.015em;">Every title, rate, and quarter in one place.</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #c4dbd2; text-wrap: pretty;">The licensing budget, content roadmap, and review queue for Formed &mdash; kept current by the people who actually make the decisions.</p>
+    </div>
+    <span style="font-size: 13px; color: #9dbfb3;">Augustine Institute &middot; Internal tool</span>
+  </div>
+
+  <!-- right: form -->
+  <div style="display: grid; place-items: center; padding: 56px;">
+    <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 26px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <span style="width: 44px; height: 44px; border-radius: 12px; background: #e3ede8; display: grid; place-items: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f5d4f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="8" r="4"></circle><path d="m13 11-9 9"></path><path d="M7 17h3v3"></path></svg>
+        </span>
+        <h2 class="ser" style="margin: 0; font-size: 34px; line-height: 1.1; letter-spacing: -0.01em;">Sign in</h2>
+        <p style="margin: 0; font-size: 14px; color: #6f675c; text-wrap: pretty;">Use your Augustine email and the shared internal password.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <label style="display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6f675c;">Work email</span>
+          <span style="min-height: 46px; border: 1px solid #e4ddd0; border-radius: 10px; background: #fffdf9; display: flex; align-items: center; padding: 0 14px; font-size: 15px; color: #a09786;">name@augustineinstitute.org</span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6f675c;">Shared password</span>
+          <span style="min-height: 46px; border: 1px solid #d3c9b7; border-radius: 10px; background: #ffffff; display: flex; align-items: center; padding: 0 14px; font-size: 15px; letter-spacing: 0.22em; color: #55504a;">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
+        </label>
+        <button style="font-family: Manrope, sans-serif; font-size: 15px; font-weight: 700; min-height: 48px; border: none; background: #2f5d4f; border-radius: 10px; color: #fffdf9; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 7 10 6 10-6"></path></svg>
+          Sign in
+        </button>
+      </div>
+
+      <p style="margin: 0; font-size: 13px; color: #a09786; text-wrap: pretty;">Only <span style="color: #6f675c; font-weight: 600;">@augustineinstitute.org</span> addresses can sign in. Ask Matt if you need the shared password.</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

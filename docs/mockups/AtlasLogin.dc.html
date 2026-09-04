@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #b6552b; text-decoration: none; } a:hover { color: #8a3f1e; }
+    .sg { font-family: "Space Grotesk", "Helvetica Neue", sans-serif; }
+    .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: #5a6478; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 860px; background: #0f1b2d; color: #101828; display: grid; place-items: center; padding: 60px; box-sizing: border-box;">
+
+  <div style="width: 100%; max-width: 940px; background: #ffffff; border-radius: 8px; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: stretch;">
+
+    <div style="background: #0f1b2d; color: #ffffff; padding: 44px 40px; display: flex; flex-direction: column; justify-content: space-between; gap: 36px; border-right: 3px solid #b6552b;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 28px; height: 28px; border-radius: 6px; background: #b6552b; display: grid; place-items: center; flex-shrink: 0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V7"></path><path d="M9 17V11"></path><path d="M15 17V4"></path><path d="M21 17v-7"></path></svg>
+        </span>
+        <span class="sg" style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em;">Licensing</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <h1 class="sg" style="margin: 0; font-size: 32px; font-weight: 700; line-height: 1.12; letter-spacing: -0.025em;">Every title, rate, and quarter in one place.</h1>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #9aa7bd; text-wrap: pretty;">The licensing budget, content roadmap, and review queue for Formed.</p>
+      </div>
+      <span style="font-size: 12px; color: #6b7891;">Augustine Institute &middot; Internal tool</span>
+    </div>
+
+    <div style="padding: 44px 40px; display: flex; flex-direction: column; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <h2 class="sg" style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">Sign in</h2>
+        <p style="margin: 0; font-size: 13px; color: #5a6478; text-wrap: pretty;">Use your Augustine email and the shared internal password.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <label style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="lbl">WORK EMAIL</span>
+          <span style="min-height: 44px; border: 1px solid #dfe3ea; border-radius: 6px; display: flex; align-items: center; padding: 0 13px; font-size: 14px; color: #98a1b2;">name@augustineinstitute.org</span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="lbl">SHARED PASSWORD</span>
+          <span style="min-height: 44px; border: 1px solid #b6552b; border-radius: 6px; display: flex; align-items: center; padding: 0 13px; font-size: 14px; letter-spacing: 0.22em; color: #3d4657;">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
+        </label>
+        <button style="font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 600; min-height: 46px; border: none; background: #b6552b; border-radius: 6px; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 7 10 6 10-6"></path></svg>
+          Sign in
+        </button>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #98a1b2; line-height: 1.6; text-wrap: pretty;">Only <span style="color: #5a6478; font-weight: 600;">@augustineinstitute.org</span> addresses can sign in. Ask Matt if you need the shared password.</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #2f5d4f; text-decoration: none; } a:hover { color: #1e4034; }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .ser { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .lbl { font-size: 12px; font-weight: 600; color: #6f675c; }
+    .fld { min-height: 40px; border: 1px solid #e4ddd0; border-radius: 8px; background: #ffffff; display: flex; align-items: center; padding: 0 12px; font-size: 14px; color: #23201c; }
+    .card { background: #fffdf9; border: 1px solid #e4ddd0; border-radius: 12px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1440px; background: #f7f4ee; color: #23201c; display: flex; flex-direction: column;">
+
+  <!-- top bar -->
+  <div style="height: 62px; flex-shrink: 0; background: #fffdf9; border-bottom: 1px solid #e4ddd0; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <span class="ser" style="font-size: 20px; letter-spacing: -0.01em;">Licensing</span>
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 14px;">
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; background: #e3ede8; color: #2f5d4f; font-weight: 600;">Licensing Summary</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Roadmap</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Content Review</a>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="num" style="font-size: 13px; font-weight: 600; border: 1px solid #e4ddd0; border-radius: 8px; padding: 7px 12px; background: #ffffff;">FY26</span>
+      <button style="font-family: inherit; font-size: 13px; font-weight: 600; height: 36px; padding: 0 14px; border: 1px solid #e4ddd0; background: #ffffff; border-radius: 8px; color: #23201c; cursor: pointer;">Add fiscal year</button>
+      <span style="width: 1px; height: 22px; background: #e4ddd0;"></span>
+      <span style="font-size: 13px; color: #6f675c;">matt.mussoline@augustineinstitute.org</span>
+    </div>
+  </div>
+
+  <div style="padding: 32px 40px 40px; display: flex; flex-direction: column; gap: 22px;">
+
+    <!-- page head -->
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+      <div style="display: flex; flex-direction: column; gap: 6px; max-width: 720px;">
+        <h1 class="ser" style="margin: 0; font-size: 40px; line-height: 1.05; letter-spacing: -0.01em;">FY26 Licensing Budget</h1>
+        <p style="margin: 0; font-size: 14px; color: #6f675c; text-wrap: pretty;">Titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.</p>
+      </div>
+      <span style="font-size: 12px; font-weight: 600; color: #2f5d4f; background: #e3ede8; border-radius: 8px; padding: 7px 12px;">July 2025 &ndash; June 2026</span>
+    </div>
+
+    <!-- KPI row -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) repeat(4, minmax(0, 1fr)); gap: 14px;">
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <span class="lbl">Fiscal year health</span>
+          <span class="num" style="font-size: 11px; font-weight: 700; color: #2f5d4f; background: #e3ede8; border-radius: 6px; padding: 2px 7px;">30% used</span>
+        </div>
+        <span class="ser num" style="font-size: 30px; line-height: 1;">On track</span>
+        <div style="height: 7px; border-radius: 4px; background: #ece6da; display: flex;"><div style="width: 30%; background: #2f5d4f; border-radius: 4px;"></div></div>
+      </div>
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;">
+        <span class="lbl">Budget</span>
+        <span class="ser num" style="font-size: 32px; line-height: 1;">$84,000</span>
+      </div>
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; border-color: #cbdcd4; background: #f2f8f5;">
+        <span class="lbl" style="color: #2f5d4f;">Committed</span>
+        <span class="ser num" style="font-size: 32px; line-height: 1; color: #2f5d4f;">$24,867</span>
+      </div>
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;">
+        <span class="lbl">Other budgets</span>
+        <span class="ser num" style="font-size: 32px; line-height: 1;">$26,150</span>
+      </div>
+      <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;">
+        <span class="lbl">Remaining</span>
+        <span class="ser num" style="font-size: 32px; line-height: 1;">$59,133</span>
+      </div>
+    </div>
+
+    <!-- signals -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <h2 class="ser" style="margin: 0; font-size: 24px;">Licensing summary</h2>
+        <span style="font-size: 13px; color: #6f675c;">Quick signals for how the licensing year is taking shape.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 14px;">
+        <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Content pieces</span>
+          <span class="ser num" style="font-size: 30px; line-height: 1;">6</span>
+          <span style="font-size: 12px; color: #a09786;">3 quarterly &middot; 3 yearly</span>
+        </div>
+        <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Average rate</span>
+          <span class="ser num" style="font-size: 30px; line-height: 1;">$4,750.00</span>
+          <span style="font-size: 12px; color: #a09786;">Average installment amount</span>
+        </div>
+        <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Cadence mix</span>
+          <span class="ser num" style="font-size: 30px; line-height: 1;">3 / 3</span>
+          <span class="num" style="font-size: 12px; color: #a09786;">$32,516.67 quarterly &middot; $18,500.00 yearly</span>
+        </div>
+        <div class="card" style="padding: 18px 20px; display: flex; align-items: center; gap: 20px;">
+          <div style="position: relative; width: 84px; height: 84px; flex-shrink: 0;">
+            <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true">
+              <circle cx="42" cy="42" r="33" fill="none" stroke="#ece6da" stroke-width="12"></circle>
+              <circle cx="42" cy="42" r="33" fill="none" stroke="#2f5d4f" stroke-width="12" stroke-dasharray="104 207" transform="rotate(-90 42 42)"></circle>
+              <circle cx="42" cy="42" r="33" fill="none" stroke="#86a99c" stroke-width="12" stroke-dasharray="35 207" transform="rotate(90 42 42)"></circle>
+              <circle cx="42" cy="42" r="33" fill="none" stroke="#b9cfc7" stroke-width="12" stroke-dasharray="35 207" transform="rotate(150 42 42)"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: grid; place-items: center;"><span class="ser num" style="font-size: 24px;">4</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0; flex-grow: 1;">
+            <span class="lbl">Active providers</span>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Harbor Light Media</span><span class="num" style="color: #6f675c;">50%</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Bluebird Learning</span><span class="num" style="color: #6f675c;">17%</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Lantern House</span><span class="num" style="color: #6f675c;">17%</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Northstar Studios</span><span class="num" style="color: #6f675c;">17%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- collapsible strips -->
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+      <div class="card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+          <span class="ser" style="font-size: 19px;">Budget sources</span>
+          <span style="font-size: 12px; color: #6f675c; text-wrap: pretty;">Content counted across budget items, roadmap titles, and content reviews.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+          <span class="num" style="font-size: 11px; font-weight: 700; color: #6f675c; background: #f0ebe1; border-radius: 6px; padding: 3px 8px;">17 tracked</span>
+          <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </span>
+        </div>
+      </div>
+      <div class="card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-color: #e8cfd3; background: #fdf7f7;">
+        <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+          <span class="ser" style="font-size: 19px;">Needs attention</span>
+          <span style="font-size: 12px; color: #6f675c; text-wrap: pretty;">Items that are blocked, undated, approved, released, or close to budget limits.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+          <span class="num" style="font-size: 11px; font-weight: 700; color: #8a3a46; background: #f6e8ea; border-radius: 6px; padding: 3px 8px;">4 open</span>
+          <span style="width: 28px; height: 28px; border: 1px solid #e8cfd3; border-radius: 8px; display: grid; place-items: center; background: #ffffff;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a3a46" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- work area -->
+    <div style="display: grid; grid-template-columns: 348px minmax(0, 1fr); gap: 20px; align-items: start;">
+
+      <!-- forms column -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="ser" style="font-size: 19px;">Edit fiscal year</span>
+            <span style="font-size: 12px; color: #6f675c;">Update the label, fiscal calendar, or total budget.</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Label</span><span class="fld">FY26 Licensing Bu&hellip;</span></label>
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Fiscal year</span><span class="fld num">2026</span></label>
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">FY starts in</span><span class="fld" style="justify-content: space-between;">July <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Budget</span><span class="fld num">84000</span></label>
+          </div>
+          <button style="font-family: inherit; font-size: 13px; font-weight: 700; height: 40px; border: 1px solid #e4ddd0; background: #ffffff; border-radius: 8px; color: #23201c; cursor: pointer;">Save budget settings</button>
+        </div>
+
+        <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="ser" style="font-size: 19px;">Add content</span>
+            <span style="font-size: 12px; color: #6f675c;">The first quarterly payment is prorated automatically.</span>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Title</span><span class="fld" style="color: #a09786;">Jesus Thirsts</span></label>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Provider</span><span class="fld" style="color: #a09786;">Provider name</span></label>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Payment amount</span><span class="fld num" style="color: #a09786;">1200</span></label>
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Cadence</span><span class="fld" style="justify-content: space-between; color: #a09786;">Select <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Added month</span><span class="fld" style="justify-content: space-between; color: #a09786;">Select <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+            <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Budget source</span><span class="fld" style="justify-content: space-between; font-size: 13px;">Misc licensing <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Notes</span><span class="fld" style="min-height: 58px; align-items: flex-start; padding-top: 10px; color: #a09786;">Optional context</span></label>
+          <button style="font-family: inherit; font-size: 13px; font-weight: 700; height: 40px; border: none; background: #2f5d4f; border-radius: 8px; color: #fffdf9; cursor: pointer;">Add title</button>
+        </div>
+
+        <div class="card" style="padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+            <span class="ser" style="font-size: 19px;">Collaborators</span>
+            <span style="font-size: 12px; color: #6f675c;">Connect Supabase to manage who can sign in.</span>
+          </div>
+          <span class="num" style="font-size: 11px; font-weight: 700; color: #6f675c; background: #f0ebe1; border-radius: 6px; padding: 3px 8px; flex-shrink: 0;">0 people</span>
+        </div>
+      </div>
+
+      <!-- quarters + edit content -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <h2 class="ser" style="margin: 0; font-size: 24px;">Committed by quarter</h2>
+          <span style="font-size: 13px; color: #6f675c;">6 content titles tracked. Click a quarter to expand its months.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="ser" style="font-size: 19px;">Quarter 1</span>
+                <span style="font-size: 12px; color: #a09786;">July &ndash; September</span>
+              </div>
+              <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              </span>
+            </div>
+            <span class="ser num" style="font-size: 30px; line-height: 1;">$13,750.00</span>
+            <div style="height: 6px; border-radius: 3px; background: #ece6da; display: flex;"><div style="width: 72%; background: #86a99c; border-radius: 3px;"></div></div>
+          </div>
+          <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="ser" style="font-size: 19px;">Quarter 2</span>
+                <span style="font-size: 12px; color: #a09786;">October &ndash; December</span>
+              </div>
+              <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              </span>
+            </div>
+            <span class="ser num" style="font-size: 30px; line-height: 1;">$8,266.67</span>
+            <div style="height: 6px; border-radius: 3px; background: #ece6da; display: flex;"><div style="width: 43%; background: #86a99c; border-radius: 3px;"></div></div>
+          </div>
+          <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; border-color: #cbdcd4;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="ser" style="font-size: 19px;">Quarter 3</span>
+                <span style="font-size: 12px; color: #a09786;">January &ndash; March</span>
+              </div>
+              <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              </span>
+            </div>
+            <span class="ser num" style="font-size: 30px; line-height: 1; color: #2f5d4f;">$19,000.00</span>
+            <div style="height: 6px; border-radius: 3px; background: #ece6da; display: flex;"><div style="width: 100%; background: #2f5d4f; border-radius: 3px;"></div></div>
+          </div>
+          <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="ser" style="font-size: 19px;">Quarter 4</span>
+                <span style="font-size: 12px; color: #a09786;">April &ndash; June</span>
+              </div>
+              <span style="width: 28px; height: 28px; border: 1px solid #e4ddd0; border-radius: 8px; display: grid; place-items: center; background: #ffffff; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              </span>
+            </div>
+            <span class="ser num" style="font-size: 30px; line-height: 1;">$10,000.00</span>
+            <div style="height: 6px; border-radius: 3px; background: #ece6da; display: flex;"><div style="width: 53%; background: #86a99c; border-radius: 3px;"></div></div>
+          </div>
+        </div>
+
+        <!-- edit content table -->
+        <div class="card" style="overflow: hidden; display: flex; flex-direction: column;">
+          <div style="padding: 16px 20px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid #efe9de;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span class="ser" style="font-size: 19px;">Edit content</span>
+              <span style="font-size: 12px; color: #6f675c;">Adjust titles, providers, payment amounts, cadence, or added month.</span>
+            </div>
+            <span style="font-size: 12px;"><a href="#">Expand all</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 9px 20px; background: #faf7f1; border-bottom: 1px solid #efe9de; font-size: 11px; font-weight: 600; color: #6f675c;">
+            <span>Title</span><span>Provider</span><span style="text-align: right;">Installment</span><span>Cadence</span><span>Added</span><span></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">The Carpenter&rsquo;s Table</span><span style="color: #55504a;">Harbor Light Media</span><span class="num" style="text-align: right;">$4,250.00</span><span style="color: #6f675c; font-size: 13px;">Quarterly</span><span style="color: #6f675c; font-size: 13px;">Jul</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">Saints in the City</span><span style="color: #55504a;">Lantern House</span><span class="num" style="text-align: right;">$9,500.00</span><span style="color: #6f675c; font-size: 13px;">Yearly</span><span style="color: #6f675c; font-size: 13px;">Aug</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">Little Way Adventures</span><span style="color: #55504a;">Bluebird Learning</span><span class="num" style="text-align: right;">$3,150.00</span><span style="color: #6f675c; font-size: 13px;">Quarterly</span><span style="color: #6f675c; font-size: 13px;">Oct</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">Desert Fathers</span><span style="color: #55504a;">Harbor Light Media</span><span class="num" style="text-align: right;">$2,600.00</span><span style="color: #6f675c; font-size: 13px;">Quarterly</span><span style="color: #6f675c; font-size: 13px;">Dec</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #f4f0e8; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">Parish Kitchen</span><span style="color: #55504a;">Northstar Studios</span><span class="num" style="text-align: right;">$7,200.00</span><span style="color: #6f675c; font-size: 13px;">Yearly</span><span style="color: #6f675c; font-size: 13px;">Feb</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr) 104px 92px 84px 52px; gap: 14px; padding: 11px 20px; font-size: 14px; align-items: center;">
+            <span style="font-weight: 600;">Harbor Catechism Minutes</span><span style="color: #55504a;">Harbor Light Media</span><span class="num" style="text-align: right;">$1,800.00</span><span style="color: #6f675c; font-size: 13px;">Yearly</span><span style="color: #6f675c; font-size: 13px;">Mar</span><span style="font-size: 12px;"><a href="#">Edit</a></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

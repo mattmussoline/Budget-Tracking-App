@@ -275,7 +275,7 @@ describe("RoadmapDashboard", () => {
   it("renders category management and ongoing series", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
-    expect(screen.getByRole("button", { name: "Manage Key" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Manage key" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Ongoing Series Cadence" })).toBeVisible();
     expect(screen.getByText("Practicing Catholic")).toBeVisible();
   });
@@ -283,19 +283,19 @@ describe("RoadmapDashboard", () => {
   it("opens the add-roadmap form in a modal dialog", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
-    const trigger = screen.getByRole("button", { name: "Add Roadmap Item" });
+    const trigger = screen.getByRole("button", { name: "Add roadmap item" });
 
-    expect(screen.queryByRole("dialog", { name: "Add Roadmap Item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Add roadmap item" })).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
 
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     expect(dialog).toHaveAttribute("open");
-    expect(screen.getByRole("heading", { name: "Add Roadmap Item" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Add roadmap item" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.queryByRole("dialog", { name: "Add Roadmap Item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Add roadmap item" })).not.toBeInTheDocument();
   });
 
   it("does not mount every closed roadmap dialog at once", () => {
@@ -313,7 +313,7 @@ describe("RoadmapDashboard", () => {
 
     fireEvent.click(januaryAddButton);
 
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     expect(dialog).toHaveAttribute("open");
     expect(within(dialog).getByLabelText("Release date")).toHaveValue("2027-01-01");
     expect(within(dialog).getByLabelText("Status")).toHaveClass("min-h-12");
@@ -324,8 +324,8 @@ describe("RoadmapDashboard", () => {
   it("closes provider suggestions after choosing one in the add-roadmap form", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    fireEvent.click(screen.getByRole("button", { name: "Add roadmap item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     const providerInput = within(dialog).getByLabelText("Provider");
 
     fireEvent.change(providerInput, { target: { value: "Tho" } });
@@ -341,8 +341,8 @@ describe("RoadmapDashboard", () => {
     actionMocks.addRoadmapItem.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    fireEvent.click(screen.getByRole("button", { name: "Add roadmap item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     const titleInput = within(dialog).getByLabelText("Title");
     const providerInput = within(dialog).getByLabelText("Provider");
     const releaseDateInput = within(dialog).getByLabelText("Release date");
@@ -378,8 +378,8 @@ describe("RoadmapDashboard", () => {
 
     expect(within(screen.getByRole("button", { name: "Edit Mystery Series" })).getByText("TBD")).toHaveClass("bg-danger-soft", "text-danger");
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Roadmap Item" }));
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    fireEvent.click(screen.getByRole("button", { name: "Add roadmap item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     fireEvent.click(within(dialog).getByRole("button", { name: "No month yet" }));
 
     expect(within(dialog).getByLabelText("Release date value")).toHaveValue("TBD");
@@ -407,7 +407,7 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Add item to February 2027" }));
-    const dialog = screen.getByRole("dialog", { name: "Add Roadmap Item" });
+    const dialog = screen.getByRole("dialog", { name: "Add roadmap item" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Date TBD in this month" }));
 
     expect(within(dialog).getByLabelText("Release month")).toHaveValue("2027-02");
@@ -648,9 +648,9 @@ describe("RoadmapDashboard", () => {
     actionMocks.updateRoadmapCategory.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Manage Key" }));
+    fireEvent.click(screen.getByRole("button", { name: "Manage key" }));
 
-    const dialog = screen.getByRole("dialog", { name: "Manage Key" });
+    const dialog = screen.getByRole("dialog", { name: "Manage key" });
     const nameInput = within(dialog).getByLabelText("Category name Parish");
     const colorSelect = within(dialog).getByLabelText("Category color Parish");
     expect(within(dialog).queryByLabelText("Category status Parish")).not.toBeInTheDocument();
@@ -671,9 +671,9 @@ describe("RoadmapDashboard", () => {
     actionMocks.reorderRoadmapCategories.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Manage Key" }));
+    fireEvent.click(screen.getByRole("button", { name: "Manage key" }));
 
-    const dialog = screen.getByRole("dialog", { name: "Manage Key" });
+    const dialog = screen.getByRole("dialog", { name: "Manage key" });
     const dataTransfer = {
       effectAllowed: "",
       getData: vi.fn(() => "cat-parish"),
@@ -693,8 +693,8 @@ describe("RoadmapDashboard", () => {
     actionMocks.deleteRoadmapCategory.mockResolvedValue(undefined);
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Manage Key" }));
-    const deleteButton = within(screen.getByRole("dialog", { name: "Manage Key" })).getByRole("button", { name: "Delete Parish" });
+    fireEvent.click(screen.getByRole("button", { name: "Manage key" }));
+    const deleteButton = within(screen.getByRole("dialog", { name: "Manage key" })).getByRole("button", { name: "Delete Parish" });
 
     fireEvent.click(deleteButton);
     expect(actionMocks.deleteRoadmapCategory).not.toHaveBeenCalled();

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Trash2, UserPlus, Users } from "lucide-react";
+import { ChevronDown, Trash2, UserPlus } from "lucide-react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSurface } from "@/components/ui/soft-surface";
@@ -14,31 +14,26 @@ type SharePanelProps = {
 
 export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePanelProps) {
   return (
-    <SoftSurface className="overflow-hidden border border-hairline bg-white">
+    <SoftSurface className="overflow-hidden bg-panel-warm">
       <details className="group">
-        <summary className="flex cursor-pointer list-none flex-col gap-4 p-5 marker:hidden sm:flex-row sm:items-start sm:justify-between md:p-6">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-deep-teal">
-              <Users className="h-5 w-5 text-white" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="font-display text-xl tracking-tight">Collaborators</h2>
-              <p className="max-w-xl text-sm font-medium leading-6 text-muted">
-                {isDemo
-                  ? "Connect Supabase to manage who can sign in."
-                  : "Add an approved work email, then share the app link and shared password."}
-              </p>
-            </div>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3.5 px-5 py-[18px] marker:hidden">
+          <div className="grid min-w-0 gap-0.5">
+            <h2 className="font-display text-lg">Collaborators</h2>
+            <p className="text-xs text-muted [text-wrap:pretty]">
+              {isDemo
+                ? "Connect Supabase to manage who can sign in."
+                : "Add an approved work email, then share the app link and shared password."}
+            </p>
           </div>
           <div className="flex w-fit shrink-0 items-center gap-2">
-            <div className="rounded-md bg-panel-warm px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <span className="rounded-md bg-tone-slate-bg px-2 py-0.5 text-[11px] font-bold text-muted">
               {allowedEmails.length} {allowedEmails.length === 1 ? "person" : "people"}
-            </div>
+            </span>
             <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
           </div>
         </summary>
-        <div className="grid gap-5 border-t border-hairline p-5 pt-4 md:p-6 md:pt-5">
-          <form action={addCollaborator} className="grid gap-3 rounded-lg bg-panel-warm p-3">
+        <div className="grid gap-5 border-t border-hairline p-5">
+          <form action={addCollaborator} className="grid gap-2.5">
             <SoftInput
               label="Collaborator email"
               name="email"
@@ -55,19 +50,19 @@ export function SharePanel({ allowedEmails, currentUserEmail, isDemo }: SharePan
           </form>
           <div className="grid gap-3">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Can sign in</h3>
-              <span className="hidden text-xs font-bold text-muted sm:inline">Augustine email required</span>
+              <h3 className="text-xs font-semibold text-muted">Can sign in</h3>
+              <span className="hidden text-xs text-faint sm:inline">Augustine email required</span>
             </div>
             {allowedEmails.length > 0 ? (
-              <ul className="divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-white">
+              <ul className="divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-panel">
                 {allowedEmails.map((email) => {
                   const isCurrentUser = email === currentUserEmail;
 
                   return (
                     <li key={email} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <span className="block truncate text-sm font-bold text-foreground">{email}</span>
-                        {isCurrentUser ? <span className="text-xs font-bold text-muted">You</span> : null}
+                        <span className="block truncate text-sm font-semibold text-foreground">{email}</span>
+                        {isCurrentUser ? <span className="text-xs text-muted">You</span> : null}
                       </div>
                       <form
                         action={removeCollaborator}

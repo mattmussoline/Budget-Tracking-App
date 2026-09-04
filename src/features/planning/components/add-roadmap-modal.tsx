@@ -2,7 +2,7 @@
 
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarPlus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
 
 type AddRoadmapModalProps = {
@@ -15,10 +15,10 @@ type AddRoadmapModalProps = {
 
 export function AddRoadmapModal({
   children,
-  triggerLabel = "Add Roadmap Item",
+  triggerLabel = "Add roadmap item",
   triggerAriaLabel,
   triggerClassName,
-  triggerIcon = <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+  triggerIcon = <Plus className="h-4 w-4" aria-hidden="true" />
 }: AddRoadmapModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -57,7 +57,7 @@ export function AddRoadmapModal({
       type="button"
       onClick={openDialog}
       aria-label={triggerAriaLabel}
-      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-formed-blue px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-all duration-200 hover:bg-formed-blue-hover", triggerClassName)}
+      className={cn("inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-formed-blue bg-formed-blue px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:border-formed-blue-hover hover:bg-formed-blue-hover", triggerClassName)}
     >
       {triggerIcon}
       {triggerLabel}
@@ -78,7 +78,7 @@ export function AddRoadmapModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p>
-            <h2 id={titleId} className="font-display text-3xl">Add Roadmap Item</h2>
+            <h2 id={titleId} className="font-display text-3xl">Add roadmap item</h2>
           </div>
           <button type="button" onClick={closeDialog} aria-label="Close add roadmap modal" className="rounded-md bg-panel-warm p-3 text-muted transition-colors hover:bg-hairline hover:text-foreground">
             <X className="h-5 w-5" aria-hidden="true" />

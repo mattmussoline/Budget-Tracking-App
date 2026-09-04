@@ -33,8 +33,8 @@ describe("LicenseManager", () => {
       />
     );
 
-    const editContentSummary = screen.getByText("Edit Content").closest("summary");
-    expect(editContentSummary).toHaveClass("px-4", "py-3");
+    const editContentSummary = screen.getByText("Edit content").closest("summary");
+    expect(editContentSummary).toHaveClass("px-5", "py-4");
     expect(container.querySelectorAll("details")).toHaveLength(2);
     expect(screen.getByRole("combobox", { name: "Cadence" })).toHaveClass("min-h-9", "text-sm");
     expect(screen.getByRole("combobox", { name: "Added month" })).toHaveClass("min-h-9", "text-sm");
@@ -53,7 +53,8 @@ describe("LicenseManager", () => {
       />
     );
 
-    expect(screen.getByText((_, element) => element?.textContent === "Thomistic - $12,000.00")).toBeInTheDocument();
+    expect(screen.getByText("$12,000.00")).toBeInTheDocument();
+    expect(screen.getByText("Thomistic")).toBeInTheDocument();
   });
 
   it("uses short select placeholder text in the edit form", () => {

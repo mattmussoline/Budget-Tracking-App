@@ -147,14 +147,14 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
   };
 
   return <>
-    <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-panel-warm px-5 py-3 text-sm font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-hairline">
-      <KeyRound className="h-4 w-4" aria-hidden="true" />Manage Key
+    <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-hairline bg-panel px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-hairline-strong">
+      <KeyRound className="h-4 w-4" aria-hidden="true" />Manage key
     </button>
     <dialog ref={dialogRef} aria-labelledby="manage-key-title" onClick={closeFromBackdrop} onKeyDown={closeFromEscape} onClose={() => triggerRef.current?.focus()} className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60">
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-4 sm:p-5">
-          <div><p className="text-[11px] font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p><h2 id="manage-key-title" className="font-display text-2xl">Manage Key</h2><p className="mt-1 text-xs font-bold text-muted">Roadmap key overview.</p></div>
-          <button type="button" onClick={closeDialog} aria-label="Close Manage Key modal" className="rounded-md bg-formed-blue p-2 text-white transition-colors hover:bg-formed-blue-hover"><X className="h-5 w-5" aria-hidden="true" /></button>
+          <div><p className="text-[11px] font-semibold uppercase tracking-wide text-formed-blue">Roadmap</p><h2 id="manage-key-title" className="font-display text-2xl">Manage key</h2><p className="mt-1 text-xs font-bold text-muted">Roadmap key overview.</p></div>
+          <button type="button" onClick={closeDialog} aria-label="Close Manage key modal" className="rounded-md bg-formed-blue p-2 text-white transition-colors hover:bg-formed-blue-hover"><X className="h-5 w-5" aria-hidden="true" /></button>
         </header>
         <div className="grid min-h-0 gap-2 overflow-y-auto p-4 sm:p-5">
           <span aria-live="polite" className="min-h-4 text-xs font-semibold uppercase text-muted">{saveStatus || orderStatus}</span>

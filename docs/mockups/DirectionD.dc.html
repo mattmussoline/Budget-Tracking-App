@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #d9b53d; text-decoration: none; } a:hover { color: #f0cf5e; }
+    .num { font-family: Sora, "Helvetica Neue", sans-serif; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1000px; background: #131311; color: #f0ede4; display: flex; flex-direction: column;">
+
+  <!-- top bar -->
+  <div style="height: 64px; flex-shrink: 0; border-bottom: 1px solid #2c2c28; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 32px;">
+      <span style="font-family: Sora, sans-serif; font-size: 15px; font-weight: 500; letter-spacing: 0.02em;">Licensing</span>
+      <div style="display: flex; align-items: center; gap: 26px; font-size: 14px;">
+        <a href="#" style="color: #f0ede4; border-bottom: 1px solid #c9a227; padding-bottom: 3px;">Summary</a>
+        <a href="#" style="color: #9a968b;">Roadmap</a>
+        <a href="#" style="color: #9a968b;">Content review</a>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <span class="num" style="font-size: 13px; color: #9a968b; border: 1px solid #2c2c28; border-radius: 6px; padding: 6px 12px;">FY26 &middot; Jul&ndash;Jun</span>
+      <button style="font-family: Manrope, sans-serif; font-size: 14px; font-weight: 600; height: 38px; padding: 0 18px; border: none; border-radius: 6px; background: #c9a227; color: #131311; cursor: pointer;">Add title</button>
+    </div>
+  </div>
+
+  <div style="padding: 36px 40px 40px; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- headline row -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: stretch;">
+
+      <!-- vault panel -->
+      <div style="background: #1b1b18; border: 1px solid #2c2c28; border-radius: 14px; padding: 30px 32px; display: flex; align-items: center; gap: 40px;">
+        <div style="position: relative; width: 168px; height: 168px; flex-shrink: 0;">
+          <svg width="168" height="168" viewBox="0 0 168 168" aria-hidden="true">
+            <circle cx="84" cy="84" r="68" fill="none" stroke="#2c2c28" stroke-width="14"></circle>
+            <circle cx="84" cy="84" r="68" fill="none" stroke="#c9a227" stroke-width="14" stroke-linecap="round" stroke-dasharray="128 428" transform="rotate(-90 84 84)"></circle>
+          </svg>
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+            <span class="num" style="font-size: 32px; font-weight: 500;">30%</span>
+            <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #9a968b;">committed</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px; min-width: 0;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 13px; color: #9a968b;">Remaining to commit</span>
+            <span class="num" style="font-size: 52px; font-weight: 500; line-height: 1; letter-spacing: -0.02em; color: #f7f4ea;">$59,133</span>
+          </div>
+          <div style="display: flex; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 12px; color: #9a968b;">Total budget</span>
+              <span class="num" style="font-size: 18px;">$84,000</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; border-left: 1px solid #2c2c28; padding-left: 32px;">
+              <span style="font-size: 12px; color: #9a968b;">Committed</span>
+              <span class="num" style="font-size: 18px; color: #d9b53d;">$24,867</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; border-left: 1px solid #2c2c28; padding-left: 32px;">
+              <span style="font-size: 12px; color: #9a968b;">Other budgets</span>
+              <span class="num" style="font-size: 18px;">$26,150</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- quarters -->
+      <div style="background: #1b1b18; border: 1px solid #2c2c28; border-radius: 14px; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 15px; font-weight: 500;">Committed by quarter</h2>
+          <span style="font-size: 12px; color: #9a968b;">Q3 is heaviest</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 12px; color: #9a968b; width: 78px; flex-shrink: 0;">Q1 Jul&ndash;Sep</span>
+            <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: #232320; display: flex;"><div style="width: 72%; background: #7a6a2c; border-radius: 4px;"></div></div>
+            <span class="num" style="font-size: 13px; width: 84px; text-align: right; flex-shrink: 0;">$13,750</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 12px; color: #9a968b; width: 78px; flex-shrink: 0;">Q2 Oct&ndash;Dec</span>
+            <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: #232320; display: flex;"><div style="width: 43%; background: #7a6a2c; border-radius: 4px;"></div></div>
+            <span class="num" style="font-size: 13px; width: 84px; text-align: right; flex-shrink: 0;">$8,267</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 12px; color: #f0ede4; width: 78px; flex-shrink: 0;">Q3 Jan&ndash;Mar</span>
+            <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: #232320; display: flex;"><div style="width: 100%; background: #c9a227; border-radius: 4px;"></div></div>
+            <span class="num" style="font-size: 13px; width: 84px; text-align: right; flex-shrink: 0; color: #d9b53d;">$19,000</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 12px; color: #9a968b; width: 78px; flex-shrink: 0;">Q4 Apr&ndash;Jun</span>
+            <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: #232320; display: flex;"><div style="width: 53%; background: #7a6a2c; border-radius: 4px;"></div></div>
+            <span class="num" style="font-size: 13px; width: 84px; text-align: right; flex-shrink: 0;">$10,000</span>
+          </div>
+        </div>
+        <div style="border-top: 1px solid #2c2c28; padding-top: 16px; display: flex; justify-content: space-between; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 12px; color: #9a968b;">Quarterly (3)</span>
+            <span class="num" style="font-size: 15px;">$32,516.67</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 12px; color: #9a968b;">Yearly (3)</span>
+            <span class="num" style="font-size: 15px;">$18,500.00</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 12px; color: #9a968b;">Average installment</span>
+            <span class="num" style="font-size: 15px;">$4,750.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- lower row -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start;">
+
+      <!-- titles -->
+      <div style="background: #1b1b18; border: 1px solid #2c2c28; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 20px 28px 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 15px; font-weight: 500;">Titles under licence</h2>
+          <span style="font-size: 12px; color: #9a968b;">6 titles &middot; 3 quarterly, 3 yearly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 8px 28px; border-top: 1px solid #2c2c28; border-bottom: 1px solid #2c2c28; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: #7d796f;">
+          <span>Title</span><span>Provider</span><span style="text-align: right;">Installment</span><span>Cadence</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; border-bottom: 1px solid #232320; font-size: 14px; align-items: center;">
+          <span>The Carpenter&rsquo;s Table</span><span style="color: #b8b3a7;">Harbor Light Media</span><span class="num" style="text-align: right;">$4,250.00</span><span style="color: #9a968b; font-size: 13px;">Quarterly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; border-bottom: 1px solid #232320; font-size: 14px; align-items: center;">
+          <span>Saints in the City</span><span style="color: #b8b3a7;">Lantern House</span><span class="num" style="text-align: right;">$9,500.00</span><span style="color: #9a968b; font-size: 13px;">Yearly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; border-bottom: 1px solid #232320; font-size: 14px; align-items: center; background: #201f1a; box-shadow: inset 2px 0 0 #c9a227;">
+          <span>Little Way Adventures</span><span style="color: #b8b3a7;">Bluebird Learning</span><span class="num" style="text-align: right;">$3,150.00</span><span style="color: #9a968b; font-size: 13px;">Quarterly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; border-bottom: 1px solid #232320; font-size: 14px; align-items: center;">
+          <span>Desert Fathers</span><span style="color: #b8b3a7;">Harbor Light Media</span><span class="num" style="text-align: right;">$2,600.00</span><span style="color: #9a968b; font-size: 13px;">Quarterly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; border-bottom: 1px solid #232320; font-size: 14px; align-items: center;">
+          <span>Parish Kitchen</span><span style="color: #b8b3a7;">Northstar Studios</span><span class="num" style="text-align: right;">$7,200.00</span><span style="color: #9a968b; font-size: 13px;">Yearly</span>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 110px 96px; gap: 16px; padding: 14px 28px; font-size: 14px; align-items: center;">
+          <span>Harbor Catechism Minutes</span><span style="color: #b8b3a7;">Harbor Light Media</span><span class="num" style="text-align: right;">$1,800.00</span><span style="color: #9a968b; font-size: 13px;">Yearly</span>
+        </div>
+      </div>
+
+      <!-- side -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div style="background: #1b1b18; border: 1px solid #2c2c28; border-radius: 14px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px;">
+          <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 15px; font-weight: 500;">Provider mix</h2>
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px;"><span>Harbor Light Media</span><span class="num" style="color: #9a968b;">50%</span></div>
+              <div style="height: 5px; border-radius: 3px; background: #232320; display: flex;"><div style="width: 50%; background: #c9a227; border-radius: 3px;"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px;"><span>Bluebird Learning</span><span class="num" style="color: #9a968b;">17%</span></div>
+              <div style="height: 5px; border-radius: 3px; background: #232320; display: flex;"><div style="width: 17%; background: #a08b34; border-radius: 3px;"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px;"><span>Lantern House</span><span class="num" style="color: #9a968b;">17%</span></div>
+              <div style="height: 5px; border-radius: 3px; background: #232320; display: flex;"><div style="width: 17%; background: #7a6a2c; border-radius: 3px;"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px;"><span>Northstar Studios</span><span class="num" style="color: #9a968b;">17%</span></div>
+              <div style="height: 5px; border-radius: 3px; background: #232320; display: flex;"><div style="width: 17%; background: #574c22; border-radius: 3px;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: #1b1b18; border: 1px solid #2c2c28; border-radius: 14px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <h2 style="margin: 0; font-family: Sora, sans-serif; font-size: 15px; font-weight: 500;">Needs attention</h2>
+            <span class="num" style="font-size: 11px; font-weight: 600; color: #131311; background: #c9a227; border-radius: 5px; padding: 3px 8px;">4 open</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;"><span>The Quiet Chapel</span><span style="color: #9a968b; font-size: 12px;">Blocked &middot; artwork pending</span></div>
+            <div style="display: flex; flex-direction: column; gap: 2px;"><span>Scripture in Seven Minutes</span><span style="color: #9a968b; font-size: 12px;">Undated &middot; no release month</span></div>
+            <div style="display: flex; flex-direction: column; gap: 2px;"><span>Pilgrim Road</span><span style="color: #9a968b; font-size: 12px;">Released &middot; not yet in summary</span></div>
+            <div style="display: flex; flex-direction: column; gap: 2px;"><span>Story Time Saints</span><span style="color: #9a968b; font-size: 12px;">Approved &middot; awaiting rate</span></div>
+          </div>
+          <a href="#" style="font-size: 13px;">Review the list</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

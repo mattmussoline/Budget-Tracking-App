@@ -1,3 +1,6 @@
+import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import type { Route } from "next";
 import { ContentLicenseForm } from "./content-license-form";
 import { DashboardInsights } from "./dashboard-insights";
 import { DashboardPopout } from "./dashboard-popout";
@@ -14,11 +17,10 @@ import type { ContentLicense } from "../budget-types";
 import type { DashboardModel } from "../dashboard-model";
 import { getNextFiscalYear } from "../fiscal-year-selection";
 import type { ProviderColorOverrides } from "../provider-colors";
-import { PlanningHeader } from "@/features/planning/components/planning-header";
-import Link from "next/link";
-import type { Route } from "next";
 import type { NeedsAttentionItem } from "../attention-model";
-import { Plus } from "lucide-react";
+import { PlanningShell } from "@/features/planning/components/planning-shell";
+import { TopBarDivider } from "@/features/planning/components/app-top-bar";
+import { monthNames } from "@/lib/months";
 
 type FiscalYearRow = {
   id: string;
@@ -61,94 +63,115 @@ export function BudgetDashboard({
   );
 
   return (
-    <main className="min-h-screen bg-white px-4 py-6 sm:px-5 md:px-8 lg:px-10">
-      <div className="mx-auto grid min-w-0 max-w-7xl gap-8">
-        <PlanningHeader
-          title={fiscalYear?.label ?? "Licensing Budget"}
-          eyebrow="Internal Licensing"
-          description="Track titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place."
-          activeSection="dashboard"
-          routePrefix={isDemo ? "/demo" : ""}
-          footer={(fiscalYears.length > 0 || userEmail || isDemo) ? (
-            <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/15 pt-4">
-              <div className="min-w-0 -mt-5">
-                {fiscalYears.length > 0 ? (
-                  <FiscalYearManager
-                    fiscalYears={fiscalYears}
-                    activeFiscalYearId={fiscalYear?.id}
-                    pinAction={pinFiscalYear}
-                    deleteAction={deleteFiscalYear}
-                    createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
-                    isDemo={isDemo}
-                    routePrefix={isDemo ? "/demo" : ""}
-                  />
-                ) : null}
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-                {isDemo ? (
-                  <p className="rounded-md bg-white px-4 py-3 text-sm font-semibold text-formed-blue shadow-sm">
-                    Public demo mode. Sample data only; editing is disabled.
-                  </p>
-                ) : null}
-                {userEmail ? (
-                  <form action={logout} className="flex min-w-0 flex-wrap items-center gap-3 rounded-md bg-white/10 px-4 py-3 text-sm font-semibold text-white">
-                    <span className="min-w-0 break-all">{userEmail}</span>
-                    <button type="submit" className="min-h-11 rounded-md bg-white px-3 py-2 text-xs uppercase text-formed-blue">
-                      Logout
-                    </button>
-                  </form>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        />
-
-        {!fiscalYear || !model ? (
-          <FiscalYearSettings isDemo={isDemo} />
-        ) : (
-          <div className="grid min-w-0 gap-8">
-            <SummaryMetrics model={model} />
-            <DashboardInsights
-              fiscalYearId={fiscalYear.id}
+    <PlanningShell
+      title={fiscalYear?.label ?? "Licensing Budget"}
+      description="Titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place."
+      activeSection="dashboard"
+      routePrefix={isDemo ? "/demo" : ""}
+      actions={
+        fiscalYear ? (
+          <span className="rounded-lg bg-formed-blue-soft px-3 py-1.5 text-xs font-semibold text-formed-blue">
+            {formatFiscalYearRange(fiscalYear.fiscal_year, fiscalYear.fiscal_year_start_month)}
+          </span>
+        ) : null
+      }
+      topBarRight={
+        <>
+          {fiscalYears.length > 0 ? (
+            <FiscalYearManager
+              fiscalYears={fiscalYears}
+              activeFiscalYearId={fiscalYear?.id}
+              pinAction={pinFiscalYear}
+              deleteAction={deleteFiscalYear}
+              createForm={<FiscalYearSettings isDemo={isDemo} defaultFiscalYear={nextFiscalYear} />}
               isDemo={isDemo}
-              model={model}
-              providerColorOverrides={providerColorOverrides}
+              routePrefix={isDemo ? "/demo" : ""}
             />
-            <div className="grid min-w-0 gap-8 lg:grid-cols-2">
-              <BudgetSourcesPanel items={budgetSourceSummary} />
-              <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
+          ) : null}
+          {isDemo ? (
+            <>
+              <TopBarDivider />
+              <span className="text-[13px] font-semibold text-formed-blue">Public demo. Sample data only.</span>
+            </>
+          ) : null}
+          {userEmail ? (
+            <>
+              <TopBarDivider />
+              <form action={logout} className="flex min-w-0 items-center gap-2.5">
+                <span className="min-w-0 truncate text-[13px] text-muted">{userEmail}</span>
+                <button
+                  type="submit"
+                  className="rounded-lg border border-hairline bg-panel px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-hairline-strong"
+                >
+                  Logout
+                </button>
+              </form>
+            </>
+          ) : null}
+        </>
+      }
+    >
+      {!fiscalYear || !model ? (
+        <FiscalYearSettings isDemo={isDemo} />
+      ) : (
+        <div className="grid min-w-0 gap-5">
+          <SummaryMetrics model={model} />
+          <DashboardInsights
+            fiscalYearId={fiscalYear.id}
+            isDemo={isDemo}
+            model={model}
+            providerColorOverrides={providerColorOverrides}
+          />
+          <div className="grid min-w-0 gap-3.5 lg:grid-cols-2">
+            <BudgetSourcesPanel items={budgetSourceSummary} />
+            <NeedsAttentionPanel fiscalYearId={fiscalYear.id} items={needsAttention} isDemo={isDemo} />
+          </div>
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,348px)_minmax(0,1fr)]">
+            <div className="grid min-w-0 content-start gap-4">
+              <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
+              <ContentLicenseForm
+                fiscalYearId={fiscalYear.id}
+                fiscalYear={fiscalYear.fiscal_year}
+                fiscalYearStartMonth={fiscalYear.fiscal_year_start_month}
+                providerOptions={providerOptions}
+                isDemo={isDemo}
+              />
+              <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
             </div>
-            <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-              <div className="grid min-w-0 content-start gap-8">
-                <FiscalYearSettings fiscalYear={fiscalYear} isDemo={isDemo} />
-                <ContentLicenseForm
-                  fiscalYearId={fiscalYear.id}
-                  fiscalYear={fiscalYear.fiscal_year}
-                  fiscalYearStartMonth={fiscalYear.fiscal_year_start_month}
-                  providerOptions={providerOptions}
-                  isDemo={isDemo}
-                />
-                <SharePanel allowedEmails={allowedEmails} currentUserEmail={userEmail} isDemo={isDemo} />
-                <p className="px-2 text-sm font-medium text-muted">{licenses.length} content titles tracked.</p>
+            <div className="grid min-w-0 content-start gap-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 className="font-display text-2xl">Committed by quarter</h2>
+                <p className="text-sm text-muted">
+                  {licenses.length} content {licenses.length === 1 ? "title" : "titles"} tracked. Click a quarter to expand its months.
+                </p>
               </div>
-              <div className="grid min-w-0 content-start gap-8">
-                <MonthBoard model={model} providerColorOverrides={providerColorOverrides} />
-                <LicenseManager
-                  fiscalYearId={fiscalYear.id}
-                  fiscalYear={fiscalYear.fiscal_year}
-                  fiscalYearStartMonth={fiscalYear.fiscal_year_start_month}
-                  licenses={licenses}
-                  providerOptions={providerOptions}
-                  providerColorOverrides={providerColorOverrides}
-                  isDemo={isDemo}
-                />
-              </div>
+              <MonthBoard model={model} providerColorOverrides={providerColorOverrides} />
+              <LicenseManager
+                fiscalYearId={fiscalYear.id}
+                fiscalYear={fiscalYear.fiscal_year}
+                fiscalYearStartMonth={fiscalYear.fiscal_year_start_month}
+                licenses={licenses}
+                providerOptions={providerOptions}
+                providerColorOverrides={providerColorOverrides}
+                isDemo={isDemo}
+              />
             </div>
           </div>
-        )}
-      </div>
-    </main>
+        </div>
+      )}
+    </PlanningShell>
   );
+}
+
+/** "July 2025 – June 2026" for the fiscal calendar the budget actually runs on. */
+function formatFiscalYearRange(fiscalYear: number, fiscalYearStartMonth: number) {
+  const startName = monthNames[fiscalYearStartMonth - 1];
+  const endMonthIndex = (fiscalYearStartMonth + 10) % 12;
+  const endName = monthNames[endMonthIndex];
+  const startYear = fiscalYearStartMonth === 1 ? fiscalYear : fiscalYear - 1;
+  const endYear = fiscalYearStartMonth === 1 ? fiscalYear : fiscalYear;
+
+  return `${startName} ${startYear} – ${endName} ${endYear}`;
 }
 
 const attentionToneClasses: Record<NeedsAttentionItem["tone"], string> = {
@@ -156,6 +179,36 @@ const attentionToneClasses: Record<NeedsAttentionItem["tone"], string> = {
   blue: "border-formed-blue-border bg-formed-blue-soft text-augustine-blue",
   red: "border-danger-border bg-danger-soft text-danger"
 };
+
+/** The collapsible strip shared by Budget sources and Needs attention. */
+function CollapsibleStrip({
+  title,
+  description,
+  count,
+  countClassName,
+  chevronClassName
+}: {
+  title: string;
+  description: string;
+  count: string;
+  countClassName: string;
+  chevronClassName: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-4 px-5 py-4">
+      <div className="grid min-w-0 gap-0.5">
+        <h2 className="font-display text-lg">{title}</h2>
+        <p className="text-xs text-muted [text-wrap:pretty]">{description}</p>
+      </div>
+      <span className="flex shrink-0 items-center gap-2.5">
+        <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${countClassName}`}>{count}</span>
+        <span className={`grid h-7 w-7 place-items-center rounded-lg border bg-panel ${chevronClassName}`}>
+          <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+      </span>
+    </div>
+  );
+}
 
 function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
   if (!items.length) return null;
@@ -165,33 +218,27 @@ function BudgetSourcesPanel({ items }: { items: BudgetSourceSummaryItem[] }) {
   return (
     <div data-testid="budget-sources-panel">
       <DashboardPopout
-        title="Budget Sources"
+        title="Budget sources"
         eyebrow={`${total} tracked`}
         description="Content counted across budget items, roadmap titles, and content reviews."
-        toneClassName="bg-deep-teal-soft text-deep-teal"
-        triggerClassName="w-full bg-deep-teal-soft p-0 text-deep-teal ring-1 ring-deep-teal"
+        toneClassName="bg-panel-warm text-foreground"
+        triggerClassName="w-full bg-panel-warm p-0"
+        showExpandIcon={false}
         trigger={
-          <div className="flex min-w-0 items-center justify-between gap-3 p-5 md:p-6">
-            <div className="min-w-0">
-              <h2 className="font-display text-2xl tracking-tight">Budget Sources</h2>
-              <p className="text-sm font-medium text-muted">Content counted across budget items, roadmap titles, and content reviews.</p>
-            </div>
-            <span className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-deep-teal">
-                {total} tracked
-              </span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/80 text-deep-teal shadow-sm ring-1 ring-deep-teal">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-              </span>
-            </span>
-          </div>
+          <CollapsibleStrip
+            title="Budget sources"
+            description="Content counted across budget items, roadmap titles, and content reviews."
+            count={`${total} tracked`}
+            countClassName="bg-tone-slate-bg text-muted"
+            chevronClassName="border-hairline text-muted"
+          />
         }
       >
         <div className="grid gap-3 md:grid-cols-4">
           {items.map((item) => (
-            <div key={item.source} className="rounded-md border border-hairline bg-panel-warm p-4">
-              <p className="text-2xl font-semibold text-foreground">{item.count}</p>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
+            <div key={item.source} className="rounded-lg border border-hairline bg-panel-warm p-4">
+              <p className="font-display text-2xl text-foreground">{item.count}</p>
+              <p className="text-xs font-semibold text-muted">{item.label}</p>
             </div>
           ))}
         </div>
@@ -204,35 +251,29 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
   return (
     <div data-testid="needs-attention-panel">
       <DashboardPopout
-        title="Needs Attention"
+        title="Needs attention"
         eyebrow={`${items.length} open`}
         description="Items that are blocked, undated, approved, released, or close to budget limits."
-        toneClassName="bg-guild-gold-soft text-guild-gold-ink"
-        triggerClassName="w-full bg-guild-gold-soft p-0 text-guild-gold-ink"
+        toneClassName="bg-danger-soft text-danger"
+        triggerClassName="w-full border-danger-border bg-danger-soft p-0"
+        showExpandIcon={false}
         trigger={
-          <div className="flex min-w-0 items-center justify-between gap-3 p-5 md:p-6">
-            <div className="min-w-0">
-              <h2 className="font-display text-2xl tracking-tight">Needs Attention</h2>
-              <p className="text-sm font-medium text-muted">Items that are blocked, undated, approved, released, or close to budget limits.</p>
-            </div>
-            <span className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-danger">
-                {items.length} open
-              </span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-danger shadow-sm ring-1 ring-danger-border">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-              </span>
-            </span>
-          </div>
+          <CollapsibleStrip
+            title="Needs attention"
+            description="Items that are blocked, undated, approved, released, or close to budget limits."
+            count={`${items.length} open`}
+            countClassName="bg-danger-soft text-danger"
+            chevronClassName="border-danger-border text-danger"
+          />
         }
       >
         {items.length ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {items.map((item) => (
-              <div key={item.id} className={`grid gap-3 rounded-md border p-4 ${attentionToneClasses[item.tone]}`}>
-                <Link href={isDemo ? (`/demo${item.href}` as Route) : item.href} aria-label={`Open ${item.title}`} className="transition hover:-translate-y-0.5">
+              <div key={item.id} className={`grid gap-3 rounded-lg border p-4 ${attentionToneClasses[item.tone]}`}>
+                <Link href={isDemo ? (`/demo${item.href}` as Route) : item.href} aria-label={`Open ${item.title}`} className="transition-colors">
                   <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="mt-1 text-xs font-bold opacity-80">{item.detail}</p>
+                  <p className="mt-1 text-xs font-medium opacity-80">{item.detail}</p>
                 </Link>
                 <form action={dismissNeedsAttentionItem}>
                   <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
@@ -241,7 +282,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
                     type="submit"
                     aria-label={`Mark ${item.title} complete`}
                     disabled={isDemo}
-                    className="min-h-9 rounded-md bg-white px-3 py-2 text-xs font-semibold text-foreground shadow-sm ring-1 ring-black/5 hover:bg-panel-warm disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-9 rounded-lg border border-hairline bg-panel px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:border-hairline-strong disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Mark complete
                   </button>
@@ -250,7 +291,7 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
             ))}
           </div>
         ) : (
-          <p className="rounded-md bg-panel-warm px-4 py-3 text-sm font-semibold text-muted">Nothing needs attention right now.</p>
+          <p className="rounded-lg border border-hairline bg-panel-warm px-4 py-3 text-sm font-medium text-muted">Nothing needs attention right now.</p>
         )}
       </DashboardPopout>
     </div>

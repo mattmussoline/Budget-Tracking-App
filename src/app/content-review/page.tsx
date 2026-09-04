@@ -24,7 +24,6 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     return (
       <PlanningShell
         title="Content Review"
-        eyebrow="Internal Licensing"
         description="Add Supabase env vars to save content review changes."
         activeSection="content-review"
       >
@@ -133,7 +132,6 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
   return (
     <PlanningShell
       title="Content Review"
-      eyebrow="Internal Licensing"
       description="Track possible titles before they move to the roadmap or budget."
       activeSection="content-review"
     >

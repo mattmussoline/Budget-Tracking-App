@@ -51,7 +51,7 @@ export function PlanningNavigation({ activeSection, routePrefix = "" }: Planning
   }, [activeSection, routePrefix, router]);
 
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Planning sections">
+    <nav className="flex flex-wrap items-center gap-1" aria-label="Planning sections">
       {planningSections.map((section) => {
         const href = sectionHref(section, routePrefix);
         if (!href) return null;
@@ -65,8 +65,8 @@ export function PlanningNavigation({ activeSection, routePrefix = "" }: Planning
             prefetch
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-semibold transition",
-              isActive ? "bg-panel text-augustine-blue" : "bg-formed-blue text-white hover:bg-white/20"
+              "inline-flex min-h-9 items-center rounded-lg px-3 py-1.5 text-sm transition",
+              isActive ? "bg-formed-blue-soft font-semibold text-formed-blue" : "font-medium text-muted hover:bg-panel hover:text-foreground"
             )}
           >
             {section.label}

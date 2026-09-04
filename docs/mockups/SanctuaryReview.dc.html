@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, "Helvetica Neue", Helvetica, sans-serif; }
+    a { color: #2f5d4f; text-decoration: none; } a:hover { color: #1e4034; }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .ser { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .card { background: #fffdf9; border: 1px solid #e4ddd0; border-radius: 12px; }
+    .lbl { font-size: 12px; font-weight: 600; color: #6f675c; }
+    .fld { min-height: 38px; border: 1px solid #e4ddd0; border-radius: 8px; background: #ffffff; display: flex; align-items: center; padding: 0 12px; font-size: 14px; color: #23201c; }
+    .btn { font-family: Manrope, sans-serif; font-size: 13px; font-weight: 600; height: 34px; padding: 0 12px; border: 1px solid #e4ddd0; background: #ffffff; border-radius: 8px; color: #23201c; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .st { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; border-radius: 5px; padding: 2px 7px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1180px; background: #f7f4ee; color: #23201c; display: flex; flex-direction: column;">
+
+  <!-- top bar -->
+  <div style="height: 62px; flex-shrink: 0; background: #fffdf9; border-bottom: 1px solid #e4ddd0; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <span class="ser" style="font-size: 20px; letter-spacing: -0.01em;">Licensing</span>
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 14px;">
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Licensing Summary</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; color: #55504a;">Roadmap</a>
+        <a href="#" style="padding: 7px 12px; border-radius: 8px; background: #e3ede8; color: #2f5d4f; font-weight: 600;">Content Review</a>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="num" style="font-size: 13px; font-weight: 600; border: 1px solid #e4ddd0; border-radius: 8px; padding: 7px 12px; background: #ffffff;">FY26</span>
+      <span style="width: 1px; height: 22px; background: #e4ddd0;"></span>
+      <span style="font-size: 13px; color: #6f675c;">matt.mussoline@augustineinstitute.org</span>
+    </div>
+  </div>
+
+  <div style="padding: 32px 40px 40px; display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- page head -->
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+      <div style="display: flex; flex-direction: column; gap: 6px; max-width: 700px;">
+        <h1 class="ser" style="margin: 0; font-size: 40px; line-height: 1.05; letter-spacing: -0.01em;">Content Review</h1>
+        <p style="margin: 0; font-size: 14px; color: #6f675c; text-wrap: pretty;">Work titles, proposed rates, provider fields, radar targets, and approval states in one queue.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="btn" style="height: 36px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9"></path><path d="M3 4v5h5"></path></svg>
+          Weekly recap
+        </button>
+        <button class="btn" style="height: 36px; border-color: #2f5d4f; background: #2f5d4f; color: #fffdf9;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          Add content
+        </button>
+      </div>
+    </div>
+
+    <!-- status tiles -->
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px;">
+      <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 5px; border-color: #cbdcd4; background: #f2f8f5;">
+        <span class="lbl" style="color: #2f5d4f;">Active decisions</span>
+        <span class="ser num" style="font-size: 30px; line-height: 1; color: #2f5d4f;">2</span>
+        <span style="font-size: 12px; color: #6f675c;">Ready to work now</span>
+      </div>
+      <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">Co-productions</span>
+        <span class="ser num" style="font-size: 30px; line-height: 1;">1</span>
+        <span style="font-size: 12px; color: #6f675c;">Potential partner projects</span>
+      </div>
+      <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">On the radar</span>
+        <span class="ser num" style="font-size: 30px; line-height: 1;">1</span>
+        <span style="font-size: 12px; color: #6f675c;">Long shots and weak-contact targets</span>
+      </div>
+      <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">Approved</span>
+        <span class="ser num" style="font-size: 30px; line-height: 1;">1</span>
+        <span style="font-size: 12px; color: #6f675c;">Ready for roadmap follow-up</span>
+      </div>
+      <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 5px;">
+        <span class="lbl">Rejected</span>
+        <span class="ser num" style="font-size: 30px; line-height: 1;">1</span>
+        <span style="font-size: 12px; color: #6f675c;">Archived decisions</span>
+      </div>
+    </div>
+
+    <!-- focus five -->
+    <div class="card" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span class="ser" style="font-size: 21px;">Focus Five</span>
+          <span style="font-size: 12px; color: #6f675c;">The five reviews you are working on next. Pin one from the queue to bring it up here.</span>
+        </div>
+        <span class="num" style="font-size: 11px; font-weight: 700; color: #2f5d4f; background: #e3ede8; border-radius: 6px; padding: 3px 8px;">5 of 5</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
+        <div style="border: 1px solid #e4ddd0; border-radius: 10px; background: #ffffff; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ser num" style="width: 24px; height: 24px; border-radius: 7px; background: #e3ede8; color: #2f5d4f; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;">1</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.2;">Mystics and Makers</span>
+          </div>
+          <span class="st" style="background: #e3ede8; color: #2f5d4f; align-self: flex-start;">APPROVED</span>
+          <span style="font-size: 11px; color: #6f675c;">Harbor Light Media</span>
+          <span class="num" style="font-size: 14px; font-weight: 700;">$3,850.00</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="num" style="font-size: 11px; color: #a09786;">1 update</span>
+            <span style="font-size: 11px; font-weight: 700; color: #2f5d4f;">Work on</span>
+          </div>
+        </div>
+        <div style="border: 1px solid #2f5d4f; border-radius: 10px; background: #ffffff; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ser num" style="width: 24px; height: 24px; border-radius: 7px; background: #2f5d4f; color: #fffdf9; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;">2</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.2;">The Sacristy Tour</span>
+          </div>
+          <span class="st" style="background: #e8f0f5; color: #2f5570; align-self: flex-start;">IN PROGRESS</span>
+          <span style="font-size: 11px; color: #6f675c;">Bluebird Learning</span>
+          <span class="num" style="font-size: 14px; font-weight: 700;">$1,250.00</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="num" style="font-size: 11px; color: #a09786;">1 update</span>
+            <span style="font-size: 11px; font-weight: 700; color: #2f5d4f;">Selected</span>
+          </div>
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 10px; background: #ffffff; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ser num" style="width: 24px; height: 24px; border-radius: 7px; background: #f6e8ea; color: #8a3a46; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;">3</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.2;">Old Stone Abbey</span>
+          </div>
+          <span class="st" style="background: #f6e8ea; color: #8a3a46; align-self: flex-start;">BLOCKED</span>
+          <span style="font-size: 11px; color: #6f675c;">Northstar Studios</span>
+          <span class="num" style="font-size: 14px; font-weight: 700;">$6,400.00</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="num" style="font-size: 11px; color: #a09786;">2 updates</span>
+            <span style="font-size: 11px; font-weight: 700; color: #2f5d4f;">Work on</span>
+          </div>
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 10px; background: #ffffff; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ser num" style="width: 24px; height: 24px; border-radius: 7px; background: #f0ebe1; color: #6f675c; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;">4</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.2;">Tiny Disciples</span>
+          </div>
+          <span class="st" style="background: #f0ebe1; color: #6f675c; align-self: flex-start;">REJECTED</span>
+          <span style="font-size: 11px; color: #6f675c;">Lantern House</span>
+          <span class="num" style="font-size: 14px; font-weight: 700;">$2,900.00</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="num" style="font-size: 11px; color: #a09786;">1 update</span>
+            <span style="font-size: 11px; font-weight: 700; color: #2f5d4f;">Work on</span>
+          </div>
+        </div>
+        <div style="border: 1px solid #e4ddd0; border-radius: 10px; background: #ffffff; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ser num" style="width: 24px; height: 24px; border-radius: 7px; background: #f6ecdb; color: #8a6320; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;">5</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.2;">Monastery Garden</span>
+          </div>
+          <span class="st" style="background: #f6ecdb; color: #8a6320; align-self: flex-start;">ON THE RADAR</span>
+          <span style="font-size: 11px; color: #6f675c;">Summit Room</span>
+          <span class="num" style="font-size: 14px; font-weight: 700;">$2,100.00</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="num" style="font-size: 11px; color: #a09786;">1 update</span>
+            <span style="font-size: 11px; font-weight: 700; color: #2f5d4f;">Work on</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- alert -->
+    <div style="background: #fdf7f2; border: 1px solid #ecdcc9; border-radius: 12px; padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span style="width: 26px; height: 26px; border-radius: 8px; background: #f6ecdb; display: grid; place-items: center; flex-shrink: 0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a6320" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v5"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg>
+        </span>
+        <span style="font-size: 13px; font-weight: 600;">1 On the Radar piece is waiting for follow-up. Open the list and decide who gets a next touch.</span>
+      </div>
+      <button class="btn" style="border-color: #d9bc94; background: #f6ecdb; color: #8a6320;">View items</button>
+    </div>
+
+    <!-- queue + detail -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 468px; gap: 18px; align-items: start;">
+
+      <!-- queue -->
+      <div class="card" style="overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 14px; border-bottom: 1px solid #efe9de;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="ser" style="font-size: 21px;">Decision queue</span>
+            <span style="font-size: 12px; color: #6f675c;">Drag to set your review order, or sort a column to look at the list another way.</span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+            <span class="fld" style="gap: 8px; color: #a09786;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+              Search titles
+            </span>
+            <span class="fld" style="justify-content: space-between;">All statuses <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
+            <span class="fld" style="justify-content: space-between;">All providers <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <span class="num" style="font-size: 12px; font-weight: 600; color: #6f675c;">5 reviews</span>
+            <div style="display: flex; align-items: center; border: 1px solid #e4ddd0; border-radius: 8px; overflow: hidden; background: #ffffff;">
+              <span style="font-size: 12px; font-weight: 600; padding: 6px 11px; color: #55504a;">Group by status</span>
+              <span style="width: 1px; align-self: stretch; background: #e4ddd0;"></span>
+              <span style="font-size: 12px; font-weight: 700; padding: 6px 11px; background: #e3ede8; color: #2f5d4f;">Priority order</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 9px 20px; background: #faf7f1; border-bottom: 1px solid #efe9de; font-size: 11px; font-weight: 600; color: #6f675c;">
+          <span></span><span>Title</span><span>Review status</span><span style="text-align: right;">Yearly rate</span><span>Provider</span><span style="text-align: right;">Count</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f4f0e8; align-items: center; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #c6bda9;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 600;">Not Started</span><span class="st" style="background: #f0ebe1; color: #6f675c; justify-self: start;">NOT STARTED</span><span class="num" style="text-align: right; color: #a09786;">&mdash;</span><span style="color: #6f675c; font-size: 13px;">&mdash;</span><span class="num" style="text-align: right; font-size: 13px; color: #a09786;">0</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f4f0e8; align-items: center; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #c6bda9;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 600;">Monastery Garden</span><span class="st" style="background: #f6ecdb; color: #8a6320; justify-self: start;">ON THE RADAR</span><span class="num" style="text-align: right;">$2,100.00</span><span style="color: #6f675c; font-size: 13px;">Summit Room</span><span class="num" style="text-align: right; font-size: 13px; color: #6f675c;">1</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f4f0e8; align-items: center; font-size: 14px; background: #f2f8f5; box-shadow: inset 3px 0 0 #2f5d4f;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #86a99c;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 700;">The Sacristy Tour</span><span class="st" style="background: #e8f0f5; color: #2f5570; justify-self: start;">IN PROGRESS</span><span class="num" style="text-align: right; font-weight: 700;">$1,250.00</span><span style="color: #55504a; font-size: 13px;">Bluebird Learning</span><span class="num" style="text-align: right; font-size: 13px; color: #6f675c;">1</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f4f0e8; align-items: center; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #c6bda9;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 600;">Old Stone Abbey</span><span class="st" style="background: #f6e8ea; color: #8a3a46; justify-self: start;">BLOCKED</span><span class="num" style="text-align: right;">$6,400.00</span><span style="color: #6f675c; font-size: 13px;">Northstar Studios</span><span class="num" style="text-align: right; font-size: 13px; color: #6f675c;">2</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f4f0e8; align-items: center; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #c6bda9;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 600;">Mystics and Makers</span><span class="st" style="background: #e3ede8; color: #2f5d4f; justify-self: start;">APPROVED</span><span class="num" style="text-align: right;">$3,850.00</span><span style="color: #6f675c; font-size: 13px;">Harbor Light Media</span><span class="num" style="text-align: right; font-size: 13px; color: #6f675c;">1</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 34px minmax(0, 2fr) 116px 104px minmax(0, 1.2fr) 44px; gap: 12px; padding: 13px 20px; align-items: center; font-size: 14px;">
+            <span style="display: flex; align-items: center; gap: 6px; color: #c6bda9;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h.01"></path><path d="M8 12h.01"></path><path d="M8 18h.01"></path><path d="M16 6h.01"></path><path d="M16 12h.01"></path><path d="M16 18h.01"></path></svg>
+            </span>
+            <span style="font-weight: 600;">Tiny Disciples</span><span class="st" style="background: #f0ebe1; color: #6f675c; justify-self: start;">REJECTED</span><span class="num" style="text-align: right;">$2,900.00</span><span style="color: #6f675c; font-size: 13px;">Lantern House</span><span class="num" style="text-align: right; font-size: 13px; color: #6f675c;">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- detail -->
+      <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="lbl" style="color: #2f5d4f;">Selected review</span>
+            <span class="ser" style="font-size: 26px; line-height: 1.05;">The Sacristy Tour</span>
+            <span class="st" style="background: #e3ede8; color: #2f5d4f; align-self: flex-start;">POTENTIAL CO-PRODUCTION OPPORTUNITY</span>
+          </div>
+          <span style="font-size: 11px; font-weight: 600; color: #a09786;">Saved</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Detail title</span><span class="fld">The Sacristy Tour</span></label>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Proposed yearly rate</span><span class="fld num">$1,250.00</span></label>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Provider</span><span class="fld">Bluebird Learning</span></label>
+          <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Status</span><span class="fld" style="justify-content: space-between; color: #2f5570; font-weight: 600;">In Progress <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+        </div>
+
+        <label style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Opportunity</span>
+          <span class="fld" style="gap: 8px;">
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #2f5d4f; display: grid; place-items: center; flex-shrink: 0;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fffdf9" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+            </span>
+            Potential co-production
+          </span>
+        </label>
+
+        <label style="display: flex; flex-direction: column; gap: 5px;"><span class="lbl">Budget</span><span class="fld" style="justify-content: space-between;">Internal production <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></label>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Metadata</span>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+            <span class="fld" style="justify-content: space-between;">Sacraments <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
+            <span class="fld" style="justify-content: space-between;">Kids Show <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span class="lbl">Link</span>
+          <div style="display: flex; gap: 8px;">
+            <span class="fld" style="flex-grow: 1; min-width: 0; font-size: 13px; color: #55504a;">https://example.com/review/sacristy-tour</span>
+            <button class="btn" style="flex-shrink: 0;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M21 14v7H3V3h7"></path></svg>
+              Open
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <span class="lbl">Notes</span>
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <span style="width: 24px; height: 24px; border: 1px solid #e4ddd0; border-radius: 6px; background: #ffffff; display: grid; place-items: center; font-size: 11px; font-weight: 700;">B</span>
+              <span style="width: 24px; height: 24px; border: 1px solid #e4ddd0; border-radius: 6px; background: #ffffff; display: grid; place-items: center; font-size: 11px; font-style: italic; font-weight: 600;">I</span>
+              <span style="width: 24px; height: 24px; border: 1px solid #e4ddd0; border-radius: 6px; background: #ffffff; display: grid; place-items: center; font-size: 11px; font-weight: 600; text-decoration: underline;">U</span>
+              <span style="width: 24px; height: 24px; border: 1px solid #e4ddd0; border-radius: 6px; background: #ffffff; display: grid; place-items: center;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6f675c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
+              </span>
+            </div>
+          </div>
+          <div style="border: 1px solid #e4ddd0; border-radius: 8px; background: #ffffff; padding: 11px 12px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.5;">
+            <span>Needs a final content review score.</span>
+            <span>Similar to a short children&rsquo;s explainer.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <span class="lbl">Update log</span>
+            <span class="num" style="font-size: 11px; color: #a09786;">1 entry</span>
+          </div>
+          <span class="fld" style="gap: 8px; color: #a09786; font-size: 13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a09786" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            Type an update and press Enter
+          </span>
+          <div style="border: 1px solid #efe9de; border-radius: 8px; background: #faf7f1; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; font-weight: 600; color: #a09786;">7 hours ago &middot; demo@example.com</span>
+            <span style="font-size: 13px; line-height: 1.5;">Watched the first two episodes. Pacing is strong; asked Bluebird for the music cue sheet.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #efe9de; padding-top: 14px;">
+          <button class="btn" style="border-color: #e8cfd3; color: #8a3a46; background: #fdf7f7;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 14h10l1-14"></path></svg>
+            Delete review
+          </button>
+          <button class="btn" style="border-color: #2f5d4f; background: #2f5d4f; color: #fffdf9;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+            Save changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
