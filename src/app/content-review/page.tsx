@@ -64,7 +64,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
   ] = await Promise.all([
     admin
       .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
+      .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank,in_focus")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("priority_rank", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false }),
@@ -106,7 +106,8 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     reviewLink: item.review_link,
     comparableContent: item.comparable_content,
     isCoproductionOpportunity: item.is_coproduction_opportunity,
-    priorityRank: item.priority_rank
+    priorityRank: item.priority_rank,
+    inFocus: item.in_focus
   }));
   const groupOrder: ContentReviewGroupOrderRow[] = (groupOrderRows ?? []).map((row) => ({
     reviewStatus: row.review_status as ReviewStatus,

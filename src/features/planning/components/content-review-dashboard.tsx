@@ -14,20 +14,20 @@ import {
   type QueueSort,
   type QueueSortColumn,
   type QueueView,
-  demoteAcquisitionTargetFromFocusFive,
   emptyQueueFilters,
   groupQueueItems,
   focusFiveItems,
   isDecisionQueueStatus,
-  isInFocusFive,
   matchesQueueFilters,
   moveGroup,
   moveQueueItem,
   moveQueueItemToGroupEnd,
   moveQueueItemToPosition,
   nextSortState,
+  recommendedNextItem,
   renumberQueue,
   resolveGroupOrder,
+  shouldClearFocusOnStatusChange,
   sortQueueItems
 } from "../content-review-queue";
 import {
@@ -36,6 +36,7 @@ import {
   reorderContentReviewGroups,
   reorderContentReviewItems,
   sendReviewToRoadmap,
+  setContentReviewFocusMembership,
   updateContentReviewItem
 } from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
@@ -144,11 +145,10 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
       setDraft((current) => current ? { ...current, [field]: value } : current);
       return;
     }
-    if (field === "reviewStatus" && value === "acquisition_target") {
-      const demoted = demoteAcquisitionTargetFromFocusFive(records, id, "acquisition_target");
-      if (demoted !== records) {
-        applyItemMove(demoted, id, "acquisition_target");
-        return;
+    if (field === "reviewStatus" && typeof value === "string") {
+      const item = records.find((record) => record.id === id);
+      if (item && shouldClearFocusOnStatusChange(item, value as ReviewStatus)) {
+        setFocusMembership(id, false);
       }
     }
     setRecords((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
@@ -249,7 +249,8 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
   const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "acquisitionTarget" ? acquisitionTargetContent : openStatusModal === "contracted" ? contractedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
   const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
   const focusFive = focusFiveItems(records);
-  const focusCandidates = records.slice(FOCUS_LIMIT);
+  const focusCandidates = records.filter((item) => item.id !== "draft" && !item.inFocus);
+  const recommendedNext = focusFive.length < FOCUS_LIMIT ? recommendedNextItem(records) : null;
   const updateCountById = useMemo(() => {
     const counts = new Map<string, number>();
     for (const update of updateLog) counts.set(update.itemId, (counts.get(update.itemId) ?? 0) + 1);
@@ -403,12 +404,41 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
     applyItemMove(moveQueueItemToGroupEnd(records, itemId, targetStatus), itemId, targetStatus);
   }
 
-  /** Pushes a review just past the Focus Five, keeping the rest of the order intact. */
-  function releaseFromFocus(itemId: string) {
+  /**
+   * Toggles Focus Five membership on its own, leaving priority_rank alone —
+   * removing a review just removes it, it never pulls another one in behind
+   * it. Adding one while the five is already full displaces the last slot,
+   * the same way pinning always has.
+   */
+  function setFocusMembership(itemId: string, inFocus: boolean) {
     if (!canSetPriority) return;
-    const next = moveQueueItemToPosition(records, itemId, FOCUS_LIMIT + 1);
-    if (next === records) return;
-    saveItemOrder(next, itemId);
+    const displacedId = inFocus && focusFive.length >= FOCUS_LIMIT ? focusFive[focusFive.length - 1]?.id : undefined;
+    setRecords((current) => current.map((item) => {
+      if (item.id === itemId) return { ...item, inFocus };
+      if (displacedId && item.id === displacedId) return { ...item, inFocus: false };
+      return item;
+    }));
+    if (isDemo) return;
+    persistFocusMembership(itemId, inFocus);
+    if (displacedId) persistFocusMembership(displacedId, false);
+  }
+
+  function persistFocusMembership(itemId: string, inFocus: boolean) {
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("itemId", itemId);
+    formData.set("inFocus", inFocus ? "true" : "false");
+    startOrdering(async () => {
+      try {
+        await setContentReviewFocusMembership(formData);
+      } catch {
+        setRecords((current) => current.map((item) => item.id === itemId ? { ...item, inFocus: !inFocus } : item));
+      }
+    });
+  }
+
+  function releaseFromFocus(itemId: string) {
+    setFocusMembership(itemId, false);
   }
 
   function moveGroupBy(status: ReviewStatus, delta: number) {
@@ -448,7 +478,8 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
     onDragStart: startItemDrag,
     onDragEnd: endDrag,
     onDrop: dropOnRow,
-    onMoveToPosition: moveToPosition
+    onMoveToPosition: moveToPosition,
+    onSetFocus: setFocusMembership
   };
 
   return (
@@ -474,12 +505,14 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
         <div className="grid min-w-0 gap-4">
           <ContentReviewFocusFive
             items={focusFive}
+            recommendedNext={recommendedNext}
             selectedId={selectedId}
             canReorder={canSetPriority}
             draggedItemId={draggedItemId}
             updateCountById={updateCountById}
             canAdd={canSetPriority && focusCandidates.length > 0}
             onAdd={() => setIsFocusPickerOpen(true)}
+            onAddRecommended={(itemId) => setFocusMembership(itemId, true)}
             onSelect={selectItemFromModal}
             onRelease={releaseFromFocus}
             onDragStart={startFocusDrag}
@@ -578,7 +611,7 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
       {isFocusPickerOpen ? <ContentReviewFocusPicker
         candidates={focusCandidates}
         onPick={(itemId) => {
-          moveToPosition(itemId, Math.min(focusFive.length + 1, FOCUS_LIMIT));
+          setFocusMembership(itemId, true);
           setIsFocusPickerOpen(false);
         }}
         onClose={() => setIsFocusPickerOpen(false)}
@@ -872,9 +905,10 @@ type ReviewSummaryRowProps = {
   onDragEnd?: () => void;
   onDrop?: (event: DragEvent<HTMLElement>, id: string) => void;
   onMoveToPosition?: (id: string, position: number) => void;
+  onSetFocus?: (id: string, inFocus: boolean) => void;
 };
 
-function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition }: ReviewSummaryRowProps) {
+function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition, onSetFocus }: ReviewSummaryRowProps) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   const isDraft = item.id === "draft";
   const draggable = Boolean(canDrag && onDragStart && !isDraft);
@@ -897,6 +931,7 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
         canDrag={draggable}
         canSetPriority={Boolean(canSetPriority && !isDraft)}
         onMoveToPosition={onMoveToPosition}
+        onSetFocus={onSetFocus}
       />
       <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-sm font-semibold focus:bg-panel-warm" />
       <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-9 min-w-0 w-full rounded-lg border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
@@ -911,7 +946,7 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
  * carry a number; everything below shows a pin that lifts a review into the
  * five. Typing a number is the keyboard route to the move a drag performs.
  */
-function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPosition }: { item: ContentReviewItem; position: number | null; canDrag: boolean; canSetPriority: boolean; onMoveToPosition?: (id: string, position: number) => void }) {
+function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPosition, onSetFocus }: { item: ContentReviewItem; position: number | null; canDrag: boolean; canSetPriority: boolean; onMoveToPosition?: (id: string, position: number) => void; onSetFocus?: (id: string, inFocus: boolean) => void }) {
   const [draftValue, setDraftValue] = useState<string | null>(null);
   const label = item.title || "Untitled review";
 
@@ -919,7 +954,7 @@ function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPositio
     return <span className="flex items-center text-xs font-semibold uppercase tracking-wide text-muted">New</span>;
   }
 
-  const focused = isInFocusFive(position);
+  const focused = Boolean(item.inFocus);
 
   function commit() {
     const parsed = Number.parseInt(draftValue ?? "", 10);
@@ -943,8 +978,8 @@ function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPositio
         type="button"
         aria-label={`Add ${label} to the Focus Five`}
         title="Add to the Focus Five"
-        disabled={!onMoveToPosition || !canSetPriority}
-        onClick={() => onMoveToPosition?.(item.id, FOCUS_LIMIT)}
+        disabled={!onSetFocus || !canSetPriority}
+        onClick={() => onSetFocus?.(item.id, true)}
         className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-guild-gold-soft hover:text-guild-gold-ink focus:outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
       >
         <Pin className="h-4 w-4" aria-hidden="true" />

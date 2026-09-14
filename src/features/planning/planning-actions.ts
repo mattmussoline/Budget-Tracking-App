@@ -239,7 +239,7 @@ export async function addContentReviewItem(formData: FormData) {
       comparable_content: optionalText(parsed.data.comparableContent),
       is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
-    .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
+    .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank,in_focus")
     .single();
 
   if (error) {
@@ -269,7 +269,8 @@ export async function addContentReviewItem(formData: FormData) {
     reviewLink: data.review_link,
     comparableContent: data.comparable_content,
     isCoproductionOpportunity: data.is_coproduction_opportunity,
-    priorityRank: data.priority_rank
+    priorityRank: data.priority_rank,
+    inFocus: data.in_focus
   } satisfies ContentReviewItem;
 }
 
@@ -413,6 +414,41 @@ export async function reorderContentReviewItems(formData: FormData) {
       fromStatus: previousStatus,
       toStatus: movedToStatus
     });
+  }
+
+  revalidatePlanning();
+}
+
+const setReviewFocusMembershipSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  itemId: z.string().trim().min(1),
+  inFocus: z.enum(["true", "false"])
+});
+
+/**
+ * Toggles Focus Five membership on its own, separate from priority_rank, so
+ * removing a review from the Focus Five never has to move anything else.
+ */
+export async function setContentReviewFocusMembership(formData: FormData) {
+  const parsed = setReviewFocusMembershipSchema.safeParse({
+    fiscalYearId: formData.get("fiscalYearId"),
+    itemId: formData.get("itemId"),
+    inFocus: formData.get("inFocus")
+  });
+  if (!parsed.success) {
+    throw new Error("Choose a valid review to update.");
+  }
+
+  const admin = await requirePlanningAdmin();
+
+  const { error } = await admin
+    .from("content_review_items")
+    .update({ in_focus: parsed.data.inFocus === "true" })
+    .eq("id", parsed.data.itemId)
+    .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
   }
 
   revalidatePlanning();

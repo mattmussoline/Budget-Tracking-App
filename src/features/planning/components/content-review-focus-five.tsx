@@ -10,12 +10,14 @@ import type { ContentReviewItem } from "../planning-types";
 
 type ContentReviewFocusFiveProps = {
   items: ContentReviewItem[];
+  recommendedNext: ContentReviewItem | null;
   selectedId: string;
   canReorder: boolean;
   draggedItemId: string | null;
   updateCountById: Map<string, number>;
   canAdd: boolean;
   onAdd: () => void;
+  onAddRecommended: (id: string) => void;
   onSelect: (id: string) => void;
   onRelease: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, id: string) => void;
@@ -24,14 +26,12 @@ type ContentReviewFocusFiveProps = {
 };
 
 /**
- * The short working list: the five reviews at the top of the manual order,
- * shown as the thing to actually do next rather than as five more rows in a
- * seventy-row queue. Membership is just the top of the queue order, so pinning,
- * dragging, and typing a number all move a review in and out of it.
+ * The short working list: up to five reviews you have deliberately chosen to
+ * work on next. Removing one just removes it — it does not pull the next
+ * queue item in behind it — so a short slot only ever fills when someone
+ * picks the recommended review or opens the picker.
  */
-export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedItemId, updateCountById, canAdd, onAdd, onSelect, onRelease, onDragStart, onDragEnd, onDrop }: ContentReviewFocusFiveProps) {
-  const emptySlots = Math.max(0, FOCUS_LIMIT - items.length);
-
+export function ContentReviewFocusFive({ items, recommendedNext, selectedId, canReorder, draggedItemId, updateCountById, canAdd, onAdd, onAddRecommended, onSelect, onRelease, onDragStart, onDragEnd, onDrop }: ContentReviewFocusFiveProps) {
   return <section data-testid="content-review-focus-five" aria-labelledby="focus-five-heading" className="rounded-soft border border-hairline bg-panel-warm px-5 py-[18px]">
     <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -44,7 +44,7 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
           type="button"
           onClick={onAdd}
           disabled={!canAdd}
-          title={items.length >= FOCUS_LIMIT ? "Adds a review and drops the last one back to the queue" : undefined}
+          title={items.length >= FOCUS_LIMIT ? "The Focus Five is full" : undefined}
           className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-hairline bg-panel px-2.5 text-xs font-semibold text-foreground transition-colors hover:border-hairline-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue disabled:opacity-40"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />Add review
@@ -106,23 +106,24 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
             <span className="text-[11px] text-faint">{updateCount} {updateCount === 1 ? "update" : "updates"}</span>
           </li>;
         })}
-        {Array.from({ length: emptySlots }, (_, index) => (
-          <li key={`empty-${index}`}>
+        {recommendedNext ? (
+          <li>
             <button
               type="button"
-              onClick={onAdd}
+              onClick={() => onAddRecommended(recommendedNext.id)}
               disabled={!canAdd}
-              aria-label={`Add a review to Focus Five slot ${items.length + index + 1}`}
+              aria-label={`Add recommended review ${recommendedNext.title || "Untitled review"} to the Focus Five`}
               className="grid h-full w-full content-start gap-2 rounded-lg border border-dashed border-hairline-strong p-3 text-left text-xs font-semibold text-muted transition-colors hover:bg-panel hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-muted"
             >
               <span className="flex items-center gap-2">
-                <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-tone-slate-bg font-display text-sm text-muted">{items.length + index + 1}</span>
-                Open slot
+                <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-tone-slate-bg font-display text-sm text-muted">+</span>
+                Recommended next
               </span>
-              <span className="flex items-center gap-1 text-[11px] font-medium text-faint">Add a review<Plus className="h-3 w-3 shrink-0" aria-hidden="true" /></span>
+              <p className="min-w-0 truncate text-[13px] font-bold leading-tight text-foreground">{recommendedNext.title || "Untitled review"}</p>
+              <span className="flex items-center gap-1 text-[11px] font-medium text-faint">Add to Focus Five<Plus className="h-3 w-3 shrink-0" aria-hidden="true" /></span>
             </button>
           </li>
-        ))}
+        ) : null}
       </ol>
     )}
   </section>;

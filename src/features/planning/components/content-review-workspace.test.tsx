@@ -13,6 +13,7 @@ const actionMocks = vi.hoisted(() => ({
   reorderContentReviewGroups: vi.fn(),
   reorderContentReviewItems: vi.fn(),
   sendReviewToRoadmap: vi.fn(),
+  setContentReviewFocusMembership: vi.fn(),
   updateContentReviewItem: vi.fn()
 }));
 
@@ -53,7 +54,8 @@ const zebraItem: ContentReviewItem = {
   provider: "Zed Media",
   reviewStatus: "not_started",
   proposedRateCents: 500000,
-  priorityRank: 1
+  priorityRank: 1,
+  inFocus: true
 };
 
 const alphaItem: ContentReviewItem = {
@@ -63,7 +65,8 @@ const alphaItem: ContentReviewItem = {
   provider: "Acme Films",
   reviewStatus: "not_started",
   proposedRateCents: 100000,
-  priorityRank: 2
+  priorityRank: 2,
+  inFocus: true
 };
 
 const betaItem: ContentReviewItem = {
@@ -73,7 +76,8 @@ const betaItem: ContentReviewItem = {
   provider: "Bravo House",
   reviewStatus: "not_started",
   proposedRateCents: 300000,
-  priorityRank: 3
+  priorityRank: 3,
+  inFocus: true
 };
 
 const rejectedItem: ContentReviewItem = {
@@ -673,15 +677,19 @@ describe("ContentReviewDashboard", () => {
     expect(order.indexOf("in_progress")).toBeLessThan(order.indexOf("on_the_radar"));
   });
 
-  it("numbers only the top five and offers a pin below them", () => {
-    const many = Array.from({ length: 7 }, (_, index) => ({
+  function buildManyReviews(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
       ...item,
       id: `review-${index + 1}`,
       title: `Review ${index + 1}`,
       reviewStatus: "not_started" as const,
-      priorityRank: index + 1
+      priorityRank: index + 1,
+      inFocus: index < 5
     }));
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+  }
+
+  it("numbers only the top five and offers a pin below them", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
 
     expect(screen.getByLabelText("Priority for Review 5")).toHaveValue("5");
     expect(screen.queryByLabelText("Priority for Review 6")).not.toBeInTheDocument();
@@ -691,15 +699,8 @@ describe("ContentReviewDashboard", () => {
   });
 
   it("keeps the pin and priority entry usable while a column sort is active", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    const many = Array.from({ length: 7 }, (_, index) => ({
-      ...item,
-      id: `review-${index + 1}`,
-      title: `Review ${index + 1}`,
-      reviewStatus: "not_started" as const,
-      priorityRank: index + 1
-    }));
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
 
     // Sorting is how you find the title you want to promote, so it must not
     // switch off the controls that set the Focus Five.
@@ -710,55 +711,53 @@ describe("ContentReviewDashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
 
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds").slice(0, 5)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-7"]);
+    // The five is already full, so pinning Review 7 in displaces Review 5.
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
+    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
+    expect(calls).toEqual(expect.arrayContaining([
+      { itemId: "review-7", inFocus: "true" },
+      { itemId: "review-5", inFocus: "false" }
+    ]));
   });
 
   it("pins a queue review into the Focus Five", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    const many = Array.from({ length: 7 }, (_, index) => ({
-      ...item,
-      id: `review-${index + 1}`,
-      title: `Review ${index + 1}`,
-      reviewStatus: "not_started" as const,
-      priorityRank: index + 1
-    }));
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
 
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds").slice(0, 5)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-7"]);
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
+    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
+    expect(calls).toEqual(expect.arrayContaining([
+      { itemId: "review-7", inFocus: "true" },
+      { itemId: "review-5", inFocus: "false" }
+    ]));
   });
 
-  it("lists the Focus Five with open slots and releases one back to the queue", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+  it("removes a review from the Focus Five without pulling in a replacement, and offers it back as the recommended next", async () => {
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
 
     const focus = screen.getByTestId("content-review-focus-five");
     expect(within(focus).getByText("3 of 5")).toBeVisible();
-    expect(within(focus).getAllByText(/Open slot/)).toHaveLength(2);
+    expect(within(focus).queryByText(/Recommended next/)).not.toBeInTheDocument();
     expect(within(focus).getByText("Zebra Chronicles")).toBeVisible();
 
     fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
 
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds")).toEqual(["review-alpha", "review-beta", "review-zebra"]);
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
+    const formData = actionMocks.setContentReviewFocusMembership.mock.calls[0][0] as FormData;
+    expect(formData.get("itemId")).toBe("review-zebra");
+    expect(formData.get("inFocus")).toBe("false");
+
+    // Two of five now — nothing backfilled the open slot on its own.
+    expect(within(focus).getByText("2 of 5")).toBeVisible();
+    expect(within(focus).getByRole("button", { name: "Add recommended review Zebra Chronicles to the Focus Five" })).toBeVisible();
   });
 
   it("adds a named review to the Focus Five even when all five slots are full", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    const many = Array.from({ length: 8 }, (_, index) => ({
-      ...item,
-      id: `review-${index + 1}`,
-      title: `Review ${index + 1}`,
-      reviewStatus: "not_started" as const,
-      priorityRank: index + 1
-    }));
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(8)} />);
 
     const focus = screen.getByTestId("content-review-focus-five");
     expect(within(focus).getByText("5 of 5")).toBeVisible();
@@ -774,10 +773,13 @@ describe("ContentReviewDashboard", () => {
     expect(within(picker).queryByRole("button", { name: "Add Review 6 to the Focus Five" })).not.toBeInTheDocument();
     fireEvent.click(within(picker).getByRole("button", { name: "Add Review 8 to the Focus Five" }));
 
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
     // Review 8 takes the fifth slot and the previous fifth drops back to the queue.
-    expect(formData.getAll("itemIds").slice(0, 6)).toEqual(["review-1", "review-2", "review-3", "review-4", "review-8", "review-5"]);
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
+    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
+    expect(calls).toEqual(expect.arrayContaining([
+      { itemId: "review-8", inFocus: "true" },
+      { itemId: "review-5", inFocus: "false" }
+    ]));
     expect(screen.queryByTestId("content-review-focus-picker")).not.toBeInTheDocument();
   });
 
@@ -786,13 +788,13 @@ describe("ContentReviewDashboard", () => {
 
     const focus = screen.getByTestId("content-review-focus-five");
     expect(within(focus).getByText("3 of 5")).toBeVisible();
-    // Three reviews, three filled slots, nothing left in the queue to promote.
+    // Three reviews, nothing left in the queue to promote.
     expect(within(focus).getByRole("button", { name: /^Add review$/ })).toBeDisabled();
-    expect(within(focus).getByRole("button", { name: "Add a review to Focus Five slot 4" })).toBeDisabled();
+    expect(within(focus).queryByRole("button", { name: /Add recommended review/ })).not.toBeInTheDocument();
   });
 
   it("keeps the Focus Five editable while the queue below is sorted", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by Provider" }));
@@ -802,7 +804,7 @@ describe("ContentReviewDashboard", () => {
     expect(within(focus).getByTestId("content-review-focus-row-review-zebra")).toHaveAttribute("draggable", "true");
 
     fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
   });
 
   it("reorders within the Focus Five by dragging", async () => {

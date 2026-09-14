@@ -235,6 +235,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-1",
     priorityRank: 1,
+    inFocus: true,
     title: "Mystics and Makers",
     provider: "Harbor Light Media",
     genre: "Biography",
@@ -250,6 +251,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-2",
     priorityRank: 2,
+    inFocus: true,
     title: "The Sacristy Tour",
     provider: "Bluebird Learning",
     genre: "Sacraments",
@@ -265,6 +267,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-3",
     priorityRank: 3,
+    inFocus: true,
     title: "Old Stone Abbey",
     provider: "Northstar Studios",
     genre: "International",
@@ -279,6 +282,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-4",
     priorityRank: 4,
+    inFocus: true,
     title: "Tiny Disciples",
     provider: "Lantern House",
     genre: "Saints",
@@ -293,6 +297,7 @@ export const demoContentReviewItems: ContentReviewItem[] = [
   {
     id: "demo-review-5",
     priorityRank: 5,
+    inFocus: true,
     title: "Monastery Garden",
     provider: "Summit Room",
     genre: "Prayer",

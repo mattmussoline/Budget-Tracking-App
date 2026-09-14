@@ -67,6 +67,8 @@ export type ContentReviewItem = {
    * the whole list.
    */
   priorityRank?: number | null;
+  /** Explicit Focus Five membership, independent of priorityRank. */
+  inFocus?: boolean | null;
 };
 
 export type ContentReviewUpdateKind = "note" | "status_change" | "created";

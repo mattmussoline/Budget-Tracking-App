@@ -30,25 +30,27 @@ export const emptyQueueFilters: QueueFilters = { search: "", status: "all", prov
  */
 export const FOCUS_LIMIT = 5;
 
+/**
+ * Focus Five membership is its own flag (`inFocus`), not a slice of the
+ * priority order — removing a review is a deliberate choice, not a position
+ * change, so it should never auto-backfill from the queue below it.
+ */
 export function focusFiveItems(items: ContentReviewItem[]) {
-  return items.filter((item) => item.id !== "draft").slice(0, FOCUS_LIMIT);
+  return items.filter((item) => item.id !== "draft" && item.inFocus).slice(0, FOCUS_LIMIT);
 }
 
-export function isInFocusFive(position: number | null) {
-  return position !== null && position >= 1 && position <= FOCUS_LIMIT;
+/** The next-ranked review not already in the Focus Five — the "recommended next" pick. */
+export function recommendedNextItem(items: ContentReviewItem[]) {
+  return items.find((item) => item.id !== "draft" && !item.inFocus) ?? null;
 }
 
 /**
- * An Acquisition Target is no longer a title to actively rank — it's
- * pending a deal, not a decision. If marking it acquisition target would
- * leave it sitting in the Focus Five, bump it to the first slot past the
- * five so the queue backfills from the next candidate.
+ * An Acquisition Target is no longer a title to actively rank — it's pending
+ * a deal, not a decision. Marking it acquisition target drops it out of the
+ * Focus Five rather than leaving it there.
  */
-export function demoteAcquisitionTargetFromFocusFive(items: ContentReviewItem[], itemId: string, nextStatus: ReviewStatus) {
-  if (nextStatus !== "acquisition_target") return items;
-  const index = items.findIndex((item) => item.id === itemId);
-  if (index < 0 || !isInFocusFive(index + 1)) return items;
-  return moveQueueItemToPosition(items, itemId, FOCUS_LIMIT + 1);
+export function shouldClearFocusOnStatusChange(item: ContentReviewItem, nextStatus: ReviewStatus) {
+  return nextStatus === "acquisition_target" && Boolean(item.inFocus);
 }
 
 export const QUEUE_SORT_LABELS: Record<QueueSortColumn, string> = {
