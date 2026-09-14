@@ -40,8 +40,9 @@ export type MinutesByBudgetSourceItem = {
 
 /**
  * Sums total runtime minutes per budget line across every roadmap item,
- * scheduled or not — the roadmap is the one place that should account for
- * everything, not just what already has a release date.
+ * scheduled or not, plus every ongoing series — the roadmap is the one
+ * place that should account for everything, not just what already has a
+ * release date.
  */
 export function buildMinutesByBudgetSourceSummary(items: Array<{ budgetSource?: BudgetSource | null; minutes?: number | null }>): MinutesByBudgetSourceItem[] {
   const totals = new Map<BudgetSource, number>(budgetSourceOptions.map((option) => [option.value, 0]));
