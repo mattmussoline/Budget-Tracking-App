@@ -879,7 +879,8 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
       onDragEnd={onDragEnd}
       onDragOver={onDrop ? allowDrop : undefined}
       onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
-      className={cn("relative grid gap-2 overflow-hidden rounded-lg border border-l-[3px] border-hairline bg-panel px-3 py-2.5 transition-colors", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "border-formed-blue bg-formed-blue-soft", draggedItemId === item.id && "opacity-60")}
+      onClick={() => (onOpenDetail ?? onSelect)(item.id)}
+      className={cn("relative grid gap-2 overflow-hidden rounded-lg border border-l-[3px] border-hairline bg-panel px-3 py-2.5 transition-colors cursor-pointer", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "border-formed-blue bg-formed-blue-soft", draggedItemId === item.id && "opacity-60")}
     >
       {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-2 top-0 z-10 rounded-b-md bg-formed-blue-soft px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-formed-blue">Co-prod</span> : null}
       <PriorityCell
@@ -889,17 +890,6 @@ function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, dragg
         canSetPriority={Boolean(canSetPriority && !isDraft)}
         onMoveToPosition={onMoveToPosition}
       />
-      <button
-        type="button"
-        aria-label={`Select ${item.title || "Untitled review"}`}
-        onClick={() => (onOpenDetail ?? onSelect)(item.id)}
-        className={cn(
-          "min-h-9 rounded-lg border px-2.5 text-left text-xs font-semibold transition-colors",
-          active ? "border-formed-blue bg-formed-blue text-white" : "border-hairline bg-panel-warm text-muted hover:border-hairline-strong hover:text-foreground"
-        )}
-      >
-        Select
-      </button>
       <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-sm font-semibold focus:bg-panel-warm" />
       <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-9 min-w-0 w-full rounded-lg border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
       <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-right text-sm tabular-nums focus:bg-panel-warm" />
