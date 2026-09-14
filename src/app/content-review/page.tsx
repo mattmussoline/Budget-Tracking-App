@@ -64,7 +64,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
   ] = await Promise.all([
     admin
       .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
+      .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("priority_rank", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false }),
@@ -100,6 +100,7 @@ export default async function ContentReviewPage({ searchParams }: ContentReviewP
     format: item.format,
     reviewStatus: item.review_status as ReviewStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
+    minutes: item.minutes,
     notes: item.notes,
     proposedRateCents: item.proposed_rate_cents,
     reviewLink: item.review_link,

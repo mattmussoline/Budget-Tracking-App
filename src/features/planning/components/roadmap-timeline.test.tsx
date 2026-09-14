@@ -43,12 +43,12 @@ const categories: RoadmapCategory[] = [
 ];
 
 const roadmapItems: RoadmapItem[] = [
-  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", notes: null, categoryId: "cat-parish", formedUrl: "https://watch.formed.org/aquinas-101" },
-  { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", notes: null, categoryId: "cat-adult" },
-  { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", notes: null, categoryId: null },
-  { id: "road-4", title: "Past Film", provider: "Augustine Institute", genre: "Biography", format: "Documentary", releaseDate: "2026-11-12", status: "planned", notes: null, categoryId: null },
-  { id: "road-5", title: "Recent Film", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2026-12-08", status: "released", notes: null, categoryId: "cat-kids" },
-  { id: "road-6", title: "Older Film", provider: null, releaseDate: "2026-12-01", status: "released", notes: null, categoryId: "cat-kids" }
+  { id: "road-1", title: "Aquinas 101", provider: "Thomistic", genre: "Scripture", format: "Formation Series", featuredInIndividualMarketing: true, releaseDate: "2027-01-24", status: "planned", budgetSource: "misc_licensing", minutes: 92, notes: null, categoryId: "cat-parish", formedUrl: "https://watch.formed.org/aquinas-101" },
+  { id: "road-2", title: "Undated Film", provider: null, releaseDate: null, status: "in_progress", budgetSource: "misc_licensing", minutes: 45, notes: null, categoryId: "cat-adult" },
+  { id: "road-3", title: "Future Film", provider: null, releaseDate: "2028-01-01", status: "planned", budgetSource: "misc_licensing", minutes: 88, notes: null, categoryId: null },
+  { id: "road-4", title: "Past Film", provider: "Augustine Institute", genre: "Biography", format: "Documentary", releaseDate: "2026-11-12", status: "planned", budgetSource: "misc_licensing", minutes: 100, notes: null, categoryId: null },
+  { id: "road-5", title: "Recent Film", provider: "Thomistic", genre: "Scripture", format: "Formation Series", releaseDate: "2026-12-08", status: "released", budgetSource: "misc_licensing", minutes: 96, notes: null, categoryId: "cat-kids" },
+  { id: "road-6", title: "Older Film", provider: null, releaseDate: "2026-12-01", status: "released", budgetSource: "misc_licensing", minutes: 70, notes: null, categoryId: "cat-kids" }
 ];
 
 const series: OngoingSeries[] = [
@@ -349,6 +349,8 @@ describe("RoadmapDashboard", () => {
     const statusSelect = within(dialog).getByLabelText("Status");
     const categorySelect = within(dialog).getByLabelText("Color category");
     const notesInput = within(dialog).getByLabelText("Notes");
+    const budgetSourceSelect = within(dialog).getByLabelText("Budget source");
+    const minutesInput = within(dialog).getByLabelText("Minutes of content");
 
     fireEvent.change(titleInput, { target: { value: "New Catechesis" } });
     fireEvent.change(providerInput, { target: { value: "Augustine Institute" } });
@@ -356,6 +358,8 @@ describe("RoadmapDashboard", () => {
     fireEvent.change(statusSelect, { target: { value: "blocked" } });
     fireEvent.change(categorySelect, { target: { value: "cat-adult" } });
     fireEvent.change(notesInput, { target: { value: "Launch notes" } });
+    fireEvent.change(budgetSourceSelect, { target: { value: "misc_licensing" } });
+    fireEvent.change(minutesInput, { target: { value: "45" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add Item" }));
 
     await waitFor(() => expect(actionMocks.addRoadmapItem).toHaveBeenCalledTimes(1));

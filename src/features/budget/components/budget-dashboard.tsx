@@ -253,14 +253,14 @@ function NeedsAttentionPanel({ fiscalYearId, items, isDemo }: { fiscalYearId: st
       <DashboardPopout
         title="Needs attention"
         eyebrow={`${items.length} open`}
-        description="Items that are blocked, undated, approved, released, or close to budget limits."
+        description="Items that are blocked, undated, contracted, released, or close to budget limits."
         toneClassName="bg-danger-soft text-danger"
         triggerClassName="w-full border-danger-border bg-danger-soft p-0"
         showExpandIcon={false}
         trigger={
           <CollapsibleStrip
             title="Needs attention"
-            description="Items that are blocked, undated, approved, released, or close to budget limits."
+            description="Items that are blocked, undated, contracted, released, or close to budget limits."
             count={`${items.length} open`}
             countClassName="bg-danger-soft text-danger"
             chevronClassName="border-danger-border text-danger"

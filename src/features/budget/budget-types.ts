@@ -10,6 +10,7 @@ export type ContentLicense = {
   cadence: PaymentCadence;
   addedFiscalMonth: number;
   budgetSource?: BudgetSource | null;
+  minutes?: number | null;
   notes?: string | null;
 };
 

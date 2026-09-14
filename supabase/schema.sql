@@ -43,6 +43,7 @@ create table if not exists public.content_licenses (
   cadence text not null check (cadence in ('quarterly', 'yearly')),
   added_fiscal_month integer not null check (added_fiscal_month between 1 and 12),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
+  minutes integer check (minutes is null or minutes > 0),
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -80,6 +81,7 @@ create table if not exists public.roadmap_items (
   release_month text,
   status text not null default 'planned' check (status in ('planned', 'scheduled', 'in_progress', 'blocked', 'released')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
+  minutes integer check (minutes is null or minutes > 0),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
   clickup_task_id text,
@@ -96,6 +98,9 @@ create table if not exists public.ongoing_series (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
   series text not null,
   cadence text not null,
+  budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
+  minutes integer check (minutes is null or minutes > 0),
+  cost_cents integer check (cost_cents is null or cost_cents >= 0),
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -108,8 +113,9 @@ create table if not exists public.content_review_items (
   provider text,
   genre text,
   format text,
-  review_status text not null default 'not_started' check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')),
+  review_status text not null default 'not_started' check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'acquisition_target', 'contracted')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
+  minutes integer check (minutes is null or minutes > 0),
   notes text,
   proposed_rate_cents bigint check (proposed_rate_cents >= 0),
   review_link text,
@@ -122,7 +128,7 @@ create table if not exists public.content_review_items (
 
 create table if not exists public.content_review_group_order (
   fiscal_year_id uuid not null references public.fiscal_years(id) on delete cascade,
-  review_status text not null check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')),
+  review_status text not null check (review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'acquisition_target', 'contracted')),
   sort_order integer not null,
   primary key (fiscal_year_id, review_status)
 );

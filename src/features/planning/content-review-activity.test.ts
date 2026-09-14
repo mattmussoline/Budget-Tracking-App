@@ -6,13 +6,13 @@ const now = new Date("2026-09-03T12:00:00.000Z");
 const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
 
 const items: ContentReviewItem[] = [
-  { id: "a", title: "The Chosen", provider: "Acme", genre: null, format: null, reviewStatus: "approved", notes: null, proposedRateCents: 385000, reviewLink: null, comparableContent: null },
+  { id: "a", title: "The Chosen", provider: "Acme", genre: null, format: null, reviewStatus: "contracted", notes: null, proposedRateCents: 385000, reviewLink: null, comparableContent: null },
   { id: "b", title: "Old Stone Abbey", provider: "Northstar", genre: null, format: null, reviewStatus: "blocked", notes: null, proposedRateCents: 120000, reviewLink: null, comparableContent: null }
 ];
 
 const updates: ContentReviewUpdate[] = [
   { id: "u1", itemId: "a", kind: "note", body: "Watched two episodes.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(2) },
-  { id: "u2", itemId: "a", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "approved", authorEmail: "matt@example.com", createdAt: hoursAgo(30) },
+  { id: "u2", itemId: "a", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "contracted", authorEmail: "matt@example.com", createdAt: hoursAgo(30) },
   { id: "u3", itemId: "b", kind: "created", body: null, fromStatus: null, toStatus: "not_started", authorEmail: "matt@example.com", createdAt: hoursAgo(100) },
   { id: "u4", itemId: "b", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "rejected", authorEmail: "matt@example.com", createdAt: hoursAgo(120) },
   { id: "u5", itemId: "gone", kind: "note", body: "Old note.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: hoursAgo(20 * 24) }
@@ -31,10 +31,10 @@ describe("summarizeRecap", () => {
     expect(month.reviewsTouched).toBe(3);
   });
 
-  it("totals the yearly rate of approvals without double counting a review", () => {
+  it("totals the yearly rate of contracted deals without double counting a review", () => {
     const summary = summarizeRecap(updates, items, 7, now);
-    expect(summary.approvedCount).toBe(1);
-    expect(summary.approvedRateCents).toBe(385000);
+    expect(summary.contractedCount).toBe(1);
+    expect(summary.contractedRateCents).toBe(385000);
     expect(summary.rejectedCount).toBe(1);
   });
 
@@ -62,7 +62,7 @@ describe("describeRecapEntry", () => {
   it("renders status transitions with readable labels", () => {
     const summary = summarizeRecap(updates, items, 7, now);
     const change = summary.days.flatMap((day) => day.entries).find((entry) => entry.id === "u2");
-    expect(describeRecapEntry(change!)).toBe("In Progress → Approved");
+    expect(describeRecapEntry(change!)).toBe("In Progress → Contracted");
   });
 });
 
@@ -119,7 +119,7 @@ describe("buildRecapText", () => {
   it("produces a pasteable summary", () => {
     const text = buildRecapText(summarizeRecap(updates, items, 7, now));
     expect(text).toContain("Content review recap — last 7 days");
-    expect(text).toContain("Approved: 1 ($3,850.00 yearly)");
+    expect(text).toContain("Contracted: 1 ($3,850.00 yearly)");
     expect(text).toContain("The Chosen: Watched two episodes.");
   });
 

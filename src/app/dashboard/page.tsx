@@ -81,7 +81,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   ] = await Promise.all([
     admin
       .from("content_licenses")
-      .select("id,title,provider,installment_cents,cadence,added_fiscal_month,budget_source,notes")
+      .select("id,title,provider,installment_cents,cadence,added_fiscal_month,budget_source,minutes,notes")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
@@ -94,12 +94,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .order("email", { ascending: true }),
     admin
       .from("roadmap_items")
-      .select("id,title,provider,release_month,status,budget_source,notes,category_id,formed_url,formed_url_candidate")
+      .select("id,title,provider,release_month,status,budget_source,minutes,notes,category_id,formed_url,formed_url_candidate")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
       .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
+      .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
@@ -137,6 +137,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     cadence: license.cadence as PaymentCadence,
     addedFiscalMonth: license.added_fiscal_month,
     budgetSource: license.budget_source ?? "misc_licensing",
+    minutes: license.minutes,
     notes: license.notes
   }));
   const providerColorOverrides: ProviderColorOverrides = Object.fromEntries(
@@ -149,6 +150,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     releaseDate: item.release_month,
     status: item.status as RoadmapStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
+    minutes: item.minutes,
     notes: item.notes,
     categoryId: item.category_id,
     formedUrl: item.formed_url,
@@ -162,6 +164,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     format: item.format,
     reviewStatus: item.review_status as ReviewStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
+    minutes: item.minutes,
     notes: item.notes,
     proposedRateCents: item.proposed_rate_cents,
     reviewLink: item.review_link,

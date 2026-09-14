@@ -22,7 +22,7 @@ const reviewItems: ContentReviewItem[] = [
     provider: "Thomistic Institute",
     genre: null,
     format: null,
-    reviewStatus: "approved",
+    reviewStatus: "contracted",
     notes: null,
     proposedRateCents: 1200000,
     reviewLink: null,

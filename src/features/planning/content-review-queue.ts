@@ -1,15 +1,18 @@
 import { REVIEW_STATUSES } from "./planning-constants";
 import type { ContentReviewGroupOrderRow, ContentReviewItem, ReviewStatus } from "./planning-types";
 
-// Approved and rejected keep their original test ids so the completed-review selectors stay stable.
-export const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "approved", "rejected"];
+// Rejected keeps its original test id so the completed-review selectors stay stable.
+// Acquisition Target sits right before Contracted: approved-by-the-team-but-no-contract-yet,
+// then a signed deal.
+export const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "acquisition_target", "contracted", "rejected"];
 
 export const QUEUE_GROUP_TEST_IDS: Record<ReviewStatus, string> = {
   not_started: "content-review-group-not-started",
   on_the_radar: "content-review-group-on-the-radar",
   in_progress: "content-review-group-in-progress",
   blocked: "content-review-group-blocked",
-  approved: "content-review-approved-content",
+  acquisition_target: "content-review-group-acquisition-target",
+  contracted: "content-review-contracted-content",
   rejected: "content-review-rejected-content"
 };
 
@@ -199,7 +202,7 @@ export function groupQueueItems(items: ContentReviewItem[], order: ReviewStatus[
 }
 
 export function isFinalReviewStatus(status: ReviewStatus) {
-  return status === "approved" || status === "rejected";
+  return status === "contracted" || status === "rejected";
 }
 
 export function isDecisionQueueStatus(status: ReviewStatus) {

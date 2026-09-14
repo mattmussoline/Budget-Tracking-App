@@ -21,6 +21,7 @@ export type RoadmapItem = {
   clickupSyncedAt?: string | null;
   formedUrl?: string | null;
   formedUrlCandidate?: string | null;
+  minutes?: number | null;
 };
 
 export type RoadmapCategory = {
@@ -36,9 +37,12 @@ export type OngoingSeries = {
   series: string;
   cadence: string;
   notes: string | null;
+  budgetSource?: BudgetSource | null;
+  minutes?: number | null;
+  costCents?: number | null;
 };
 
-export type ReviewStatus = "not_started" | "on_the_radar" | "in_progress" | "blocked" | "rejected" | "approved";
+export type ReviewStatus = "not_started" | "on_the_radar" | "in_progress" | "blocked" | "rejected" | "acquisition_target" | "contracted";
 
 export type ContentReviewItem = {
   id: string;
@@ -53,6 +57,7 @@ export type ContentReviewItem = {
   reviewLink: string | null;
   comparableContent: string | null;
   isCoproductionOpportunity?: boolean | null;
+  minutes?: number | null;
   /**
    * Ordering key for the manual review order, not the number shown on screen.
    * The queue displays each item's 1-based position after sorting by this

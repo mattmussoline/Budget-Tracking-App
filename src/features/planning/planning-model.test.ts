@@ -24,7 +24,8 @@ describe("planning taxonomies", () => {
       "In Progress",
       "Blocked",
       "Rejected",
-      "Approved"
+      "Acquisition Target",
+      "Contracted"
     ]);
   });
 
@@ -119,6 +120,6 @@ describe("planning workspace migration", () => {
     const schemaPath = resolve("supabase/schema.sql");
     const sql = readFileSync(schemaPath, "utf8");
 
-    expect(sql).toContain("review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'approved')");
+    expect(sql).toContain("review_status in ('not_started', 'on_the_radar', 'in_progress', 'blocked', 'rejected', 'acquisition_target', 'contracted')");
   });
 });

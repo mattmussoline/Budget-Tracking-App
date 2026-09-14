@@ -10,7 +10,8 @@ import { SoftSelect } from "@/components/ui/soft-select";
 import { cn } from "@/components/ui/soft-surface";
 import { PageHead } from "./planning-shell";
 import { DashboardPopout } from "@/features/budget/components/dashboard-popout";
-import { budgetSourceOptions } from "@/features/budget/budget-source";
+import { budgetSourceOptions, buildMinutesByBudgetSourceSummary, getBudgetSourceLabel } from "@/features/budget/budget-source";
+import { formatCurrency } from "@/lib/currency";
 import {
   addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
   updateOngoingSeries, updateRoadmapItem
@@ -82,6 +83,7 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey(), fiscalYearStartMonth);
+  const minutesByBudgetSource = buildMinutesByBudgetSourceSummary(roadmapItems);
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `${routeBasePath}?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
@@ -135,6 +137,8 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
     </div> : null}
 
     {!isRoadmapFocus ? <RoadmapSummary summary={summary} /> : null}
+
+    {!isRoadmapFocus ? <MinutesByBudgetSourcePanel items={minutesByBudgetSource} /> : null}
 
     {viewMode === "cards" ? <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div className="grid gap-0.5"><h2 className="font-display text-2xl">{months[0].label} – {months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-3 overflow-x-auto overflow-y-visible", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
@@ -336,6 +340,28 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
       </div>
     </div>
   </details>;
+}
+
+function MinutesByBudgetSourcePanel({ items }: { items: ReturnType<typeof buildMinutesByBudgetSourceSummary> }) {
+  const totalMinutes = items.reduce((sum, item) => sum + item.minutes, 0);
+
+  return <div data-testid="minutes-by-budget-source-panel" className="rounded-soft border border-hairline bg-panel-warm p-5">
+    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="grid gap-0.5">
+        <h2 className="font-display text-lg">Minutes secured by budget line</h2>
+        <p className="text-xs text-muted [text-wrap:pretty]">Every roadmap item, dated or still in the backlog, totaled by budget source.</p>
+      </div>
+      <span className="rounded-md bg-tone-slate-bg px-2 py-0.5 text-[11px] font-bold text-muted">{totalMinutes.toLocaleString()} min total</span>
+    </div>
+    <div className="grid gap-3 md:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.source} className="rounded-lg border border-hairline bg-panel p-4">
+          <p className="font-display text-2xl text-foreground">{item.minutes.toLocaleString()}</p>
+          <p className="text-xs font-semibold text-muted">{item.label}</p>
+        </div>
+      ))}
+    </div>
+  </div>;
 }
 
 function SummaryMetric({ title, value, label, accentClassName, description, children }: { title: string; value: string; label: string; accentClassName: string; description: string; children: ReactNode }) {
@@ -856,8 +882,9 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="self-start">
-          <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? "misc_licensing"} options={[...budgetSourceOptions]} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
+          <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? ""} placeholder="Select" required options={[...budgetSourceOptions]} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
         </div>
+        <SoftInput id={`${fieldPrefix}-minutes`} label="Minutes of content" name="minutes" type="number" min={1} inputMode="numeric" placeholder="Total runtime, e.g. 96" defaultValue={item?.minutes ?? ""} required disabled={fieldsDisabled} />
         <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
         <div className="grid gap-2 md:col-span-2">
           <SoftInput id={`${fieldPrefix}-formed-url`} label="Formed link" name="formedUrl" type="url" placeholder="https://watch.formed.org/..." value={formedUrl} onChange={(event) => setFormedUrl(event.target.value)} disabled={fieldsDisabled} />
@@ -994,10 +1021,11 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
         <h2 className="font-display text-lg">Ongoing series cadence</h2>
       </div>
       <div>
-        <div className="grid grid-cols-[1.2fr_0.7fr_1fr_auto] gap-3.5 border-y border-hairline bg-panel px-5 py-2.5 text-[11px] font-semibold text-muted">
+        <div className="grid grid-cols-[1fr_0.6fr_0.9fr_0.5fr_auto] gap-3.5 border-y border-hairline bg-panel px-5 py-2.5 text-[11px] font-semibold text-muted">
           <span>Series</span>
           <span>Cadence</span>
-          <span>Notes</span>
+          <span>Budget line</span>
+          <span>Minutes</span>
           <span>Edit</span>
         </div>
         {ongoingSeries.map((item) => (
@@ -1006,10 +1034,11 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
             key={item.id}
             className="border-b border-hairline px-5 py-3 last:border-b-0"
           >
-            <summary className="grid cursor-pointer list-none items-center gap-3.5 text-sm md:grid-cols-[1.2fr_0.7fr_1fr_auto] [&::-webkit-details-marker]:hidden">
+            <summary className="grid cursor-pointer list-none items-center gap-3.5 text-sm md:grid-cols-[1fr_0.6fr_0.9fr_0.5fr_auto] [&::-webkit-details-marker]:hidden">
               <b className="font-semibold">{item.series}</b>
               <span className="text-muted">{item.cadence}</span>
-              <span className="text-[13px] text-muted">{item.notes}</span>
+              <span className="text-[13px] text-muted">{getBudgetSourceLabel(item.budgetSource)}</span>
+              <span className="text-[13px] text-muted">{item.minutes ?? "—"}</span>
               <span className="text-xs font-semibold text-formed-blue">Edit</span>
             </summary>
             <form action={updateOngoingSeries} className="mt-3 grid gap-3 border-t border-hairline pt-3 md:grid-cols-2">
@@ -1017,6 +1046,9 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
               <input type="hidden" name="seriesId" value={item.id} />
               <SoftInput id={`series-${item.id}`} label="Series" name="series" defaultValue={item.series} disabled={isDemo} />
               <SoftInput id={`cadence-${item.id}`} label="Cadence" name="cadence" defaultValue={item.cadence} disabled={isDemo} />
+              <SoftSelect id={`series-budget-source-${item.id}`} label="Budget source" name="budgetSource" defaultValue={item.budgetSource ?? ""} placeholder="Select" required options={[...budgetSourceOptions]} disabled={isDemo} />
+              <SoftInput id={`series-minutes-${item.id}`} label="Minutes of content" name="minutes" type="number" min={1} inputMode="numeric" placeholder="Total runtime" defaultValue={item.minutes ?? ""} required disabled={isDemo} />
+              <SoftInput id={`series-cost-${item.id}`} label="Cost" name="cost" inputMode="decimal" placeholder="0" defaultValue={item.costCents !== null && item.costCents !== undefined ? formatCurrency(item.costCents) : ""} required disabled={isDemo} />
               <SoftInput id={`series-notes-${item.id}`} label="Notes" name="notes" defaultValue={item.notes ?? ""} disabled={isDemo} />
               <div className="flex gap-2">
                 <SoftButton type="submit" variant="primary" disabled={isDemo}>Save Series</SoftButton>
@@ -1046,6 +1078,9 @@ function SeriesTable({ fiscalYearId, ongoingSeries, isDemo }: { fiscalYearId: st
             <input type="hidden" name="fiscalYearId" value={fiscalYearId} />
             <SoftInput id="new-series" label="Series" name="series" disabled={isDemo} />
             <SoftInput id="new-cadence" label="Cadence" name="cadence" disabled={isDemo} />
+            <SoftSelect id="new-series-budget-source" label="Budget source" name="budgetSource" defaultValue="" placeholder="Select" required options={[...budgetSourceOptions]} disabled={isDemo} />
+            <SoftInput id="new-series-minutes" label="Minutes of content" name="minutes" type="number" min={1} inputMode="numeric" placeholder="Total runtime" required disabled={isDemo} />
+            <SoftInput id="new-series-cost" label="Cost" name="cost" inputMode="decimal" placeholder="0" required disabled={isDemo} />
             <SoftInput id="new-series-notes" label="Notes" name="notes" disabled={isDemo} />
             <SoftButton type="submit" variant="primary" disabled={isDemo}>Add Series</SoftButton>
           </form>

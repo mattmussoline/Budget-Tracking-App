@@ -24,7 +24,10 @@ const licenseSchema = z.object({
   installment: z.string().min(1),
   cadence: z.enum(["quarterly", "yearly"]),
   addedFiscalMonth: z.coerce.number().int().min(1).max(12),
-  budgetSource: z.enum(budgetSourceOptions.map((option) => option.value) as [string, ...string[]]).default("misc_licensing"),
+  budgetSource: z.enum(budgetSourceOptions.map((option) => option.value) as [string, ...string[]]),
+  // Total runtime minutes for the whole piece of content — a movie's length or a
+  // series' combined runtime, never broken out per episode.
+  minutes: z.coerce.number().int().positive(),
   notes: z.string().trim().optional()
 });
 
@@ -124,6 +127,7 @@ export async function addContentLicense(formData: FormData) {
     cadence: parsed.data.cadence,
     added_fiscal_month: parsed.data.addedFiscalMonth,
     budget_source: parsed.data.budgetSource,
+    minutes: parsed.data.minutes,
     notes: parsed.data.notes || null
   });
 
@@ -253,6 +257,7 @@ export async function updateContentLicense(formData: FormData) {
       cadence: parsed.data.cadence,
       added_fiscal_month: parsed.data.addedFiscalMonth,
       budget_source: parsed.data.budgetSource,
+      minutes: parsed.data.minutes,
       notes: parsed.data.notes || null
     })
     .eq("id", parsed.data.licenseId)

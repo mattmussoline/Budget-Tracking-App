@@ -64,13 +64,13 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   const [{ data: roadmapRows, error: roadmapError }, { data: seriesRows, error: seriesError }, { data: categoryRows, error: categoryError }] = await Promise.all([
     admin
       .from("roadmap_items")
-      .select("id,title,provider,genre,format,featured_in_individual_marketing,release_month,status,budget_source,notes,category_id,clickup_task_id,clickup_task_url,clickup_synced_at,formed_url,formed_url_candidate")
+      .select("id,title,provider,genre,format,featured_in_individual_marketing,release_month,status,budget_source,minutes,notes,category_id,clickup_task_id,clickup_task_url,clickup_synced_at,formed_url,formed_url_candidate")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("release_month", { ascending: true })
       .order("created_at", { ascending: true }),
     admin
       .from("ongoing_series")
-      .select("id,series,cadence,notes")
+      .select("id,series,cadence,budget_source,minutes,cost_cents,notes")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("series", { ascending: true }),
     admin
@@ -99,6 +99,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     releaseDate: item.release_month,
     status: (item.status === "ready" ? "in_progress" : item.status) as RoadmapStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
+    minutes: item.minutes,
     notes: item.notes,
     categoryId: item.category_id,
     clickupTaskId: item.clickup_task_id,
@@ -112,6 +113,9 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
     id: item.id,
     series: item.series,
     cadence: item.cadence,
+    budgetSource: item.budget_source ?? "misc_licensing",
+    minutes: item.minutes,
+    costCents: item.cost_cents,
     notes: item.notes
   }));
   const categories: RoadmapCategory[] = (categoryRows ?? []).map((category) => ({

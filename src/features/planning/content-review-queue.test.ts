@@ -91,12 +91,12 @@ describe("sortQueueItems", () => {
 
   it("sorts review status by queue order rather than alphabetically", () => {
     const items = [
-      makeItem({ id: "approved", reviewStatus: "approved" }),
+      makeItem({ id: "contracted", reviewStatus: "contracted" }),
       makeItem({ id: "blocked", reviewStatus: "blocked" }),
       makeItem({ id: "not-started", reviewStatus: "not_started" })
     ];
 
-    expect(ids(sortQueueItems(items, { column: "reviewStatus", direction: "asc" }))).toEqual(["not-started", "blocked", "approved"]);
+    expect(ids(sortQueueItems(items, { column: "reviewStatus", direction: "asc" }))).toEqual(["not-started", "blocked", "contracted"]);
   });
 
   it("pins the unsaved draft to the top under every sort", () => {
@@ -114,14 +114,14 @@ describe("sortQueueItems", () => {
 describe("matchesQueueFilters", () => {
   it("always keeps the unsaved draft visible", () => {
     const draft = makeItem({ id: "draft", title: "", provider: "" });
-    expect(matchesQueueFilters(draft, { search: "nothing matches", status: "approved", provider: "Acme" })).toBe(true);
+    expect(matchesQueueFilters(draft, { search: "nothing matches", status: "contracted", provider: "Acme" })).toBe(true);
   });
 
   it("filters by title, status, and provider", () => {
     const item = makeItem({ id: "a", title: "The Chosen", provider: "Acme", reviewStatus: "blocked" });
     expect(matchesQueueFilters(item, { search: "chosen", status: "all", provider: "all" })).toBe(true);
     expect(matchesQueueFilters(item, { search: "pilgrim", status: "all", provider: "all" })).toBe(false);
-    expect(matchesQueueFilters(item, { search: "", status: "approved", provider: "all" })).toBe(false);
+    expect(matchesQueueFilters(item, { search: "", status: "contracted", provider: "all" })).toBe(false);
     expect(matchesQueueFilters(item, { search: "", status: "all", provider: "Other" })).toBe(false);
   });
 });
@@ -135,10 +135,10 @@ describe("resolveGroupOrder", () => {
   it("honors the saved order and appends statuses that were never saved", () => {
     const order = resolveGroupOrder([
       { reviewStatus: "blocked", sortOrder: 0 },
-      { reviewStatus: "approved", sortOrder: 1 }
+      { reviewStatus: "contracted", sortOrder: 1 }
     ]);
 
-    expect(order.slice(0, 2)).toEqual(["blocked", "approved"]);
+    expect(order.slice(0, 2)).toEqual(["blocked", "contracted"]);
     expect([...order].sort()).toEqual([...QUEUE_GROUP_ORDER].sort());
   });
 
@@ -184,7 +184,7 @@ describe("moveQueueItemToGroupEnd", () => {
 
   it("keeps the position when the target group is empty", () => {
     const items = [makeItem({ id: "a", reviewStatus: "not_started" }), makeItem({ id: "b", reviewStatus: "not_started" })];
-    expect(moveQueueItemToGroupEnd(items, "a", "approved")).toBe(items);
+    expect(moveQueueItemToGroupEnd(items, "a", "contracted")).toBe(items);
   });
 });
 

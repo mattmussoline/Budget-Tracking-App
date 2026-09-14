@@ -20,6 +20,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "quarterly",
     addedFiscalMonth: 1,
     budgetSource: "misc_licensing",
+    minutes: 96,
     notes: "Quarterly licensing deal with first payment in July."
   },
   {
@@ -30,6 +31,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "yearly",
     addedFiscalMonth: 2,
     budgetSource: "donor_funded",
+    minutes: 240,
     notes: "Funded through a sample donor campaign."
   },
   {
@@ -40,6 +42,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "quarterly",
     addedFiscalMonth: 4,
     budgetSource: "internal",
+    minutes: 130,
     notes: "Kids series used to show the licensing summary's cadence math."
   },
   {
@@ -50,6 +53,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "quarterly",
     addedFiscalMonth: 6,
     budgetSource: "misc_licensing",
+    minutes: 88,
     notes: "Shared provider to show grouped provider reporting."
   },
   {
@@ -60,6 +64,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "yearly",
     addedFiscalMonth: 8,
     budgetSource: "other",
+    minutes: 300,
     notes: "Sample yearly purchase in the spring."
   },
   {
@@ -70,6 +75,7 @@ export const demoLicenses: ContentLicense[] = [
     cadence: "yearly",
     addedFiscalMonth: 9,
     budgetSource: "misc_licensing",
+    minutes: 60,
     notes: "Additional title so the provider mix demo sorts by content pieces, not just spend."
   }
 ];
@@ -99,6 +105,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-07-21",
     status: "released",
     budgetSource: "donor_funded",
+    minutes: 92,
     notes: "Released title that demonstrates the Push to Licensing Summary handoff reminder.",
     categoryId: "demo-cat-adult",
     formedUrl: "https://watch.formed.org/pilgrim-road"
@@ -112,6 +119,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-08-18",
     status: "in_progress",
     budgetSource: "misc_licensing",
+    minutes: 45,
     notes: "In editorial review with artwork still pending.",
     categoryId: "demo-cat-adult"
   },
@@ -124,6 +132,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-09-08",
     status: "planned",
     budgetSource: "internal",
+    minutes: 120,
     notes: "Family release for early fall.",
     categoryId: "demo-cat-family"
   },
@@ -137,6 +146,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-11-17",
     status: "planned",
     budgetSource: "other",
+    minutes: 75,
     notes: "Seasonal campaign sample.",
     categoryId: "demo-cat-seasonal"
   },
@@ -149,6 +159,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-10-TBD",
     status: "blocked",
     budgetSource: "misc_licensing",
+    minutes: 50,
     notes: "Blocked sample item with a known release month, but no exact date yet.",
     categoryId: "demo-cat-youth"
   },
@@ -162,15 +173,40 @@ export const demoRoadmapItems: RoadmapItem[] = [
     releaseDate: "2026-10-06",
     status: "planned",
     budgetSource: "donor_funded",
+    minutes: 84,
     notes: "Additional planned title so the public demo shows a richer Roadmap at-a-glance summary.",
     categoryId: "demo-cat-adult"
   }
 ];
 
 export const demoOngoingSeries: OngoingSeries[] = [
-  { id: "demo-series-1", series: "Weekly Witness", cadence: "Every Friday", notes: "Short-form release cadence." },
-  { id: "demo-series-2", series: "Family Feature Night", cadence: "Monthly", notes: "Monthly family programming block." },
-  { id: "demo-series-3", series: "Seasonal Retreats", cadence: "Quarterly", notes: "Tied to liturgical seasons." }
+  {
+    id: "demo-series-1",
+    series: "Weekly Witness",
+    cadence: "Every Friday",
+    notes: "Short-form release cadence.",
+    budgetSource: "misc_licensing",
+    minutes: 15,
+    costCents: 60000
+  },
+  {
+    id: "demo-series-2",
+    series: "Family Feature Night",
+    cadence: "Monthly",
+    notes: "Monthly family programming block.",
+    budgetSource: "internal",
+    minutes: 90,
+    costCents: 0
+  },
+  {
+    id: "demo-series-3",
+    series: "Seasonal Retreats",
+    cadence: "Quarterly",
+    notes: "Tied to liturgical seasons.",
+    budgetSource: "donor_funded",
+    minutes: 45,
+    costCents: 350000
+  }
 ];
 
 function demoUpdateTime(daysAgo: number, hour = 9) {
@@ -182,7 +218,7 @@ function demoUpdateTime(daysAgo: number, hour = 9) {
 
 export const demoContentReviewUpdates: ContentReviewUpdate[] = [
   { id: "demo-update-1", itemId: "demo-review-2", kind: "note", body: "Watched the first two episodes. Pacing is strong; asked Bluebird for the music cue sheet.", fromStatus: null, toStatus: null, authorEmail: "demo@example.com", createdAt: demoUpdateTime(0, 11) },
-  { id: "demo-update-2", itemId: "demo-review-1", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "approved", authorEmail: "demo@example.com", createdAt: demoUpdateTime(1, 14) },
+  { id: "demo-update-2", itemId: "demo-review-1", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "contracted", authorEmail: "demo@example.com", createdAt: demoUpdateTime(1, 14) },
   { id: "demo-update-3", itemId: "demo-review-3", kind: "note", body: "Rights paperwork still outstanding. Chased Northstar again.", fromStatus: null, toStatus: null, authorEmail: "demo@example.com", createdAt: demoUpdateTime(2, 10) },
   { id: "demo-update-4", itemId: "demo-review-4", kind: "status_change", body: null, fromStatus: "in_progress", toStatus: "rejected", authorEmail: "demo@example.com", createdAt: demoUpdateTime(4, 16) },
   { id: "demo-update-5", itemId: "demo-review-5", kind: "created", body: null, fromStatus: null, toStatus: "on_the_radar", authorEmail: "demo@example.com", createdAt: demoUpdateTime(6, 8) },
@@ -197,9 +233,10 @@ export const demoContentReviewItems: ContentReviewItem[] = [
     provider: "Harbor Light Media",
     genre: "Biography",
     format: "Docu-Series",
-    reviewStatus: "approved",
+    reviewStatus: "contracted",
     budgetSource: "misc_licensing",
-    notes: "Approved sample waiting to move into the roadmap.",
+    minutes: 180,
+    notes: "Contracted sample waiting to move into the roadmap.",
     proposedRateCents: 385000,
     reviewLink: "https://example.com/review/mystics-and-makers",
     comparableContent: "Comparable to a short adult faith formation series."
@@ -260,5 +297,35 @@ export const demoContentReviewItems: ContentReviewItem[] = [
     proposedRateCents: 210000,
     reviewLink: "https://example.com/review/monastery-garden",
     comparableContent: "Long-shot spiritual reflection resource for later follow-up."
+  },
+  {
+    id: "demo-review-6",
+    priorityRank: 6,
+    title: "Harbor Sunday Homilies",
+    provider: "Harbor Light Media",
+    genre: "Christian Formation",
+    format: "Reflection",
+    reviewStatus: "acquisition_target",
+    budgetSource: "misc_licensing",
+    minutes: 130,
+    notes: "Team wants this one; still waiting on a signed agreement with Harbor Light.",
+    proposedRateCents: 200000,
+    reviewLink: "https://example.com/review/harbor-sunday-homilies",
+    comparableContent: "Comparable to a short reflection series."
+  },
+  {
+    id: "demo-review-7",
+    priorityRank: 7,
+    title: "Lantern House Vespers",
+    provider: "Lantern House",
+    genre: "Prayer",
+    format: "Prayer",
+    reviewStatus: "acquisition_target",
+    budgetSource: "donor_funded",
+    minutes: 60,
+    notes: "Approved for pursuit; contract terms still with Lantern House's licensing team.",
+    proposedRateCents: 175000,
+    reviewLink: "https://example.com/review/lantern-house-vespers",
+    comparableContent: "Comparable to a short prayer resource."
   }
 ];

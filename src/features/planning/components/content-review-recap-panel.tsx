@@ -68,7 +68,7 @@ export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onCl
     { label: "Updates logged", value: String(summary.notesLogged) },
     { label: "Status changes", value: String(summary.statusChanges) },
     { label: "Reviews added", value: String(summary.reviewsAdded) },
-    { label: "Approved", value: summary.approvedCount ? `${summary.approvedCount} · ${formatOptionalCurrency(summary.approvedRateCents)}` : "0" },
+    { label: "Contracted", value: summary.contractedCount ? `${summary.contractedCount} · ${formatOptionalCurrency(summary.contractedRateCents)}` : "0" },
     { label: "Rejected", value: String(summary.rejectedCount) }
   ];
 

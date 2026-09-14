@@ -86,6 +86,7 @@ const blankDraft = (): ContentReviewItem => ({
   format: "",
   reviewStatus: "not_started",
   budgetSource: "misc_licensing",
+  minutes: null,
   notes: "",
   proposedRateCents: null,
   reviewLink: "",
@@ -168,6 +169,7 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
     formData.set("format", item.format ?? "");
     formData.set("reviewStatus", item.reviewStatus);
     formData.set("budgetSource", item.budgetSource ?? "misc_licensing");
+    formData.set("minutes", item.minutes != null ? String(item.minutes) : "");
     formData.set("notes", item.notes ?? "");
     formData.set("proposedRate", formatOptionalCurrency(item.proposedRateCents));
     formData.set("reviewLink", item.reviewLink ?? "");
@@ -230,11 +232,13 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
   );
   const activeQueue = queue.filter((item) => isDecisionQueueStatus(item.reviewStatus));
   const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
-  const approvedContent = queue.filter((item) => item.reviewStatus === "approved");
+  const acquisitionTargetContent = queue.filter((item) => item.reviewStatus === "acquisition_target");
+  const contractedContent = queue.filter((item) => item.reviewStatus === "contracted");
   const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
   const coproductionContent = queue.filter((item) => item.isCoproductionOpportunity);
+  const acquisitionTargetTotalCents = acquisitionTargetContent.reduce((total, item) => total + (item.proposedRateCents ?? 0), 0);
   const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
-  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "approved" ? approvedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
+  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "acquisitionTarget" ? acquisitionTargetContent : openStatusModal === "contracted" ? contractedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
   const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
   const focusFive = focusFiveItems(records);
   const focusCandidates = records.slice(FOCUS_LIMIT);
@@ -449,11 +453,12 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
           <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add content</SoftButton>
         </>}
       />
-      <section aria-label="Review status summary" className="grid min-w-0 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+      <section aria-label="Review status summary" className="grid min-w-0 gap-3.5 sm:grid-cols-2 lg:grid-cols-6">
         <StatusCard label="Active decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
         <StatusCard label="Co-productions" value={coproductionContent.length} helper="Potential partner projects" tone="coproduction" onClick={() => setOpenStatusModal("coproduction")} />
         <StatusCard label="On the radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
-        <StatusCard label="Approved" value={approvedContent.length} helper="Ready for roadmap follow-up" tone="approved" onClick={() => setOpenStatusModal("approved")} />
+        <StatusCard label="Acquisition targets" value={acquisitionTargetContent.length} secondaryValue={formatOptionalCurrency(acquisitionTargetTotalCents || null) || "$0"} helper="Total value approved by the team, no contract yet" tone="acquisitionTarget" onClick={() => setOpenStatusModal("acquisitionTarget")} />
+        <StatusCard label="Contracted" value={contractedContent.length} helper="Ready for roadmap follow-up" tone="contracted" onClick={() => setOpenStatusModal("contracted")} />
         <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" tone="rejected" onClick={() => setOpenStatusModal("rejected")} />
       </section>
 
@@ -582,23 +587,24 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
   );
 }
 
-type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "approved" | "rejected";
-type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "approved" | "rejected";
+type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "acquisitionTarget" | "contracted" | "rejected";
+type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "acquisitionTarget" | "contracted" | "rejected";
 
 /**
  * Only Active decisions carries a tint, so the tile you are meant to work from
  * reads first; the rest stay flat and let their numbers do the work.
  */
-const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; value: string; Icon: typeof CheckCircle2 }> = {
-  neutral: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: CheckCircle2 },
-  active: { card: "border-tone-cyan-line bg-deep-teal-soft", label: "text-deep-teal", value: "text-deep-teal", Icon: ArrowRight },
-  coproduction: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: Handshake },
-  radar: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: Radar },
-  approved: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: CheckCircle2 },
-  rejected: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", Icon: XCircle }
+const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; value: string; secondaryValue: string; Icon: typeof CheckCircle2 }> = {
+  neutral: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: CheckCircle2 },
+  active: { card: "border-tone-cyan-line bg-deep-teal-soft", label: "text-deep-teal", value: "text-deep-teal", secondaryValue: "text-deep-teal", Icon: ArrowRight },
+  coproduction: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: Handshake },
+  radar: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: Radar },
+  acquisitionTarget: { card: "border-guild-gold bg-guild-gold-soft", label: "text-guild-gold-ink", value: "text-guild-gold-ink", secondaryValue: "text-augustine-blue", Icon: CheckCircle2 },
+  contracted: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: CheckCircle2 },
+  rejected: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: XCircle }
 };
 
-function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label: string; value: number; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
+function StatusCard({ label, value, secondaryValue, helper, tone = "neutral", onClick }: { label: string; value: number; secondaryValue?: string; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
   const toneClasses = STATUS_CARD_TONES[tone];
   const cardClass = cn(
     "grid min-w-0 content-start gap-1.5 rounded-soft border px-4 py-4 text-left transition-colors",
@@ -607,7 +613,10 @@ function StatusCard({ label, value, helper, tone = "neutral", onClick }: { label
   );
   const content = <>
     <span className={cn("text-xs font-semibold", toneClasses.label)}>{label}</span>
-    <span className={cn("font-display text-3xl leading-none", toneClasses.value)}>{value}</span>
+    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <span className={cn("font-display text-3xl leading-none", toneClasses.value)}>{value}</span>
+      {secondaryValue ? <span className={cn("font-display text-3xl leading-none", toneClasses.secondaryValue)}>{secondaryValue}</span> : null}
+    </span>
     <span className="text-xs leading-snug text-muted [text-wrap:pretty]">{helper}</span>
   </>;
 
@@ -645,13 +654,21 @@ const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string;
     testId: "content-review-radar-content",
     tone: "radar"
   },
-  approved: {
-    title: "Approved",
-    eyebrow: "Approved review",
-    description: "Content that is cleared and ready for roadmap follow-up.",
-    empty: "No approved reviews yet.",
-    testId: "content-review-approved-modal-content",
-    tone: "approved"
+  acquisitionTarget: {
+    title: "Acquisition targets",
+    eyebrow: "Acquisition target",
+    description: "The team wants this content, but it is not under contract with the provider yet.",
+    empty: "No acquisition targets yet.",
+    testId: "content-review-acquisition-target-modal-content",
+    tone: "acquisitionTarget"
+  },
+  contracted: {
+    title: "Contracted",
+    eyebrow: "Contracted review",
+    description: "Content with a signed agreement, ready for roadmap follow-up.",
+    empty: "No contracted reviews yet.",
+    testId: "content-review-contracted-modal-content",
+    tone: "contracted"
   },
   rejected: {
     title: "Rejected",
@@ -1049,6 +1066,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
       <CompactField label="Status"><ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} compact /></CompactField>
       <CompactField label="Opportunity"><OpportunityField checked={Boolean(item.isCoproductionOpportunity)} disabled={isDemo} onChange={(value) => onChange("isCoproductionOpportunity", value)} /></CompactField>
       <CompactField label="Budget"><SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} hideLabel /></CompactField>
+      <CompactField label="Minutes"><Field label="Minutes Of Content" type="number" value={item.minutes != null ? String(item.minutes) : ""} onChange={(value) => onChange("minutes", value === "" ? null : Number(value))} disabled={isDemo} hideLabel /></CompactField>
       <CompactField label="Metadata">
         <div className="grid gap-2 sm:grid-cols-2">
           <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} compact />
@@ -1071,7 +1089,7 @@ function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onC
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
         {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-danger" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete review</SoftButton></form> : null}
-        {item.id !== "draft" && item.reviewStatus === "approved" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to roadmap"}</SoftButton> : null}
+        {item.id !== "draft" && item.reviewStatus === "contracted" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending || !item.minutes} title={!item.minutes ? "Add the minutes of content before sending this to the roadmap." : undefined} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to roadmap"}</SoftButton> : null}
       </div>
       <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save changes</SoftButton>
     </div>

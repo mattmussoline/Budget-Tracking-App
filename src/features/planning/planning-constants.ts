@@ -12,7 +12,8 @@ export const REVIEW_STATUSES = [
   { label: "In Progress", value: "in_progress", tone: "purple" },
   { label: "Blocked", value: "blocked", tone: "red" },
   { label: "Rejected", value: "rejected", tone: "orange" },
-  { label: "Approved", value: "approved", tone: "green" }
+  { label: "Acquisition Target", value: "acquisition_target", tone: "amber" },
+  { label: "Contracted", value: "contracted", tone: "green" }
 ] as const satisfies ReadonlyArray<PlanningOption>;
 
 export const CONTENT_GENRES = [

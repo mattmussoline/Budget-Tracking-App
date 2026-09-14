@@ -47,8 +47,8 @@ export type RecapSummary = {
   notesLogged: number;
   statusChanges: number;
   reviewsAdded: number;
-  approvedCount: number;
-  approvedRateCents: number;
+  contractedCount: number;
+  contractedRateCents: number;
   rejectedCount: number;
   days: RecapDay[];
 };
@@ -75,8 +75,8 @@ export function summarizeRecap(
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const approvals = inRange.filter((update) => update.kind === "status_change" && update.toStatus === "approved");
-  const approvedItemIds = new Set(approvals.map((update) => update.itemId));
+  const contracts = inRange.filter((update) => update.kind === "status_change" && update.toStatus === "contracted");
+  const contractedItemIds = new Set(contracts.map((update) => update.itemId));
 
   const days: RecapDay[] = [];
   for (const update of inRange) {
@@ -93,8 +93,8 @@ export function summarizeRecap(
     notesLogged: inRange.filter((update) => update.kind === "note").length,
     statusChanges: inRange.filter((update) => update.kind === "status_change").length,
     reviewsAdded: inRange.filter((update) => update.kind === "created").length,
-    approvedCount: approvals.length,
-    approvedRateCents: [...approvedItemIds].reduce((total, id) => total + (rateById.get(id) ?? 0), 0),
+    contractedCount: contracts.length,
+    contractedRateCents: [...contractedItemIds].reduce((total, id) => total + (rateById.get(id) ?? 0), 0),
     rejectedCount: inRange.filter((update) => update.kind === "status_change" && update.toStatus === "rejected").length,
     days
   };
@@ -115,7 +115,7 @@ export function buildRecapText(summary: RecapSummary) {
     `Updates logged: ${summary.notesLogged}`,
     `Status changes: ${summary.statusChanges}`,
     `Reviews added: ${summary.reviewsAdded}`,
-    `Approved: ${summary.approvedCount}${summary.approvedRateCents ? ` (${formatOptionalCurrency(summary.approvedRateCents)} yearly)` : ""}`,
+    `Contracted: ${summary.contractedCount}${summary.contractedRateCents ? ` (${formatOptionalCurrency(summary.contractedRateCents)} yearly)` : ""}`,
     `Rejected: ${summary.rejectedCount}`,
     ""
   ];

@@ -32,11 +32,11 @@ export function buildNeedsAttentionItems({
   const items: NeedsAttentionItem[] = [];
 
   for (const review of reviewItems) {
-    if (review.reviewStatus === "approved" && !roadmapTitles.has(normalizeTitle(review.title))) {
+    if (review.reviewStatus === "contracted" && !roadmapTitles.has(normalizeTitle(review.title))) {
       items.push({
-        id: `review-approved-${review.id}`,
+        id: `review-contracted-${review.id}`,
         title: review.title,
-        detail: "Approved review is ready to send to the roadmap.",
+        detail: "Contracted review is ready to send to the roadmap.",
         tone: "blue",
         href: "/content-review"
       });

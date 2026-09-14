@@ -11,10 +11,14 @@ import { ROADMAP_STATUSES, type ContentReviewItem, type ContentReviewUpdate, typ
 import { isEmptyNotesHtml, notesHtmlToPlainText, sanitizeNotesHtml } from "./rich-text";
 
 const roadmapStatusSchema = z.enum(ROADMAP_STATUSES);
-const reviewStatusSchema = z.enum(["not_started", "on_the_radar", "in_progress", "blocked", "rejected", "approved"]);
+const reviewStatusSchema = z.enum(["not_started", "on_the_radar", "in_progress", "blocked", "rejected", "acquisition_target", "contracted"]);
 const budgetSourceSchema = z.enum(budgetSourceOptions.map((option) => option.value) as [string, ...string[]]);
 const nullableDateSchema = z.union([z.literal(""), z.literal("TBD"), z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-((0[1-9]|[12]\d|3[01])|TBD)$/)]).optional();
 const nullableUuidSchema = z.union([z.literal(""), z.string().uuid()]).optional();
+// Total runtime minutes for the whole piece of content — a movie's length or a
+// series' combined runtime, never broken out per episode.
+const minutesSchema = z.coerce.number().int().positive();
+const optionalMinutesSchema = z.union([z.literal(""), z.coerce.number().int().positive()]).optional();
 
 const roadmapItemSchema = z.object({
   fiscalYearId: z.string().uuid(),
@@ -25,7 +29,8 @@ const roadmapItemSchema = z.object({
   featuredInIndividualMarketing: z.preprocess((value) => value === "on" || value === "true", z.boolean()).default(false),
   releaseDate: nullableDateSchema,
   status: roadmapStatusSchema,
-  budgetSource: budgetSourceSchema.default("misc_licensing"),
+  budgetSource: budgetSourceSchema,
+  minutes: minutesSchema,
   notes: z.string().trim().optional(),
   formedUrl: z.union([z.literal(""), z.string().url()]).optional(),
   formedUrlCandidate: z.union([z.literal(""), z.string().url()]).optional(),
@@ -43,7 +48,8 @@ const reviewItemSchema = z.object({
   genre: z.string().trim().optional(),
   format: z.string().trim().optional(),
   reviewStatus: reviewStatusSchema,
-  budgetSource: budgetSourceSchema.default("misc_licensing"),
+  budgetSource: budgetSourceSchema,
+  minutes: optionalMinutesSchema,
   notes: z.string().trim().optional().transform((value) => {
     if (!value) return value;
     const sanitized = sanitizeNotesHtml(value);
@@ -83,6 +89,9 @@ const seriesSchema = z.object({
   fiscalYearId: z.string().uuid(),
   series: z.string().trim().min(1),
   cadence: z.string().trim().min(1),
+  budgetSource: budgetSourceSchema,
+  minutes: minutesSchema,
+  cost: z.string().trim().min(1),
   notes: z.string().trim().optional()
 });
 
@@ -113,6 +122,7 @@ export async function addRoadmapItem(formData: FormData) {
     release_month: optionalText(parsed.data.releaseDate),
     status: parsed.data.status,
     budget_source: parsed.data.budgetSource,
+    minutes: parsed.data.minutes,
     notes: optionalText(parsed.data.notes),
     formed_url: optionalText(parsed.data.formedUrl),
     formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
@@ -145,6 +155,7 @@ export async function updateRoadmapItem(formData: FormData) {
       release_month: optionalText(parsed.data.releaseDate),
       status: parsed.data.status,
       budget_source: parsed.data.budgetSource,
+      minutes: parsed.data.minutes,
       notes: optionalText(parsed.data.notes),
       formed_url: optionalText(parsed.data.formedUrl),
       formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
@@ -208,13 +219,14 @@ export async function addContentReviewItem(formData: FormData) {
       format: optionalText(parsed.data.format),
       review_status: parsed.data.reviewStatus,
       budget_source: parsed.data.budgetSource,
+      minutes: parsed.data.minutes ? parsed.data.minutes : null,
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
       comparable_content: optionalText(parsed.data.comparableContent),
       is_coproduction_opportunity: parsed.data.isCoproductionOpportunity
     })
-    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
+    .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity,priority_rank")
     .single();
 
   if (error) {
@@ -238,6 +250,7 @@ export async function addContentReviewItem(formData: FormData) {
     format: data.format,
     reviewStatus: data.review_status as ReviewStatus,
     budgetSource: data.budget_source ?? "misc_licensing",
+    minutes: data.minutes,
     notes: data.notes,
     proposedRateCents: data.proposed_rate_cents,
     reviewLink: data.review_link,
@@ -273,6 +286,7 @@ export async function updateContentReviewItem(formData: FormData) {
       format: optionalText(parsed.data.format),
       review_status: parsed.data.reviewStatus,
       budget_source: parsed.data.budgetSource,
+      minutes: parsed.data.minutes ? parsed.data.minutes : null,
       notes: optionalText(parsed.data.notes),
       proposed_rate_cents: dollarsToOptionalCents(parsed.data.proposedRate ?? ""),
       review_link: optionalText(parsed.data.reviewLink),
@@ -502,13 +516,13 @@ export async function deleteContentReviewItem(formData: FormData) {
 export async function sendReviewToRoadmap(formData: FormData) {
   const parsed = reviewPipelineSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error("Choose a valid approved review to send to the roadmap.");
+    throw new Error("Choose a valid contracted review to send to the roadmap.");
   }
 
   const admin = await requirePlanningAdmin();
   const { data: review, error: reviewError } = await admin
     .from("content_review_items")
-    .select("id,title,provider,genre,format,review_status,budget_source,notes,proposed_rate_cents,is_coproduction_opportunity")
+    .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,is_coproduction_opportunity")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -517,8 +531,12 @@ export async function sendReviewToRoadmap(formData: FormData) {
     throw new Error(reviewError?.message ?? "Could not find that review.");
   }
 
-  if (review.review_status !== "approved") {
-    throw new Error("Only approved reviews can be sent to the roadmap.");
+  if (review.review_status !== "contracted") {
+    throw new Error("Only contracted reviews can be sent to the roadmap.");
+  }
+
+  if (!review.minutes) {
+    throw new Error("Add the minutes of content before sending this to the roadmap.");
   }
 
   const noteParts = [
@@ -537,6 +555,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
     release_month: "TBD",
     status: "planned",
     budget_source: review.budget_source ?? "misc_licensing",
+    minutes: review.minutes,
     notes: noteParts.join(" ")
   });
 
@@ -556,7 +575,7 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: roadmapItem, error: roadmapError } = await admin
     .from("roadmap_items")
-    .select("id,title,provider,genre,format,release_month,status,budget_source,notes")
+    .select("id,title,provider,genre,format,release_month,status,budget_source,minutes,notes")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -573,6 +592,7 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
     cadence: "yearly",
     added_fiscal_month: monthToFiscalMonth(roadmapItem.release_month),
     budget_source: roadmapItem.budget_source ?? "misc_licensing",
+    minutes: roadmapItem.minutes,
     notes: ["Created from roadmap.", roadmapItem.notes].filter(Boolean).join(" ")
   });
 
@@ -699,12 +719,20 @@ export async function addOngoingSeries(formData: FormData) {
     throw new Error("Check the series name and cadence.");
   }
 
+  const costCents = dollarsToOptionalCents(parsed.data.cost);
+  if (costCents === null) {
+    throw new Error("Add a cost for this series.");
+  }
+
   const admin = await requirePlanningAdmin();
 
   const { error } = await admin.from("ongoing_series").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
     series: parsed.data.series,
     cadence: parsed.data.cadence,
+    budget_source: parsed.data.budgetSource,
+    minutes: parsed.data.minutes,
+    cost_cents: costCents,
     notes: optionalText(parsed.data.notes)
   });
 
@@ -721,6 +749,11 @@ export async function updateOngoingSeries(formData: FormData) {
     throw new Error("Check the series name and cadence.");
   }
 
+  const costCents = dollarsToOptionalCents(parsed.data.cost);
+  if (costCents === null) {
+    throw new Error("Add a cost for this series.");
+  }
+
   const admin = await requirePlanningAdmin();
 
   const { error } = await admin
@@ -728,6 +761,9 @@ export async function updateOngoingSeries(formData: FormData) {
     .update({
       series: parsed.data.series,
       cadence: parsed.data.cadence,
+      budget_source: parsed.data.budgetSource,
+      minutes: parsed.data.minutes,
+      cost_cents: costCents,
       notes: optionalText(parsed.data.notes)
     })
     .eq("id", parsed.data.seriesId)

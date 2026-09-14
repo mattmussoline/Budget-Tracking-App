@@ -31,3 +31,29 @@ export function buildBudgetSourceSummary(items: Array<{ budgetSource?: BudgetSou
     count: counts.get(option.value) ?? 0
   }));
 }
+
+export type MinutesByBudgetSourceItem = {
+  source: BudgetSource;
+  label: string;
+  minutes: number;
+};
+
+/**
+ * Sums total runtime minutes per budget line across every roadmap item,
+ * scheduled or not — the roadmap is the one place that should account for
+ * everything, not just what already has a release date.
+ */
+export function buildMinutesByBudgetSourceSummary(items: Array<{ budgetSource?: BudgetSource | null; minutes?: number | null }>): MinutesByBudgetSourceItem[] {
+  const totals = new Map<BudgetSource, number>(budgetSourceOptions.map((option) => [option.value, 0]));
+
+  for (const item of items) {
+    const source = budgetSourceOptions.some((option) => option.value === item.budgetSource) ? item.budgetSource! : "misc_licensing";
+    totals.set(source, (totals.get(source) ?? 0) + (item.minutes ?? 0));
+  }
+
+  return budgetSourceOptions.map((option) => ({
+    source: option.value,
+    label: option.label,
+    minutes: totals.get(option.value) ?? 0
+  }));
+}

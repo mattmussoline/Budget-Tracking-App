@@ -30,7 +30,8 @@ const item: ContentReviewItem = {
   provider: "Thomistic Institute",
   genre: "Scripture",
   format: "Formation Series",
-  reviewStatus: "approved",
+  reviewStatus: "contracted",
+  minutes: 92,
   notes: "Strong formation fit.",
   proposedRateCents: 1200000,
   reviewLink: "https://example.com/review",
@@ -95,7 +96,7 @@ describe("ContentReviewDashboard", () => {
 
     expect(screen.getByRole("heading", { name: "Decision queue" })).toBeVisible();
     expect(screen.getByLabelText("Detail Title")).toHaveValue("Aquinas 101");
-    expect(screen.getByLabelText("Review Status")).toHaveValue("approved");
+    expect(screen.getByLabelText("Review Status")).toHaveValue("contracted");
     expect(screen.getByLabelText("Proposed Yearly Rate")).toHaveValue("$12,000.00");
     expect(screen.getByLabelText("Genre")).toHaveValue("Scripture");
     expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
@@ -258,22 +259,22 @@ describe("ContentReviewDashboard", () => {
     const decisionQueue = screen.getByTestId("content-review-active-queue");
     const inProgressGroup = within(decisionQueue).getByTestId("content-review-group-in-progress");
     const radarGroup = within(decisionQueue).getByTestId("content-review-group-on-the-radar");
-    const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
+    const contractedGroup = within(decisionQueue).getByTestId("content-review-contracted-content");
     const rejectedGroup = within(decisionQueue).getByTestId("content-review-rejected-content");
 
     expect(within(inProgressGroup).getByDisplayValue("Catholic Basics")).toBeInTheDocument();
     expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeInTheDocument();
-    expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeInTheDocument();
+    expect(within(contractedGroup).getByDisplayValue("Aquinas 101")).toBeInTheDocument();
     expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeInTheDocument();
 
     // Every status group starts collapsed until opened.
     expect(inProgressGroup).not.toHaveAttribute("open");
     expect(radarGroup).not.toHaveAttribute("open");
-    expect(approvedGroup).not.toHaveAttribute("open");
+    expect(contractedGroup).not.toHaveAttribute("open");
     expect(rejectedGroup).not.toHaveAttribute("open");
 
     expect(inProgressGroup.querySelector("summary")).toHaveTextContent("In Progress");
-    expect(approvedGroup.querySelector("summary")).toHaveTextContent("Approved");
+    expect(contractedGroup.querySelector("summary")).toHaveTextContent("Contracted");
 
     fireEvent.click(within(rejectedGroup).getByRole("button", { name: "Select Archive Candidate" }));
     expect(screen.getByLabelText("Detail Title")).toHaveValue("Archive Candidate");
@@ -293,10 +294,10 @@ describe("ContentReviewDashboard", () => {
     expect(within(activeDialog).getByDisplayValue("Catholic Basics")).toBeVisible();
     fireEvent.click(within(activeDialog).getByRole("button", { name: "Close Active decisions reviews" }));
 
-    fireEvent.click(screen.getByRole("button", { name: /Approved: 1/ }));
-    const approvedDialog = screen.getByRole("dialog", { name: "Approved" });
-    expect(within(approvedDialog).getByDisplayValue("Aquinas 101")).toBeVisible();
-    fireEvent.click(within(approvedDialog).getByRole("button", { name: "Close Approved reviews" }));
+    fireEvent.click(screen.getByRole("button", { name: /Contracted: 1/ }));
+    const contractedDialog = screen.getByRole("dialog", { name: "Contracted" });
+    expect(within(contractedDialog).getByDisplayValue("Aquinas 101")).toBeVisible();
+    fireEvent.click(within(contractedDialog).getByRole("button", { name: "Close Contracted reviews" }));
 
     fireEvent.click(screen.getByRole("button", { name: /Rejected: 1/ }));
     const rejectedDialog = screen.getByRole("dialog", { name: "Rejected" });
@@ -322,13 +323,13 @@ describe("ContentReviewDashboard", () => {
   it("filters the decision queue by review status", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
 
-    fireEvent.change(screen.getByLabelText("Filter by review status"), { target: { value: "approved" } });
+    fireEvent.change(screen.getByLabelText("Filter by review status"), { target: { value: "contracted" } });
 
     const decisionQueue = screen.getByTestId("content-review-active-queue");
-    const approvedGroup = within(decisionQueue).getByTestId("content-review-approved-content");
-    expect(within(approvedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
+    const contractedGroup = within(decisionQueue).getByTestId("content-review-contracted-content");
+    expect(within(contractedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
     // Filtering opens the matching group even when it is a normally collapsed final status.
-    expect(approvedGroup.querySelector("details")).toHaveAttribute("open");
+    expect(contractedGroup.querySelector("details")).toHaveAttribute("open");
     expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
   });
 
@@ -463,13 +464,20 @@ describe("ContentReviewDashboard", () => {
     expect(screen.queryByRole("heading", { name: "New content review" })).not.toBeInTheDocument();
   });
 
-  it("lets approved reviews move forward to the roadmap", () => {
+  it("lets contracted reviews move forward to the roadmap", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
     expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeEnabled();
   });
 
-  it("confirms when an approved review is sent to the roadmap", async () => {
+  it("disables sending to the roadmap until minutes of content are filled in", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, minutes: null }]} />);
+
+    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeDisabled();
+  });
+
+  it("confirms when a contracted review is sent to the roadmap", async () => {
     actionMocks.sendReviewToRoadmap.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
 
@@ -479,7 +487,7 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByText("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.")).toBeVisible();
   });
 
-  it("does not offer roadmap sending for reviews that are not approved", () => {
+  it("does not offer roadmap sending for reviews that are not contracted", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
 
     expect(screen.queryByRole("button", { name: "Send to roadmap" })).not.toBeInTheDocument();
@@ -537,7 +545,7 @@ describe("ContentReviewDashboard", () => {
     await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
     const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
     expect(formData.get("movedItemId")).toBe("review-active");
-    expect(formData.get("movedToStatus")).toBe("approved");
+    expect(formData.get("movedToStatus")).toBe("contracted");
   });
 
   it("saves a dragged group order", async () => {
