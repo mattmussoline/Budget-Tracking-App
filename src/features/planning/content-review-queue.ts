@@ -4,7 +4,7 @@ import type { ContentReviewGroupOrderRow, ContentReviewItem, ReviewStatus } from
 // Rejected keeps its original test id so the completed-review selectors stay stable.
 // Acquisition Target sits right before Contracted: approved-by-the-team-but-no-contract-yet,
 // then a signed deal.
-export const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "acquisition_target", "contracted", "rejected"];
+export const QUEUE_GROUP_ORDER: ReviewStatus[] = ["not_started", "on_the_radar", "in_progress", "blocked", "acquisition_target", "rejected", "contracted"];
 
 export const QUEUE_GROUP_TEST_IDS: Record<ReviewStatus, string> = {
   not_started: "content-review-group-not-started",
@@ -36,6 +36,19 @@ export function focusFiveItems(items: ContentReviewItem[]) {
 
 export function isInFocusFive(position: number | null) {
   return position !== null && position >= 1 && position <= FOCUS_LIMIT;
+}
+
+/**
+ * An Acquisition Target is no longer a title to actively rank — it's
+ * pending a deal, not a decision. If marking it acquisition target would
+ * leave it sitting in the Focus Five, bump it to the first slot past the
+ * five so the queue backfills from the next candidate.
+ */
+export function demoteAcquisitionTargetFromFocusFive(items: ContentReviewItem[], itemId: string, nextStatus: ReviewStatus) {
+  if (nextStatus !== "acquisition_target") return items;
+  const index = items.findIndex((item) => item.id === itemId);
+  if (index < 0 || !isInFocusFive(index + 1)) return items;
+  return moveQueueItemToPosition(items, itemId, FOCUS_LIMIT + 1);
 }
 
 export const QUEUE_SORT_LABELS: Record<QueueSortColumn, string> = {

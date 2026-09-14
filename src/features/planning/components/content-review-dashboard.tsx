@@ -14,6 +14,7 @@ import {
   type QueueSort,
   type QueueSortColumn,
   type QueueView,
+  demoteAcquisitionTargetFromFocusFive,
   emptyQueueFilters,
   groupQueueItems,
   focusFiveItems,
@@ -142,6 +143,13 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
     if (id === "draft") {
       setDraft((current) => current ? { ...current, [field]: value } : current);
       return;
+    }
+    if (field === "reviewStatus" && value === "acquisition_target") {
+      const demoted = demoteAcquisitionTargetFromFocusFive(records, id, "acquisition_target");
+      if (demoted !== records) {
+        applyItemMove(demoted, id, "acquisition_target");
+        return;
+      }
     }
     setRecords((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
   }
