@@ -345,19 +345,22 @@ function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
 function MinutesByBudgetSourcePanel({ items }: { items: ReturnType<typeof buildMinutesByBudgetSourceSummary> }) {
   const totalMinutes = items.reduce((sum, item) => sum + item.minutes, 0);
 
-  return <div data-testid="minutes-by-budget-source-panel" className="rounded-soft border border-hairline bg-panel-warm p-5">
+  return <div data-testid="minutes-by-budget-source-panel" className="rounded-soft border border-deep-teal bg-deep-teal-soft p-5">
     <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
       <div className="grid gap-0.5">
-        <h2 className="font-display text-lg">Minutes secured by budget line</h2>
+        <h2 className="font-display text-lg text-deep-teal">Minutes secured by budget line</h2>
         <p className="text-xs text-muted [text-wrap:pretty]">Every roadmap item, dated or still in the backlog, totaled by budget source.</p>
       </div>
-      <span className="rounded-md bg-tone-slate-bg px-2 py-0.5 text-[11px] font-bold text-muted">{totalMinutes.toLocaleString()} min total</span>
+      <span className="rounded-md bg-deep-teal px-3 py-1 text-sm font-bold text-white shadow-sm">{totalMinutes.toLocaleString()} min total</span>
     </div>
     <div className="grid gap-3 md:grid-cols-4">
       {items.map((item) => (
-        <div key={item.source} className="rounded-lg border border-hairline bg-panel p-4">
-          <p className="font-display text-2xl text-foreground">{item.minutes.toLocaleString()}</p>
-          <p className="text-xs font-semibold text-muted">{item.label}</p>
+        <div key={item.source} className="overflow-hidden rounded-lg border border-hairline bg-white">
+          <div className="h-1 bg-deep-teal" />
+          <div className="p-4">
+            <p className="font-display text-2xl text-deep-teal">{item.minutes.toLocaleString()}</p>
+            <p className="text-xs font-semibold text-muted">{item.label}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -782,6 +785,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [clickUpUrl, setClickUpUrl] = useState(item?.clickupTaskUrl ?? null);
+  const [sentToBudget, setSentToBudget] = useState(Boolean(item?.sentToBudgetAt));
   const [formedUrl, setFormedUrl] = useState(item?.formedUrl ?? "");
   const [formedUrlCandidate, setFormedUrlCandidate] = useState(item?.formedUrlCandidate ?? "");
   const fieldsDisabled = Boolean(isDemo || isSaving);
@@ -831,7 +835,8 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
 
     try {
       await sendRoadmapItemToBudget(new FormData(formRef.current));
-      setMessage("Pushed to Licensing Summary with a $0 yearly placeholder. Update the amount on the Licensing Summary.");
+      setSentToBudget(true);
+      setMessage("Pushed to Licensing Summary with this item's cost as a yearly placeholder. Adjust the cadence on the Licensing Summary if needed.");
     } catch {
       setMessage("Could not add this roadmap item to the budget.");
     } finally {
@@ -885,6 +890,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
           <SoftSelect id={`${fieldPrefix}-budget-source`} label="Budget source" name="budgetSource" defaultValue={item?.budgetSource ?? ""} placeholder="Select" required options={[...budgetSourceOptions]} className="min-h-12 px-3 text-sm" disabled={fieldsDisabled} />
         </div>
         <SoftInput id={`${fieldPrefix}-minutes`} label="Minutes of content" name="minutes" type="number" min={1} inputMode="numeric" placeholder="Total runtime, e.g. 96" defaultValue={item?.minutes ?? ""} required disabled={fieldsDisabled} />
+        <SoftInput id={`${fieldPrefix}-cost`} label="Cost" name="cost" inputMode="decimal" placeholder="0" defaultValue={item?.costCents !== null && item?.costCents !== undefined ? formatCurrency(item.costCents) : ""} required disabled={fieldsDisabled} />
         <SoftSelect id={`${fieldPrefix}-category`} label="Color category" name="categoryId" defaultValue={item?.categoryId ?? ""} placeholder="No category" options={categoryOptions} disabled={fieldsDisabled} />
         <div className="grid gap-2 md:col-span-2">
           <SoftInput id={`${fieldPrefix}-formed-url`} label="Formed link" name="formedUrl" type="url" placeholder="https://watch.formed.org/..." value={formedUrl} onChange={(event) => setFormedUrl(event.target.value)} disabled={fieldsDisabled} />
@@ -933,7 +939,7 @@ function RoadmapForm({ fiscalYearId, categories, providerOptions, item, defaultR
         {item ? <SoftButton data-roadmap-delete="true" formAction={deleteRoadmapItem} type="submit" variant="ghost" className="text-danger" disabled={isDemo} onClick={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><Trash2 className="h-4 w-4" />Delete</SoftButton> : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget}><DollarSign className="h-4 w-4" />Push to Licensing Summary</SoftButton> : null}
+        {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToBudget} className={sentToBudget ? "border-deep-teal bg-deep-teal-soft text-deep-teal hover:bg-deep-teal-soft hover:text-deep-teal" : undefined}><DollarSign className="h-4 w-4" />{sentToBudget ? "Pushed to Licensing Summary" : "Push to Licensing Summary"}</SoftButton> : null}
         {item ? <SoftButton type="button" variant="ghost" disabled={fieldsDisabled} onClick={handleSendToClickUp}><Send className="h-4 w-4" />{clickUpUrl ? "Check ClickUp" : "Push to ClickUp"}</SoftButton> : null}
         {clickUpUrl ? <a href={clickUpUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-formed-blue-soft px-5 py-3 text-sm font-semibold uppercase tracking-wide text-formed-blue transition-all duration-200 hover:bg-formed-blue-soft"><ExternalLink className="h-4 w-4" />Open in ClickUp</a> : null}
       </div>
