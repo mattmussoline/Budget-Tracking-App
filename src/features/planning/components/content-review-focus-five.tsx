@@ -78,8 +78,9 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
             onDragEnd={onDragEnd}
             onDragOver={(event) => { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = "move"; }}
             onDrop={(event) => onDrop(event, item.id)}
+            onClick={() => onSelect(item.id)}
             className={cn(
-              "grid min-w-0 content-start gap-2 rounded-lg border bg-panel p-3 transition-colors",
+              "grid min-w-0 content-start gap-2 rounded-lg border bg-panel p-3 transition-colors cursor-pointer",
               selectedId === item.id ? "border-formed-blue" : "border-hairline",
               draggedItemId === item.id && "opacity-60"
             )}
@@ -90,7 +91,7 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
               <p className="min-w-0 flex-1 text-[13px] font-bold leading-tight">{label}</p>
               <button
                 type="button"
-                onClick={() => onRelease(item.id)}
+                onClick={(event) => { event.stopPropagation(); onRelease(item.id); }}
                 disabled={!canReorder}
                 aria-label={`Remove ${label} from the Focus Five`}
                 title="Remove from the Focus Five"
@@ -102,17 +103,7 @@ export function ContentReviewFocusFive({ items, selectedId, canReorder, draggedI
             <span className={cn("w-fit rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide", TONE_CLASSES[status.tone].chip)}>{status.label}</span>
             {item.provider ? <span className="truncate text-[11px] text-muted">{item.provider}</span> : null}
             {item.proposedRateCents ? <span className="text-sm font-bold tabular-nums">{formatOptionalCurrency(item.proposedRateCents)}</span> : null}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-faint">{updateCount} {updateCount === 1 ? "update" : "updates"}</span>
-              <button
-                type="button"
-                onClick={() => onSelect(item.id)}
-                aria-label={`Work on ${label}`}
-                className="shrink-0 rounded text-[11px] font-bold text-formed-blue transition-colors hover:text-formed-blue-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
-              >
-                {selectedId === item.id ? "Selected" : "Work on"}
-              </button>
-            </div>
+            <span className="text-[11px] text-faint">{updateCount} {updateCount === 1 ? "update" : "updates"}</span>
           </li>;
         })}
         {Array.from({ length: emptySlots }, (_, index) => (
