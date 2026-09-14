@@ -31,6 +31,7 @@ const roadmapItemSchema = z.object({
   status: roadmapStatusSchema,
   budgetSource: budgetSourceSchema,
   minutes: minutesSchema,
+  cost: z.string().trim().min(1),
   notes: z.string().trim().optional(),
   formedUrl: z.union([z.literal(""), z.string().url()]).optional(),
   formedUrlCandidate: z.union([z.literal(""), z.string().url()]).optional(),
@@ -112,6 +113,11 @@ export async function addRoadmapItem(formData: FormData) {
     throw new Error("Check the roadmap title, release date, and status.");
   }
 
+  const costCents = dollarsToOptionalCents(parsed.data.cost);
+  if (costCents === null) {
+    throw new Error("Add a cost for this roadmap item.");
+  }
+
   const { error } = await admin.from("roadmap_items").insert({
     fiscal_year_id: parsed.data.fiscalYearId,
     title: parsed.data.title,
@@ -123,6 +129,7 @@ export async function addRoadmapItem(formData: FormData) {
     status: parsed.data.status,
     budget_source: parsed.data.budgetSource,
     minutes: parsed.data.minutes,
+    cost_cents: costCents,
     notes: optionalText(parsed.data.notes),
     formed_url: optionalText(parsed.data.formedUrl),
     formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
@@ -142,6 +149,11 @@ export async function updateRoadmapItem(formData: FormData) {
     throw new Error("Check the roadmap title, release date, and status.");
   }
 
+  const costCents = dollarsToOptionalCents(parsed.data.cost);
+  if (costCents === null) {
+    throw new Error("Add a cost for this roadmap item.");
+  }
+
   const admin = await requirePlanningAdmin();
 
   const { error } = await admin
@@ -156,6 +168,7 @@ export async function updateRoadmapItem(formData: FormData) {
       status: parsed.data.status,
       budget_source: parsed.data.budgetSource,
       minutes: parsed.data.minutes,
+      cost_cents: costCents,
       notes: optionalText(parsed.data.notes),
       formed_url: optionalText(parsed.data.formedUrl),
       formed_url_candidate: parsed.data.formedUrl ? null : optionalText(parsed.data.formedUrlCandidate),
@@ -539,6 +552,10 @@ export async function sendReviewToRoadmap(formData: FormData) {
     throw new Error("Add the minutes of content before sending this to the roadmap.");
   }
 
+  if (!review.proposed_rate_cents) {
+    throw new Error("Add a proposed rate before sending this to the roadmap.");
+  }
+
   const noteParts = [
     "Created from content review.",
     review.is_coproduction_opportunity ? "Potential co-production opportunity." : null,
@@ -556,6 +573,7 @@ export async function sendReviewToRoadmap(formData: FormData) {
     status: "planned",
     budget_source: review.budget_source ?? "misc_licensing",
     minutes: review.minutes,
+    cost_cents: review.proposed_rate_cents,
     notes: noteParts.join(" ")
   });
 
@@ -575,7 +593,7 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
   const admin = await requirePlanningAdmin();
   const { data: roadmapItem, error: roadmapError } = await admin
     .from("roadmap_items")
-    .select("id,title,provider,genre,format,release_month,status,budget_source,minutes,notes")
+    .select("id,title,provider,genre,format,release_month,status,budget_source,minutes,cost_cents,notes")
     .eq("id", parsed.data.itemId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId)
     .single();
@@ -588,7 +606,7 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
     fiscal_year_id: parsed.data.fiscalYearId,
     title: roadmapItem.title,
     provider: optionalText(roadmapItem.provider) ?? "Provider TBD",
-    installment_cents: 0,
+    installment_cents: roadmapItem.cost_cents ?? 0,
     cadence: "yearly",
     added_fiscal_month: monthToFiscalMonth(roadmapItem.release_month),
     budget_source: roadmapItem.budget_source ?? "misc_licensing",
@@ -598,6 +616,15 @@ export async function sendRoadmapItemToBudget(formData: FormData) {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  const { error: updateError } = await admin
+    .from("roadmap_items")
+    .update({ sent_to_budget_at: new Date().toISOString() })
+    .eq("id", roadmapItem.id);
+
+  if (updateError) {
+    throw new Error(updateError.message);
   }
 
   revalidatePlanning();

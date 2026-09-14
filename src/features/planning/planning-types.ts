@@ -22,6 +22,8 @@ export type RoadmapItem = {
   formedUrl?: string | null;
   formedUrlCandidate?: string | null;
   minutes?: number | null;
+  costCents?: number | null;
+  sentToBudgetAt?: string | null;
 };
 
 export type RoadmapCategory = {

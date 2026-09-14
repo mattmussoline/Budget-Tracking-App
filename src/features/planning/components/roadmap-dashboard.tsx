@@ -83,7 +83,7 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey(), fiscalYearStartMonth);
-  const minutesByBudgetSource = buildMinutesByBudgetSourceSummary(roadmapItems);
+  const minutesByBudgetSource = buildMinutesByBudgetSourceSummary(roadmapItems.filter((item) => isInFiscalYearSnapshot(item.releaseDate, fiscalYearStartMonth)));
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `${routeBasePath}?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
   const today = parseMonthAnchor(null);
@@ -349,7 +349,7 @@ function MinutesByBudgetSourcePanel({ items }: { items: ReturnType<typeof buildM
     <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
       <div className="grid gap-0.5">
         <h2 className="font-display text-lg text-deep-teal">Minutes secured by budget line</h2>
-        <p className="text-xs text-muted [text-wrap:pretty]">Every roadmap item, dated or still in the backlog, totaled by budget source.</p>
+        <p className="text-xs text-muted [text-wrap:pretty]">Every roadmap item in this fiscal year, dated or still in the backlog, totaled by budget source.</p>
       </div>
       <span className="rounded-md bg-deep-teal px-3 py-1 text-sm font-bold text-white shadow-sm">{totalMinutes.toLocaleString()} min total</span>
     </div>

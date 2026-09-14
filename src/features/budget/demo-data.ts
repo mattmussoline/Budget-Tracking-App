@@ -106,6 +106,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "released",
     budgetSource: "donor_funded",
     minutes: 92,
+    costCents: 425000,
     notes: "Released title that demonstrates the Push to Licensing Summary handoff reminder.",
     categoryId: "demo-cat-adult",
     formedUrl: "https://watch.formed.org/pilgrim-road"
@@ -120,6 +121,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "in_progress",
     budgetSource: "misc_licensing",
     minutes: 45,
+    costCents: 180000,
     notes: "In editorial review with artwork still pending.",
     categoryId: "demo-cat-adult"
   },
@@ -133,6 +135,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "planned",
     budgetSource: "internal",
     minutes: 120,
+    costCents: 260000,
     notes: "Family release for early fall.",
     categoryId: "demo-cat-family"
   },
@@ -147,6 +150,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "planned",
     budgetSource: "other",
     minutes: 75,
+    costCents: 310000,
     notes: "Seasonal campaign sample.",
     categoryId: "demo-cat-seasonal"
   },
@@ -160,6 +164,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "blocked",
     budgetSource: "misc_licensing",
     minutes: 50,
+    costCents: 150000,
     notes: "Blocked sample item with a known release month, but no exact date yet.",
     categoryId: "demo-cat-youth"
   },
@@ -174,6 +179,7 @@ export const demoRoadmapItems: RoadmapItem[] = [
     status: "planned",
     budgetSource: "donor_funded",
     minutes: 84,
+    costCents: 95000,
     notes: "Additional planned title so the public demo shows a richer Roadmap at-a-glance summary.",
     categoryId: "demo-cat-adult"
   }

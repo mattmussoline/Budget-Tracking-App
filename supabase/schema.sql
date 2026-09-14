@@ -82,6 +82,7 @@ create table if not exists public.roadmap_items (
   status text not null default 'planned' check (status in ('planned', 'scheduled', 'in_progress', 'blocked', 'released')),
   budget_source text not null default 'misc_licensing' check (budget_source in ('misc_licensing', 'internal', 'donor_funded', 'other')),
   minutes integer check (minutes is null or minutes > 0),
+  cost_cents integer check (cost_cents is null or cost_cents >= 0),
   notes text,
   category_id uuid references public.roadmap_categories(id) on delete set null,
   clickup_task_id text,
@@ -89,6 +90,7 @@ create table if not exists public.roadmap_items (
   clickup_synced_at timestamptz,
   formed_url text,
   formed_url_candidate text,
+  sent_to_budget_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

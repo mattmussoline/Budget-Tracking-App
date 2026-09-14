@@ -94,7 +94,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .order("email", { ascending: true }),
     admin
       .from("roadmap_items")
-      .select("id,title,provider,release_month,status,budget_source,minutes,notes,category_id,formed_url,formed_url_candidate")
+      .select("id,title,provider,release_month,status,budget_source,minutes,cost_cents,notes,category_id,formed_url,formed_url_candidate")
       .eq("fiscal_year_id", activeFiscalYear.id)
       .order("created_at", { ascending: true }),
     admin
@@ -151,6 +151,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     status: item.status as RoadmapStatus,
     budgetSource: item.budget_source ?? "misc_licensing",
     minutes: item.minutes,
+    costCents: item.cost_cents,
     notes: item.notes,
     categoryId: item.category_id,
     formedUrl: item.formed_url,
