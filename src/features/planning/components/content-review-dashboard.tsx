@@ -124,6 +124,7 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
 
   function selectItem(id: string) {
     if (id !== selectedId) setSaveState("idle");
+    shouldFocusEditorRef.current = true;
     setSelectedId(id);
   }
 
@@ -206,6 +207,7 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
   function addDraft() {
     const next = blankDraft();
     setDraft(next);
+    shouldFocusEditorRef.current = true;
     setSelectedId("draft");
     setSaveState("idle");
   }

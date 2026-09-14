@@ -1,8 +1,10 @@
 "use client";
 
 import { MessageSquarePlus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cn } from "@/components/ui/soft-surface";
+import { errorMessage, isSessionExpiredError } from "@/lib/auth/session-error";
 import { formatRelativeTime, reviewStatusLabel } from "../content-review-activity";
 import { addContentReviewUpdate, deleteContentReviewUpdate } from "../planning-actions";
 import { REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
@@ -23,6 +25,7 @@ function statusChipClass(status: ReviewStatus | null) {
 }
 
 export function ContentReviewUpdateLog({ fiscalYearId, itemId, updates, isDemo, onAdded, onDeleted }: ContentReviewUpdateLogProps) {
+  const router = useRouter();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -41,9 +44,14 @@ export function ContentReviewUpdateLog({ fiscalYearId, itemId, updates, isDemo, 
     startTransition(async () => {
       try {
         onAdded(await addContentReviewUpdate(formData));
-      } catch {
+      } catch (submitError) {
         setBody(trimmed);
-        setError("Could not save that update.");
+        if (isSessionExpiredError(submitError)) {
+          setError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setError(errorMessage(submitError, "Could not save that update."));
       }
     });
   }
@@ -57,8 +65,13 @@ export function ContentReviewUpdateLog({ fiscalYearId, itemId, updates, isDemo, 
     startTransition(async () => {
       try {
         await deleteContentReviewUpdate(formData);
-      } catch {
-        setError("Could not delete that update.");
+      } catch (deleteError) {
+        if (isSessionExpiredError(deleteError)) {
+          setError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setError(errorMessage(deleteError, "Could not delete that update."));
       }
     });
   }

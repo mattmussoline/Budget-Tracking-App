@@ -1,9 +1,13 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { demoCoproductionOpportunities } from "../demo-coproduction";
 import { CoproductionSlate } from "./coproduction-slate";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() })
+}));
 
 beforeAll(() => {
   // jsdom does not implement the dialog methods the modal calls.

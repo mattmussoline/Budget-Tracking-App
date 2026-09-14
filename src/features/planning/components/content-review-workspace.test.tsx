@@ -17,6 +17,9 @@ const actionMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../planning-actions", () => actionMocks);
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() })
+}));
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());

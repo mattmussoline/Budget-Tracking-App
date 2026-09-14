@@ -1,12 +1,14 @@
 "use client";
 
 import { ImagePlus, MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { type ChangeEvent, type KeyboardEvent, type MouseEvent, type SyntheticEvent, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
 import { formatRelativeTime } from "@/features/planning/content-review-activity";
 import { TONE_CLASSES } from "@/features/planning/planning-constants";
 import { formatCurrencyWholeDollars } from "@/lib/currency";
+import { errorMessage, isSessionExpiredError } from "@/lib/auth/session-error";
 import { addCoproductionUpdate, changeCoproductionStage, deleteCoproductionUpdate, removeCoproductionImage, uploadCoproductionImage } from "../coproduction-actions";
 import {
   BENCHMARK_VERDICT_LABEL,
@@ -106,6 +108,7 @@ type CoproductionDetailModalProps = {
  * carry the reasoning, the log, and the deal metadata.
  */
 export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onClose, onUpdated, onUpdatesChanged, onDeleted }: CoproductionDetailModalProps) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const stage = stageOption(opportunity.stage);
@@ -137,8 +140,13 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
       try {
         const updated = await uploadCoproductionImage(formData);
         onUpdated?.(updated);
-      } catch {
-        setImageError("Could not upload that image.");
+      } catch (uploadError) {
+        if (isSessionExpiredError(uploadError)) {
+          setImageError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setImageError(errorMessage(uploadError, "Could not upload that image."));
       }
     });
   }
@@ -153,8 +161,13 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
       try {
         const updated = await removeCoproductionImage(formData);
         onUpdated?.(updated);
-      } catch {
-        setImageError("Could not remove that image.");
+      } catch (removeError) {
+        if (isSessionExpiredError(removeError)) {
+          setImageError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setImageError(errorMessage(removeError, "Could not remove that image."));
       }
     });
   }
@@ -176,9 +189,14 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
           onUpdatesChanged?.(opportunity.id, next);
           return next;
         });
-      } catch {
+      } catch (submitError) {
         setNoteBody(trimmed);
-        setNoteError("Could not save that update.");
+        if (isSessionExpiredError(submitError)) {
+          setNoteError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setNoteError(errorMessage(submitError, "Could not save that update."));
       }
     });
   }
@@ -196,8 +214,13 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
     startTransition(async () => {
       try {
         await deleteCoproductionUpdate(formData);
-      } catch {
-        setNoteError("Could not delete that update.");
+      } catch (deleteError) {
+        if (isSessionExpiredError(deleteError)) {
+          setNoteError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setNoteError(errorMessage(deleteError, "Could not delete that update."));
       }
     });
   }
@@ -212,8 +235,13 @@ export function CoproductionDetailModal({ opportunity, fiscalYearId, isDemo, onC
       try {
         await changeCoproductionStage(formData);
         onUpdated?.({ ...opportunity, stage: nextStage });
-      } catch {
-        setNoteError("Could not change the stage.");
+      } catch (stageError) {
+        if (isSessionExpiredError(stageError)) {
+          setNoteError("Your session expired. Redirecting you to log in again...");
+          router.push("/login");
+          return;
+        }
+        setNoteError(errorMessage(stageError, "Could not change the stage."));
       }
     });
   }
