@@ -61,6 +61,13 @@ const SORT_LABELS: Record<QueueSortColumn, string> = {
   provider: "Provider"
 };
 
+/** Group headings count items, so the one countable-noun status reads as a plural. */
+const GROUP_HEADING_LABELS: Partial<Record<ReviewStatus, string>> = {
+  acquisition_target: "Acquisition Targets"
+};
+
+const groupHeadingLabel = (status: ReviewStatus, fallback: string) => GROUP_HEADING_LABELS[status] ?? fallback;
+
 const statusLabel = (status: ReviewStatus) => REVIEW_STATUSES.find((option) => option.value === status)?.label ?? status;
 const statusTone = (status: ReviewStatus) => REVIEW_STATUSES.find((option) => option.value === status)?.tone ?? "slate";
 
@@ -419,7 +426,7 @@ export function ContentReviewDashboard({
           <SortHeader column="title" sort={sort} onToggle={toggleSort} />
           <SortHeader column="reviewStatus" sort={sort} onToggle={toggleSort} />
           <SortHeader column="provider" sort={sort} onToggle={toggleSort} />
-          <SortHeader column="proposedRateCents" sort={sort} onToggle={toggleSort} align="justify-end" />
+          <SortHeader column="proposedRateCents" sort={sort} onToggle={toggleSort} align="justify-center" />
         </div>
 
         {filteredLane.length === 0 ? (
@@ -440,7 +447,7 @@ export function ContentReviewDashboard({
                     className={cn("mt-2.5 flex w-full items-center gap-2 px-3 py-2.5 text-left", TONE_CLASSES[status.tone].field)}
                   >
                     {isOpen ? <ChevronDown className="h-3 w-3 shrink-0" aria-hidden="true" /> : <ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />}
-                    <span className="text-[12.5px] font-bold">{status.label}</span>
+                    <span className="text-[12.5px] font-bold">{groupHeadingLabel(status.value, status.label)}</span>
                     <span className="text-xs font-semibold">{groupItems.length}</span>
                   </button>
                   {isOpen ? groupItems.map((item) => <QueueRow key={item.id} item={item} selected={selectedId === item.id} onSelect={selectItem} />) : null}
@@ -509,14 +516,13 @@ export function ContentReviewDashboard({
 function SortHeader({ column, sort, onToggle, align = "justify-start" }: { column: QueueSortColumn; sort: QueueSort; onToggle: (column: QueueSortColumn) => void; align?: string }) {
   const active = sort?.column === column ? sort.direction : null;
   return (
-    <span role="columnheader" aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}>
+    <span role="columnheader" aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"} className={cn("flex", align)}>
       <button
         type="button"
         onClick={() => onToggle(column)}
         aria-label={`Sort by ${SORT_LABELS[column]}`}
         className={cn(
           "inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[.07em] transition",
-          align,
           active ? "text-formed-blue" : "text-muted hover:text-foreground"
         )}
       >
@@ -537,7 +543,7 @@ function QueueRow({ item, selected, onSelect }: { item: ContentReviewItem; selec
       aria-current={selected ? "true" : undefined}
       onClick={() => onSelect(item.id)}
       className={cn(
-        "grid grid-cols-1 gap-1.5 border-b border-hairline border-l-[3px] px-3 py-3 text-left transition-colors md:gap-2.5",
+        "grid w-full grid-cols-1 gap-1.5 border-b border-hairline border-l-[3px] px-3 py-3 text-left transition-colors md:gap-2.5",
         COLUMN_GRID_CLASS,
         TONE_CLASSES[tone].accent,
         selected ? "border-l-formed-blue bg-formed-blue-soft" : "bg-panel hover:bg-panel-warm"
@@ -553,7 +559,7 @@ function QueueRow({ item, selected, onSelect }: { item: ContentReviewItem; selec
         <span className="text-[12px] font-medium text-muted">{statusLabel(item.reviewStatus)}</span>
       </span>
       <span className="truncate text-[12.5px] font-normal text-muted">{item.provider || ""}</span>
-      <span className="text-right text-[12.5px] font-medium tabular-nums">
+      <span className="text-center text-[12.5px] font-medium tabular-nums">
         {item.proposedRateCents ? formatOptionalCurrency(item.proposedRateCents) : <span className="text-faint">—</span>}
       </span>
     </button>
