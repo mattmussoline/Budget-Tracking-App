@@ -176,6 +176,16 @@ textarea {
   }
 }
 
+/* Content Review redesign: the only motion in that screen is a 150ms fade on overlays and disclosures. */
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes float {
   0%,
   100% {

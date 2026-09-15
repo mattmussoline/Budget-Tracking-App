@@ -1,10 +1,11 @@
 "use client";
 
-import { ClipboardCheck, Copy, X } from "lucide-react";
+import { X } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
-import { RECAP_RANGES, type RecapRange, buildRecapText, describeRecapEntry, summarizeMyNotes, summarizeRecap } from "../content-review-activity";
+import { RECAP_RANGES, type RecapRange, describeRecapEntry, summarizeRecap } from "../content-review-activity";
+import { REVIEW_STATUSES, TONE_SWATCH_CLASSES } from "../planning-constants";
 import { formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ContentReviewUpdate } from "../planning-types";
 
@@ -16,21 +17,17 @@ type ContentReviewRecapPanelProps = {
   onSelect: (itemId: string) => void;
 };
 
-export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onClose, onSelect }: ContentReviewRecapPanelProps) {
+/** Weekly recap: a right-hand slide-over with a 7/14/30 day switch, a one-line summary, and recent activity. */
+export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: ContentReviewRecapPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [rangeDays, setRangeDays] = useState<RecapRange>(7);
-  const [copied, setCopied] = useState(false);
   const summary = useMemo(() => summarizeRecap(updates, items, rangeDays), [updates, items, rangeDays]);
-  const myOverview = useMemo(
-    () => summarizeMyNotes(updates, items, rangeDays, currentUserEmail),
-    [updates, items, rangeDays, currentUserEmail]
-  );
+  const statusToneByStatus = useMemo(() => new Map(REVIEW_STATUSES.map((option) => [option.value, option.tone])), []);
   const titleId = "content-review-recap-title";
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-
     if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
     else dialog.setAttribute("open", "");
   }, []);
@@ -52,67 +49,33 @@ export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onCl
     closeDialog();
   }
 
-  function copyRecap() {
-    const text = currentUserEmail ? `${myOverview.overviewText}\n\n${buildRecapText(summary)}` : buildRecapText(summary);
-    navigator.clipboard?.writeText(text).then(
-      () => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2000);
-      },
-      () => setCopied(false)
-    );
-  }
+  const summaryLine = `${summary.reviewsTouched} ${summary.reviewsTouched === 1 ? "review" : "reviews"} touched, ${summary.statusChanges} status ${summary.statusChanges === 1 ? "change" : "changes"}, ${summary.notesLogged} ${summary.notesLogged === 1 ? "update" : "updates"} logged` +
+    (summary.contractedCount ? `, ${summary.contractedCount} contracted (${formatOptionalCurrency(summary.contractedRateCents)})` : "");
 
-  const stats = [
-    { label: "Reviews touched", value: String(summary.reviewsTouched) },
-    { label: "Updates logged", value: String(summary.notesLogged) },
-    { label: "Status changes", value: String(summary.statusChanges) },
-    { label: "Reviews added", value: String(summary.reviewsAdded) },
-    { label: "Contracted", value: summary.contractedCount ? `${summary.contractedCount} · ${formatOptionalCurrency(summary.contractedRateCents)}` : "0" },
-    { label: "Rejected", value: String(summary.rejectedCount) }
-  ];
-
-  return createPortal(<dialog
-    ref={dialogRef}
-    open
-    style={{ display: "block", visibility: "visible" }}
-    aria-labelledby={titleId}
-    onClick={closeFromBackdrop}
-    onKeyDown={closeFromEscape}
-    onClose={onClose}
-    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
-  >
-    <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-formed-blue-border bg-formed-blue-soft p-5 sm:p-7">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Review Activity</p>
-          <h2 id={titleId} className="font-display text-3xl">Recap</h2>
-          <p className="mt-1 text-sm font-medium text-augustine-blue">What the review work has looked like over the last {summary.rangeDays} days.</p>
-        </div>
-        <button type="button" onClick={closeDialog} aria-label="Close recap" className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm">
-          <X className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </header>
-
-      <div data-testid="content-review-recap-content" className="grid min-h-0 gap-5 overflow-y-auto p-5 sm:p-7">
-        {currentUserEmail ? (
-          <div data-testid="content-review-my-notes-overview" className="grid gap-3 rounded-lg bg-formed-blue-soft p-4 ring-1 ring-formed-blue-border">
-            <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Your notes, at a glance</p>
-            <p className="text-sm font-medium text-augustine-blue">{myOverview.overviewText}</p>
-            {myOverview.themes.length > 0 ? (
-              <ul className="flex flex-wrap gap-2">
-                {myOverview.themes.map((theme) => (
-                  <li key={theme.label} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-foreground ring-1 ring-hairline" title={theme.itemTitles.join(", ")}>
-                    {theme.label} · {theme.count}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+  return createPortal(
+    <dialog
+      ref={dialogRef}
+      open
+      style={{ display: "block", visibility: "visible", animation: "fadein 150ms ease" }}
+      aria-labelledby={titleId}
+      onClick={closeFromBackdrop}
+      onKeyDown={closeFromEscape}
+      onClose={onClose}
+      className="fixed inset-y-0 right-0 z-[70] m-0 block h-full w-[calc(100%-2rem)] max-w-[420px] bg-panel p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/40"
+    >
+      <div className="flex h-full flex-col">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Review activity</p>
+            <h2 id={titleId} className="font-display text-2xl">Weekly recap</h2>
           </div>
-        ) : null}
+          <button type="button" onClick={closeDialog} aria-label="Close recap" className="p-2 text-muted transition hover:bg-panel-warm hover:text-foreground">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </header>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div role="group" aria-label="Recap range" className="flex gap-1 rounded-md bg-panel-warm p-1">
+        <div data-testid="content-review-recap-content" className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-6">
+          <div role="group" aria-label="Recap range" className="flex w-fit gap-1 bg-panel-warm p-1">
             {RECAP_RANGES.map((range) => (
               <button
                 key={range}
@@ -120,63 +83,51 @@ export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onCl
                 aria-pressed={rangeDays === range}
                 onClick={() => setRangeDays(range)}
                 className={cn(
-                  "min-h-9 rounded px-3 text-xs font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-formed-blue",
-                  rangeDays === range ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                  "min-h-8 px-3 text-xs font-semibold uppercase tracking-wide transition",
+                  rangeDays === range ? "bg-augustine-blue text-white" : "text-muted hover:text-foreground"
                 )}
               >
-                {range} days
+                {range}d
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={copyRecap}
-            className="inline-flex min-h-9 items-center gap-2 rounded-md bg-augustine-blue px-3 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-augustine-blue-raised focus:outline-none focus:ring-2 focus:ring-formed-blue"
-          >
-            {copied ? <ClipboardCheck className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
-            {copied ? "Copied" : "Copy recap"}
-          </button>
-        </div>
 
-        <dl className="grid gap-2 sm:grid-cols-3">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg bg-panel-warm p-3 ring-1 ring-hairline">
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">{stat.label}</dt>
-              <dd className="mt-1 font-display text-2xl">{stat.value}</dd>
+          <p className="text-sm font-medium leading-relaxed">{summaryLine}.</p>
+
+          {summary.days.length === 0 ? (
+            <p className="bg-panel-warm p-4 text-sm font-bold text-muted">No review activity in the last {summary.rangeDays} days.</p>
+          ) : (
+            <div className="grid gap-4">
+              {summary.days.map((day) => (
+                <section key={day.key} className="grid gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{day.label}</h3>
+                  <ul className="grid gap-1.5">
+                    {day.entries.map((entry) => {
+                      const swatchTone = statusToneByStatus.get(entry.toStatus ?? entry.fromStatus ?? "not_started") ?? "slate";
+                      return (
+                        <li key={entry.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelect(entry.itemId)}
+                            className="flex w-full items-center gap-2 bg-panel-warm px-3 py-2 text-left transition hover:bg-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
+                          >
+                            <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0", TONE_SWATCH_CLASSES[swatchTone])} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">{entry.title}</span>
+                              <span className="block truncate text-xs font-medium text-muted">{describeRecapEntry(entry)}</span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
             </div>
-          ))}
-        </dl>
-
-        {summary.days.length === 0 ? (
-          <p className="rounded-lg bg-panel-warm p-5 font-bold text-muted">No review activity in the last {summary.rangeDays} days.</p>
-        ) : (
-          <div className="grid gap-4">
-            {summary.days.map((day) => (
-              <section key={day.key} className="grid gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{day.label}</h3>
-                <ul className="grid gap-2">
-                  {day.entries.map((entry) => (
-                    <li key={entry.id}>
-                      <button
-                        type="button"
-                        onClick={() => onSelect(entry.itemId)}
-                        className="grid w-full gap-0.5 rounded-md bg-panel-warm p-3 text-left ring-1 ring-hairline transition hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-formed-blue"
-                      >
-                        <span className="text-sm font-semibold">{entry.title}</span>
-                        <span className="text-sm font-medium text-muted">{describeRecapEntry(entry)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </div>
-
-      <footer className="flex shrink-0 justify-end border-t border-hairline p-4 sm:px-7">
-        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Close</button>
-      </footer>
-    </div>
-  </dialog>, document.body);
+    </dialog>,
+    document.body
+  );
 }

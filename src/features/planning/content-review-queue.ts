@@ -23,36 +23,6 @@ export type QueueView = "grouped" | "priority";
 
 export const emptyQueueFilters: QueueFilters = { search: "", status: "all", provider: "all" };
 
-/**
- * How many reviews carry a priority number. Everything past this is simply "in
- * the queue" — the point of the ranking is a short, honest working list, not a
- * number on all seventy titles.
- */
-export const FOCUS_LIMIT = 5;
-
-/**
- * Focus Five membership is its own flag (`inFocus`), not a slice of the
- * priority order — removing a review is a deliberate choice, not a position
- * change, so it should never auto-backfill from the queue below it.
- */
-export function focusFiveItems(items: ContentReviewItem[]) {
-  return items.filter((item) => item.id !== "draft" && item.inFocus).slice(0, FOCUS_LIMIT);
-}
-
-/** The next-ranked review not already in the Focus Five — the "recommended next" pick. */
-export function recommendedNextItem(items: ContentReviewItem[]) {
-  return items.find((item) => item.id !== "draft" && !item.inFocus) ?? null;
-}
-
-/**
- * An Acquisition Target is no longer a title to actively rank — it's pending
- * a deal, not a decision. Marking it acquisition target drops it out of the
- * Focus Five rather than leaving it there.
- */
-export function shouldClearFocusOnStatusChange(item: ContentReviewItem, nextStatus: ReviewStatus) {
-  return nextStatus === "acquisition_target" && Boolean(item.inFocus);
-}
-
 export const QUEUE_SORT_LABELS: Record<QueueSortColumn, string> = {
   priority: "Priority",
   title: "Title",
@@ -222,4 +192,83 @@ export function isFinalReviewStatus(status: ReviewStatus) {
 
 export function isDecisionQueueStatus(status: ReviewStatus) {
   return !isFinalReviewStatus(status) && status !== "on_the_radar";
+}
+
+/**
+ * The Content Review redesign's rail: three fixed lanes above the seven
+ * status lanes. "needs" mirrors {@link isDecisionQueueStatus}; "priorities"
+ * is the pinned rail list; "all" is the whole queue.
+ */
+export type QueueLane = "needs" | "priorities" | "all" | ReviewStatus;
+
+/**
+ * How many reviews carry a priority slot (1-5) in the rail. Kept short and
+ * honest on purpose — the point is a working list, not a rank on every title.
+ */
+export const PRIORITY_LIMIT = 5;
+
+/**
+ * Priorities rail membership is its own flag (`inFocus`), not a slice of the
+ * priority order — removing a review is a deliberate choice, not a position
+ * change, so a freed slot never auto-backfills from the queue below it.
+ */
+export function priorityItems(items: ContentReviewItem[]) {
+  return items.filter((item) => item.id !== "draft" && item.inFocus).slice(0, PRIORITY_LIMIT);
+}
+
+export function isPriorityListFull(items: ContentReviewItem[]) {
+  return priorityItems(items).length >= PRIORITY_LIMIT;
+}
+
+/** The next-ranked review not already pinned — offered by the picker first. */
+export function recommendedPriorityCandidate(items: ContentReviewItem[]) {
+  return items.find((item) => item.id !== "draft" && !item.inFocus) ?? null;
+}
+
+/**
+ * An Acquisition Target is pending a deal, not a decision to actively rank —
+ * moving a pinned review to that status drops it out of Priorities rather
+ * than leaving it there.
+ */
+export function shouldClearPriorityOnStatusChange(item: ContentReviewItem, nextStatus: ReviewStatus) {
+  return nextStatus === "acquisition_target" && Boolean(item.inFocus);
+}
+
+export function needsDecisionItems(items: ContentReviewItem[]) {
+  return items.filter((item) => item.id !== "draft" && isDecisionQueueStatus(item.reviewStatus));
+}
+
+/** The On the Radar rail badge: how many reviews are waiting for a next touch. */
+export function radarFollowUpCount(items: ContentReviewItem[]) {
+  return items.filter((item) => item.reviewStatus === "on_the_radar").length;
+}
+
+/** The Acquisition Target rail badge: total proposed value with no contract yet. */
+export function acquisitionTargetTotalCents(items: ContentReviewItem[]) {
+  return items
+    .filter((item) => item.reviewStatus === "acquisition_target")
+    .reduce((total, item) => total + (item.proposedRateCents ?? 0), 0);
+}
+
+/** Selects the reviews that belong to one rail lane, before search/status/provider filters apply. */
+export function laneItems(items: ContentReviewItem[], lane: QueueLane, priorities: ContentReviewItem[]) {
+  if (lane === "needs") return needsDecisionItems(items);
+  if (lane === "priorities") return priorities;
+  if (lane === "all") return items.filter((item) => item.id !== "draft");
+  return items.filter((item) => item.reviewStatus === lane);
+}
+
+export const LANE_LABELS: Record<"needs" | "priorities" | "all", string> = {
+  needs: "Needs a decision",
+  priorities: "Priorities",
+  all: "All reviews"
+};
+
+/** The queue header's serif title + muted subline for the active lane. */
+export function laneHeading(lane: QueueLane, laneCount: number, totalCount: number): { title: string; subline: string } {
+  if (lane === "priorities") return { title: "Priorities", subline: `${laneCount} ${laneCount === 1 ? "review" : "reviews"} you chose to work on next` };
+  if (lane === "needs") return { title: "Needs a decision", subline: `${laneCount} of ${totalCount} reviews are waiting on a call from your team` };
+  if (lane === "all") return { title: "All reviews", subline: `${totalCount} titles in the FY26 queue` };
+  const status = REVIEW_STATUSES.find((option) => option.value === lane);
+  return { title: status?.label ?? lane, subline: `${laneCount} reviews in this status` };
 }

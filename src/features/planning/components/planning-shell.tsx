@@ -30,7 +30,7 @@ export function PlanningShell({
   return (
     <div className="min-h-screen bg-parchment">
       <AppTopBar activeSection={activeSection} routePrefix={routePrefix} right={topBarRight} />
-      <main className="mx-auto grid min-w-0 max-w-[1600px] gap-5 px-5 pb-12 pt-8 md:px-10">
+      <main className="mx-auto grid min-w-0 max-w-[1920px] gap-5 px-5 pb-12 pt-8 md:px-10">
         {title ? <PageHead title={title} description={description ?? ""} actions={actions} /> : null}
         {children}
       </main>

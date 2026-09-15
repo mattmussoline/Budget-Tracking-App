@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -36,554 +36,212 @@ const item: ContentReviewItem = {
   notes: "Strong formation fit.",
   proposedRateCents: 1200000,
   reviewLink: "https://example.com/review",
-  comparableContent: "Symbolon"
+  comparableContent: null
 };
 
-const activeItem: ContentReviewItem = {
-  ...item,
-  id: "review-active",
-  title: "Catholic Basics",
-  reviewStatus: "in_progress",
-  isCoproductionOpportunity: true
-};
-
-const zebraItem: ContentReviewItem = {
-  ...item,
-  id: "review-zebra",
-  title: "Zebra Chronicles",
-  provider: "Zed Media",
-  reviewStatus: "not_started",
-  proposedRateCents: 500000,
-  priorityRank: 1,
-  inFocus: true
-};
-
-const alphaItem: ContentReviewItem = {
-  ...item,
-  id: "review-alpha",
-  title: "Alpha Mission",
-  provider: "Acme Films",
-  reviewStatus: "not_started",
-  proposedRateCents: 100000,
-  priorityRank: 2,
-  inFocus: true
-};
-
-const betaItem: ContentReviewItem = {
-  ...item,
-  id: "review-beta",
-  title: "Beta Signal",
-  provider: "Bravo House",
-  reviewStatus: "not_started",
-  proposedRateCents: 300000,
-  priorityRank: 3,
-  inFocus: true
-};
-
-const rejectedItem: ContentReviewItem = {
-  ...item,
-  id: "review-rejected",
-  title: "Archive Candidate",
-  reviewStatus: "rejected"
-};
-
-const radarItem: ContentReviewItem = {
-  ...item,
-  id: "review-radar",
-  title: "Long Shot Series",
-  reviewStatus: "on_the_radar"
-};
+const pinned1: ContentReviewItem = { ...item, id: "pin-1", title: "Zebra Chronicles", reviewStatus: "not_started", inFocus: true, priorityRank: 1 };
+const pinned2: ContentReviewItem = { ...item, id: "pin-2", title: "Alpha Mission", reviewStatus: "in_progress", inFocus: true, priorityRank: 2 };
+const needsDecision: ContentReviewItem = { ...item, id: "needs-1", title: "Blocked Title", reviewStatus: "blocked", inFocus: false };
+const radarItem: ContentReviewItem = { ...item, id: "radar-1", title: "Long Shot Series", reviewStatus: "on_the_radar" };
+const acquisitionItem: ContentReviewItem = { ...item, id: "acq-1", title: "Acquisition Candidate", reviewStatus: "acquisition_target", proposedRateCents: 500000 };
 
 describe("ContentReviewDashboard", () => {
-  it("renders the compact decision queue and selected detail editor", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
+  it("lands on the Priorities lane and renders the three-region layout", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[pinned1, pinned2, needsDecision]} isDemo />);
 
-    expect(screen.getByRole("heading", { name: "Decision queue" })).toBeVisible();
-    expect(screen.getByLabelText("Detail Title")).toHaveValue("Aquinas 101");
-    expect(screen.getByLabelText("Review Status")).toHaveValue("contracted");
-    expect(screen.getByLabelText("Proposed Yearly Rate")).toHaveValue("$12,000.00");
-    expect(screen.getByLabelText("Genre")).toHaveValue("Scripture");
-    expect(screen.getByLabelText("Format")).toHaveValue("Formation Series");
-    expect(screen.getByLabelText("Review Link")).toHaveValue("https://example.com/review");
-    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "https://example.com/review");
-    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveTextContent("Strong formation fit.");
-    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveTextContent("Symbolon");
+    expect(screen.getByRole("heading", { name: "Priorities", level: 1 })).toBeVisible();
+    expect(screen.getByText("2 reviews you chose to work on next")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Priorities", level: 2 })).toBeVisible();
+    expect(screen.getByText("2 of 5")).toBeVisible();
   });
 
-  it("makes links in the combined notes field clickable", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Watch https://example.com/notes", comparableContent: "Compare https://example.com/compare" }]} isDemo />);
+  it("switches lanes from the rail and updates the queue header", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[pinned1, needsDecision, radarItem, item]} isDemo />);
 
-    const notesLink = screen.getByRole("link", { name: "https://example.com/notes" });
-    const comparableLink = screen.getByRole("link", { name: "https://example.com/compare" });
+    fireEvent.click(screen.getByRole("button", { name: /Needs a decision/ }));
+    expect(screen.getByRole("heading", { name: "Needs a decision", level: 1 })).toBeVisible();
 
-    expect(notesLink).toHaveAttribute("href", "https://example.com/notes");
-    expect(comparableLink).toHaveAttribute("href", "https://example.com/compare");
-    expect(notesLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Notes");
-    expect(comparableLink.closest("[role='textbox']")).toHaveAttribute("aria-label", "Notes");
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    expect(screen.getByRole("heading", { name: "All reviews", level: 1 })).toBeVisible();
+    expect(screen.getByText("4 titles in the FY26 queue")).toBeVisible();
   });
 
-  it("turns newly typed review-note URLs into links after editing", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("shows the On the Radar and Acquisition Target rail badges", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[radarItem, acquisitionItem]} isDemo />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Notes" });
-    notesBox.focus();
-    notesBox.textContent = "Watch https://example.com/new-note";
-    fireEvent.input(notesBox);
-    expect(screen.queryByRole("link", { name: "https://example.com/new-note" })).not.toBeInTheDocument();
-
-    fireEvent.blur(notesBox);
-
-    const newLink = screen.getByRole("link", { name: "https://example.com/new-note" });
-    expect(newLink).toHaveAttribute("href", "https://example.com/new-note");
-    expect(newLink.closest("[role='textbox']")).toBe(notesBox);
+    expect(screen.getByText("1 to follow up")).toBeVisible();
+    expect(screen.getByText("$5,000.00 · no contract")).toBeVisible();
   });
 
-  it("keeps newly typed review notes visible while editing", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("selects a row and opens the fixed detail panel without a draft flow", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Notes" });
-    notesBox.focus();
-    notesBox.textContent = "Fresh decision queue notes";
-    fireEvent.input(notesBox);
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
 
-    expect(notesBox).toHaveTextContent("Fresh decision queue notes");
-    expect(notesBox).not.toHaveTextContent("Strong formation fit.");
+    expect(screen.getByText("Selected review")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Blocked Title" })).toBeVisible();
+    expect(screen.getByLabelText("Review Status")).toHaveValue("blocked");
   });
 
-  it("saves paragraph breaks and rich formatting from the notes editor", async () => {
+  it("closes the detail panel and expands the queue full width", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+    fireEvent.click(screen.getByRole("button", { name: "Close selected review" }));
+
+    expect(screen.queryByText("Selected review")).not.toBeInTheDocument();
+  });
+
+  it("changes status from the detail panel, logs it, and offers an undo toast", async () => {
     actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Notes" });
-    notesBox.focus();
-    notesBox.innerHTML = "<p>First note</p><p><strong>Second</strong> note</p><ul><li>Watch https://example.com/spacing</li></ul>";
-    fireEvent.input(notesBox);
-    fireEvent.blur(notesBox);
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+    fireEvent.change(screen.getByLabelText("Review Status"), { target: { value: "in_progress" } });
 
-    await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
-    const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
-    expect(saved).toContain("<p>First note</p>");
-    expect(saved).toContain("<strong>Second</strong> note");
-    expect(saved).toContain("<ul><li>");
-    expect(screen.getByRole("link", { name: "https://example.com/spacing" })).toHaveAttribute("href", "https://example.com/spacing");
+    expect(screen.getByText("Moved to In Progress.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeVisible();
+    await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByLabelText("Review Status")).toHaveValue("blocked");
   });
 
-  it("renders legacy plain-text notes as paragraphs", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, notes: "Line one\n\nLine two", comparableContent: null }]} />);
+  it("pins a review to Priorities from the detail panel and unpins it from the rail", async () => {
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Notes" });
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Priorities" }));
 
-    expect(notesBox.innerHTML).toBe("<p>Line one</p><p>Line two</p>");
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Remove from Priorities" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Remove Blocked Title from Priorities/ }));
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
+    expect(screen.getByText("Removed from Priorities.")).toBeVisible();
   });
 
-  it("strips unsafe markup that arrives in the notes editor", async () => {
-    actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("refuses to pin a sixth review once Priorities is full", () => {
+    const sixth: ContentReviewItem = { ...needsDecision, id: "needs-6" };
+    const many = [pinned1, pinned2, { ...pinned1, id: "pin-3" }, { ...pinned1, id: "pin-4" }, { ...pinned1, id: "pin-5" }, sixth];
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
 
-    const notesBox = screen.getByRole("textbox", { name: "Notes" });
-    notesBox.focus();
-    notesBox.innerHTML = '<p onclick="steal()">Keep this</p><img src="x" onerror="steal()"><a href="javascript:steal()">bad link</a>';
-    fireEvent.input(notesBox);
-    fireEvent.blur(notesBox);
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-6"));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Priorities" }));
 
-    await waitFor(() => expect(actionMocks.updateContentReviewItem).toHaveBeenCalledTimes(1));
-    const saved = String(actionMocks.updateContentReviewItem.mock.calls[0][0].get("notes"));
-    expect(saved).toContain("<p>Keep this</p>");
-    expect(saved).not.toContain("onclick");
-    expect(saved).not.toContain("onerror");
-    expect(saved).not.toContain("javascript:");
-    expect(saved).not.toContain("<img");
+    expect(screen.getByText("Priorities is full — remove something first.")).toBeVisible();
+    expect(actionMocks.setContentReviewFocusMembership).not.toHaveBeenCalled();
   });
 
-  it("offers formatting controls for the notes editor", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("selects a priority from the rail list", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[pinned1, pinned2]} isDemo />);
 
-    const toolbar = screen.getByRole("group", { name: "Notes formatting" });
-
-    expect(within(toolbar).getByRole("button", { name: "Bold (Cmd+B)" })).toBeVisible();
-    expect(within(toolbar).getByRole("button", { name: "Italic (Cmd+I)" })).toBeVisible();
-    expect(within(toolbar).getByRole("button", { name: "Underline (Cmd+U)" })).toBeVisible();
-    expect(within(toolbar).getByRole("button", { name: "Bulleted list" })).toBeVisible();
-    expect(within(toolbar).getByRole("button", { name: "Numbered list" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Alpha Mission" }));
+    expect(screen.getByRole("heading", { name: "Alpha Mission" })).toBeVisible();
   });
 
-  it("uses the roadmap provider picker for review details", () => {
-    render(
-      <ContentReviewDashboard
-        fiscalYearId="00000000-0000-0000-0000-000000000028"
-        items={[item]}
-        providerOptions={["Thomistic Institute", "Wonderborn"]}
-      />
-    );
+  it("opens the Add another priority picker and pins the chosen review", async () => {
+    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    const providerInput = screen.getByLabelText("Provider");
-    fireEvent.change(providerInput, { target: { value: "Won" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add another priority" }));
+    expect(screen.getByRole("heading", { name: "Add another priority" })).toBeVisible();
 
-    expect(screen.getByRole("button", { name: "Wonderborn" })).toBeVisible();
-
-    fireEvent.click(screen.getByRole("button", { name: "Wonderborn" }));
-
-    expect(providerInput).toHaveValue("Wonderborn");
-    expect(screen.queryByRole("button", { name: "Wonderborn" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add Blocked Title to Priorities" }));
+    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("heading", { name: "Add another priority" })).not.toBeInTheDocument();
   });
 
-  it("keeps decision queue column headers aligned with row columns", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} isDemo />);
+  it("searches the queue by title", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision, radarItem]} isDemo />);
 
-    const header = screen.getByTestId("content-review-queue-header");
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.change(screen.getByLabelText("Search titles"), { target: { value: "long shot" } });
 
-    expect(header.children).toHaveLength(6);
-    expect(header).toHaveClass("text-center");
-    expect(header.children[0]).toHaveTextContent("Priority");
-    expect(header.children[1]).toHaveAttribute("aria-hidden", "true");
-    expect(header.children[2]).toHaveTextContent("Title");
-    expect(header.children[3]).toHaveTextContent("Review Status");
-    expect(header.children[4]).toHaveTextContent("Yearly Rate");
-    expect(header.children[5]).toHaveTextContent("Provider");
-
-    const row = screen.getByTestId("content-review-row-review-active");
-    expect(row.className).toContain("md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]");
-    expect(header.className).toContain("md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]");
+    expect(screen.getByTestId("content-review-row-radar-1")).toBeVisible();
+    expect(screen.queryByTestId("content-review-row-needs-1")).not.toBeInTheDocument();
   });
 
-  it("opens a blank unsaved draft from Add Content", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
+  it("shows the empty state and clears filters", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.change(screen.getByLabelText("Search titles"), { target: { value: "nothing matches" } });
 
-    expect(screen.getByRole("heading", { name: "New content review" })).toBeVisible();
-    expect(screen.getByLabelText("Detail Title")).toHaveValue("");
-  });
-
-  it("groups every review by status inside one decision queue", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
-
-    const decisionQueue = screen.getByTestId("content-review-active-queue");
-    const inProgressGroup = within(decisionQueue).getByTestId("content-review-group-in-progress");
-    const radarGroup = within(decisionQueue).getByTestId("content-review-group-on-the-radar");
-    const contractedGroup = within(decisionQueue).getByTestId("content-review-contracted-content");
-    const rejectedGroup = within(decisionQueue).getByTestId("content-review-rejected-content");
-
-    expect(within(inProgressGroup).getByDisplayValue("Catholic Basics")).toBeInTheDocument();
-    expect(within(radarGroup).getByDisplayValue("Long Shot Series")).toBeInTheDocument();
-    expect(within(contractedGroup).getByDisplayValue("Aquinas 101")).toBeInTheDocument();
-    expect(within(rejectedGroup).getByDisplayValue("Archive Candidate")).toBeInTheDocument();
-
-    // Every status group starts collapsed until opened.
-    expect(inProgressGroup).not.toHaveAttribute("open");
-    expect(radarGroup).not.toHaveAttribute("open");
-    expect(contractedGroup).not.toHaveAttribute("open");
-    expect(rejectedGroup).not.toHaveAttribute("open");
-
-    expect(inProgressGroup.querySelector("summary")).toHaveTextContent("In Progress");
-    expect(contractedGroup.querySelector("summary")).toHaveTextContent("Contracted");
-
-    fireEvent.click(within(rejectedGroup).getByRole("button", { name: "Select Archive Candidate" }));
-    expect(screen.getByLabelText("Detail Title")).toHaveValue("Archive Candidate");
-  });
-
-  it("keeps the status summary cards and modals working alongside the grouped queue", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
-
-    expect(screen.getByText("1 On the Radar piece is waiting for follow-up. Open the list and decide who gets a next touch.")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View items" }));
-    const radarDialog = screen.getByRole("dialog", { name: "On the radar" });
-    expect(within(within(radarDialog).getByTestId("content-review-radar-content")).getByDisplayValue("Long Shot Series")).toBeVisible();
-    fireEvent.click(within(radarDialog).getByRole("button", { name: "Close On the radar reviews" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /Active decisions: 1/ }));
-    const activeDialog = screen.getByRole("dialog", { name: "Active decisions" });
-    expect(within(activeDialog).getByDisplayValue("Catholic Basics")).toBeVisible();
-    fireEvent.click(within(activeDialog).getByRole("button", { name: "Close Active decisions reviews" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /Contracted: 1/ }));
-    const contractedDialog = screen.getByRole("dialog", { name: "Contracted" });
-    expect(within(contractedDialog).getByDisplayValue("Aquinas 101")).toBeVisible();
-    fireEvent.click(within(contractedDialog).getByRole("button", { name: "Close Contracted reviews" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /Rejected: 1/ }));
-    const rejectedDialog = screen.getByRole("dialog", { name: "Rejected" });
-    expect(within(rejectedDialog).getByDisplayValue("Archive Candidate")).toBeVisible();
-  });
-
-  it("filters the decision queue by title", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
-
-    expect(screen.getByText("4 reviews")).toBeVisible();
-
-    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "long shot" } });
-
-    const decisionQueue = screen.getByTestId("content-review-active-queue");
-    expect(within(decisionQueue).getByDisplayValue("Long Shot Series")).toBeVisible();
-    expect(within(decisionQueue).queryByDisplayValue("Catholic Basics")).not.toBeInTheDocument();
-    expect(within(decisionQueue).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
-    expect(screen.getByText("Showing 1 of 4")).toBeVisible();
-    // Statuses with no match drop out of the list entirely while a filter is on.
-    expect(within(decisionQueue).queryByTestId("content-review-group-in-progress")).not.toBeInTheDocument();
-  });
-
-  it("filters the decision queue by review status", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, radarItem, item, rejectedItem]} isDemo />);
-
-    fireEvent.change(screen.getByLabelText("Filter by review status"), { target: { value: "contracted" } });
-
-    const decisionQueue = screen.getByTestId("content-review-active-queue");
-    const contractedGroup = within(decisionQueue).getByTestId("content-review-contracted-content");
-    expect(within(contractedGroup).getByDisplayValue("Aquinas 101")).toBeVisible();
-    // Filtering opens the matching group even when it is a normally collapsed final status.
-    expect(contractedGroup.querySelector("details")).toHaveAttribute("open");
-    expect(within(decisionQueue).queryByDisplayValue("Archive Candidate")).not.toBeInTheDocument();
-  });
-
-  it("filters the decision queue by provider", () => {
-    const otherProvider: ContentReviewItem = { ...activeItem, id: "review-other", title: "Other Provider Series", provider: "Word on Fire" };
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, otherProvider]} isDemo />);
-
-    const providerFilter = screen.getByLabelText("Filter by provider");
-    expect(within(providerFilter).getByRole("option", { name: "Thomistic Institute" })).toBeInTheDocument();
-    expect(within(providerFilter).getByRole("option", { name: "Word on Fire" })).toBeInTheDocument();
-
-    fireEvent.change(providerFilter, { target: { value: "Word on Fire" } });
-
-    const decisionQueue = screen.getByTestId("content-review-active-queue");
-    expect(within(decisionQueue).getByDisplayValue("Other Provider Series")).toBeVisible();
-    expect(within(decisionQueue).queryByDisplayValue("Catholic Basics")).not.toBeInTheDocument();
-  });
-
-  it("reports and clears a filter that matches nothing", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} isDemo />);
-
-    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "nothing matches this" } });
-
-    expect(screen.getByTestId("content-review-no-matches")).toBeVisible();
+    expect(screen.getByText("Nothing here — this lane is clear.")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-
-    expect(screen.queryByTestId("content-review-no-matches")).not.toBeInTheDocument();
-    expect(within(screen.getByTestId("content-review-active-queue")).getByDisplayValue("Catholic Basics")).toBeInTheDocument();
+    expect(screen.getByTestId("content-review-row-needs-1")).toBeVisible();
   });
 
-  it("keeps an unsaved draft visible even when it does not match the filters", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+  it("groups the All reviews lane by status and suppresses grouping while searching or sorted", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision, radarItem]} isDemo />);
 
-    fireEvent.change(screen.getByLabelText("Filter by title"), { target: { value: "catholic" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    expect(screen.getByTestId("content-review-group-blocked")).toBeInTheDocument();
 
-    const notStartedGroup = within(screen.getByTestId("content-review-active-queue")).getByTestId("content-review-group-not-started");
-    expect(within(notStartedGroup).getByLabelText("Summary Title")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(screen.queryByTestId("content-review-group-blocked")).not.toBeInTheDocument();
   });
 
-  it("uses explicit row selection instead of making the editable row itself a button", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
+  it("sorts the queue by column header and cycles back to the manual order", () => {
+    const zebra: ContentReviewItem = { ...needsDecision, id: "z", title: "Zebra" };
+    const alpha: ContentReviewItem = { ...needsDecision, id: "a", title: "Alpha" };
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebra, alpha]} isDemo />);
 
-    fireEvent.click(screen.getByTestId("content-review-group-in-progress").querySelector("summary")!);
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    const titleOrder = () => screen.getAllByText(/Zebra|Alpha/).map((node) => node.textContent);
 
-    expect(screen.getByRole("button", { name: "Select Catholic Basics" })).toBeVisible();
-    expect(screen.getByLabelText("Summary Title").closest("[role='button']")).toBeNull();
+    expect(titleOrder()).toEqual(["Zebra", "Alpha"]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titleOrder()).toEqual(["Alpha", "Zebra"]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titleOrder()).toEqual(["Zebra", "Alpha"]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
+    expect(titleOrder()).toEqual(["Zebra", "Alpha"]);
   });
 
-  it("marks co-production opportunities with a small queue signal and compact editor field", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
-
-    fireEvent.click(screen.getByTestId("content-review-group-in-progress").querySelector("summary")!);
-
-    expect(screen.getByRole("button", { name: /Co-productions: 1/ })).toBeVisible();
-    expect(screen.getAllByLabelText("Potential co-production opportunity")).toHaveLength(2);
-    expect(screen.getByText("Co-prod")).toBeVisible();
-    expect(screen.getAllByText("Potential co-production").length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getAllByLabelText("Potential co-production opportunity")[1]);
-
-    expect(screen.getByText("unsaved")).toBeVisible();
-  });
-
-  it("opens a top-level co-productions summary", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} isDemo />);
-
-    fireEvent.click(screen.getByRole("button", { name: /Co-productions: 1/ }));
-
-    const dialog = screen.getByRole("dialog", { name: "Co-productions" });
-    expect(within(dialog).getByDisplayValue("Catholic Basics")).toBeVisible();
-    expect(within(dialog).queryByDisplayValue("Aquinas 101")).not.toBeInTheDocument();
-  });
-
-  it("marks edited review details as unsaved until the user saves", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
-
-    fireEvent.change(screen.getByLabelText("Detail Title"), { target: { value: "Aquinas 102" } });
-
-    expect(screen.getByText("unsaved")).toBeVisible();
-  });
-
-  it("offers the exact approved controlled options", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} isDemo />);
-
-    expect(screen.getByLabelText("Review Status")).toContainHTML("Not Started");
-    expect(screen.getByLabelText("Review Status")).toContainHTML("On the Radar");
-    expect(screen.getByLabelText("Genre")).toContainHTML("Christian Formation");
-    expect(screen.getByLabelText("Format")).toContainHTML("Docu-Series");
-    expect(screen.getByLabelText("Format")).toContainHTML("Ministry Resource");
-  });
-
-  it("lets users type a multi-digit proposed rate before formatting it", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
-
-    const proposedRate = screen.getByLabelText("Summary Proposed Yearly Rate");
-    fireEvent.focus(proposedRate);
-    fireEvent.change(proposedRate, { target: { value: "1" } });
-    fireEvent.change(proposedRate, { target: { value: "12" } });
-    fireEvent.change(proposedRate, { target: { value: "123" } });
-
-    expect(proposedRate).toHaveValue("123");
-
-    fireEvent.blur(proposedRate);
-    expect(proposedRate).toHaveValue("$123.00");
-  });
-
-  it("creates a draft only once from the explicit save button", async () => {
-    let resolveSave: ((saved: ContentReviewItem) => void) | undefined;
-    actionMocks.addContentReviewItem.mockReturnValue(new Promise<ContentReviewItem>((resolve) => {
-      resolveSave = resolve;
-    }));
-
+  it("opens Add content and validates a title before submitting", async () => {
+    actionMocks.addContentReviewItem.mockResolvedValue({ ...item, id: "new-item", title: "New Review", reviewStatus: "not_started" });
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Add content" }));
-    fireEvent.change(screen.getByLabelText("Summary Title"), { target: { value: "New Review" } });
-    fireEvent.blur(screen.getByLabelText("Summary Title"));
-
+    fireEvent.click(screen.getByRole("button", { name: /^Add to/ }));
+    expect(screen.getByText("Add a title before saving.")).toBeVisible();
     expect(actionMocks.addContentReviewItem).not.toHaveBeenCalled();
 
-    const saveButton = screen.getByRole("button", { name: "Save changes" });
-    fireEvent.click(saveButton);
-    fireEvent.click(saveButton);
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "New Review" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Add to/ }));
 
-    expect(actionMocks.addContentReviewItem).toHaveBeenCalledTimes(1);
-
-    resolveSave?.({ ...item, id: "review-saved", title: "New Review" });
-
+    await waitFor(() => expect(actionMocks.addContentReviewItem).toHaveBeenCalledTimes(1));
     expect(await screen.findByRole("heading", { name: "New Review" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "New content review" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Add content" })).not.toBeInTheDocument();
   });
 
-  it("lets contracted reviews move forward to the roadmap", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+  it("deletes a review from the More fields panel and clears the selection", async () => {
+    actionMocks.deleteContentReviewItem.mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+    fireEvent.click(screen.getByRole("button", { name: "More fields" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(actionMocks.deleteContentReviewItem).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Selected review")).not.toBeInTheDocument();
   });
 
-  it("disables sending to the roadmap until minutes of content are filled in", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[{ ...item, minutes: null }]} />);
-
-    expect(screen.getByRole("button", { name: "Send to roadmap" })).toBeDisabled();
-  });
-
-  it("confirms when a contracted review is sent to the roadmap", async () => {
-    actionMocks.sendReviewToRoadmap.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Send to roadmap" }));
-
-    await waitFor(() => expect(actionMocks.sendReviewToRoadmap).toHaveBeenCalledTimes(1));
-    expect(screen.getByText("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.")).toBeVisible();
-  });
-
-  it("does not offer roadmap sending for reviews that are not contracted", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem]} />);
-
-    expect(screen.queryByRole("button", { name: "Send to roadmap" })).not.toBeInTheDocument();
-  });
-
-  it("sorts the queue by a column header and returns to the manual order", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const titles = () => screen.getAllByLabelText("Summary Title").map((input) => (input as HTMLInputElement).value);
-    expect(titles()).toEqual(["Zebra Chronicles", "Alpha Mission", "Beta Signal"]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
-    expect(titles()).toEqual(["Alpha Mission", "Beta Signal", "Zebra Chronicles"]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
-    expect(titles()).toEqual(["Zebra Chronicles", "Beta Signal", "Alpha Mission"]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
-    expect(titles()).toEqual(["Zebra Chronicles", "Alpha Mission", "Beta Signal"]);
-  });
-
-  it("offers a chip that clears an active sort", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem]} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Yearly Rate" }));
-    const chip = screen.getByRole("button", { name: /Sorted by Yearly Rate/ });
-
-    fireEvent.click(chip);
-
-    expect(screen.queryByRole("button", { name: /Sorted by Yearly Rate/ })).not.toBeInTheDocument();
-  });
-
-  it("saves a dragged review order", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-zebra"), setData: vi.fn() };
-    fireEvent.dragStart(screen.getByTestId("content-review-row-review-zebra"), { dataTransfer });
-    fireEvent.drop(screen.getByTestId("content-review-row-review-beta"), { dataTransfer });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds")).toEqual(["review-alpha", "review-beta", "review-zebra"]);
-    expect(formData.get("movedToStatus")).toBeNull();
-  });
-
-  it("changes the review status when a row is dragged into another group", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
-
-    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-active"), setData: vi.fn() };
-    fireEvent.dragStart(screen.getByTestId("content-review-row-review-active"), { dataTransfer });
-    fireEvent.drop(screen.getByTestId("content-review-row-review-1"), { dataTransfer });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.get("movedItemId")).toBe("review-active");
-    expect(formData.get("movedToStatus")).toBe("contracted");
-  });
-
-  it("saves a dragged group order", async () => {
-    actionMocks.reorderContentReviewGroups.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
-
-    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "in_progress"), setData: vi.fn() };
-    fireEvent.dragStart(screen.getByRole("button", { name: /Drag the In Progress group/ }), { dataTransfer });
-    fireEvent.drop(screen.getByTestId("content-review-group-not-started"), { dataTransfer });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewGroups).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewGroups.mock.calls[0][0] as FormData;
-    expect(formData.getAll("reviewStatuses")[0]).toBe("in_progress");
-  });
-
-  it("moves a review to a priority typed into its badge", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const badge = screen.getByLabelText("Priority for Beta Signal");
-    expect(badge).toHaveValue("3");
-
-    fireEvent.change(badge, { target: { value: "1" } });
-    fireEvent.keyDown(badge, { key: "Enter" });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds")).toEqual(["review-beta", "review-zebra", "review-alpha"]);
-  });
-
-  it("logs an update when Enter is pressed in the update field", async () => {
+  it("logs an update from the compose row's Save button", async () => {
     actionMocks.addContentReviewUpdate.mockResolvedValue({
       id: "update-1",
-      itemId: "review-1",
+      itemId: "needs-1",
       kind: "note",
       body: "Chased the rights paperwork.",
       fromStatus: null,
@@ -591,233 +249,35 @@ describe("ContentReviewDashboard", () => {
       authorEmail: "matt@example.com",
       createdAt: new Date().toISOString()
     });
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    const field = screen.getByLabelText("Log an update");
-    fireEvent.change(field, { target: { value: "Chased the rights paperwork." } });
-    fireEvent.keyDown(field, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+    fireEvent.change(screen.getByLabelText("Log an update"), { target: { value: "Chased the rights paperwork." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(actionMocks.addContentReviewUpdate).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.addContentReviewUpdate.mock.calls[0][0] as FormData;
-    expect(formData.get("body")).toBe("Chased the rights paperwork.");
-    expect(formData.get("itemId")).toBe("review-1");
     expect(await screen.findByText("Chased the rights paperwork.")).toBeVisible();
-    expect(field).toHaveValue("");
   });
 
-  it("ignores an empty update submission", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[item]} />);
-
-    const field = screen.getByLabelText("Log an update");
-    fireEvent.change(field, { target: { value: "   " } });
-    fireEvent.keyDown(field, { key: "Enter" });
-
-    expect(actionMocks.addContentReviewUpdate).not.toHaveBeenCalled();
-  });
-
-  it("summarizes recent review work in the recap panel", () => {
-    const now = new Date().toISOString();
-    render(<ContentReviewDashboard
-      fiscalYearId="00000000-0000-0000-0000-000000000028"
-      items={[item, activeItem]}
-      updates={[
-        { id: "u1", itemId: "review-1", kind: "note", body: "Watched the sample.", fromStatus: null, toStatus: null, authorEmail: "matt@example.com", createdAt: now },
-        { id: "u2", itemId: "review-active", kind: "status_change", body: null, fromStatus: "not_started", toStatus: "in_progress", authorEmail: "matt@example.com", createdAt: now }
-      ]}
-    />);
+  it("opens the weekly recap slide-over with the 7/14/30 day switch", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
     fireEvent.click(screen.getByRole("button", { name: "Weekly recap" }));
 
-    const recap = screen.getByTestId("content-review-recap-content");
-    expect(within(recap).getByText("Reviews touched").nextSibling).toHaveTextContent("2");
-    expect(within(recap).getByText("Updates logged").nextSibling).toHaveTextContent("1");
-    expect(within(recap).getByText("Status changes").nextSibling).toHaveTextContent("1");
-    expect(within(recap).getByText("Watched the sample.")).toBeVisible();
-    expect(within(recap).getByText("Not Started → In Progress")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Weekly recap" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Recap range" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "30d" }));
+    expect(screen.getByRole("button", { name: "30d" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("disables reordering in demo mode", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem]} isDemo />);
+  it("disables editing controls in demo mode", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    expect(screen.getByTestId("content-review-row-review-zebra")).not.toHaveAttribute("draggable", "true");
-    expect(screen.getByLabelText("Priority for Zebra Chronicles")).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
+
+    expect(screen.getByLabelText("Review Status")).toBeDisabled();
     expect(screen.getByLabelText("Log an update")).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /Drag the .* group/ })).not.toBeInTheDocument();
-  });
-
-  it("never makes a group summary the drag source", () => {
-    // A drag begun inside a <summary> fires dragstart but never completes a
-    // drop, so the handle must live outside it or group reordering silently
-    // does nothing.
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
-
-    const group = screen.getByTestId("content-review-group-in-progress");
-    const summary = group.querySelector("summary")!;
-
-    expect(summary).not.toHaveAttribute("draggable", "true");
-    expect(summary.querySelector("[draggable=\"true\"]")).toBeNull();
-
-    const handle = screen.getByRole("button", { name: /Drag the In Progress group/ });
-    expect(handle).toHaveAttribute("draggable", "true");
-    // A <button> swallows the drop the same way a <summary> does, so the handle
-    // must stay a focusable span.
-    expect(handle.tagName).toBe("SPAN");
-    expect(handle).toHaveAttribute("tabindex", "0");
-  });
-
-  it("reorders groups from the handle with the arrow keys", async () => {
-    actionMocks.reorderContentReviewGroups.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[activeItem, item]} />);
-
-    fireEvent.keyDown(screen.getByRole("button", { name: /Drag the In Progress group/ }), { key: "ArrowUp" });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewGroups).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewGroups.mock.calls[0][0] as FormData;
-    const order = formData.getAll("reviewStatuses");
-    expect(order.indexOf("in_progress")).toBeLessThan(order.indexOf("on_the_radar"));
-  });
-
-  function buildManyReviews(count: number) {
-    return Array.from({ length: count }, (_, index) => ({
-      ...item,
-      id: `review-${index + 1}`,
-      title: `Review ${index + 1}`,
-      reviewStatus: "not_started" as const,
-      priorityRank: index + 1,
-      inFocus: index < 5
-    }));
-  }
-
-  it("numbers only the top five and offers a pin below them", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
-
-    expect(screen.getByLabelText("Priority for Review 5")).toHaveValue("5");
-    expect(screen.queryByLabelText("Priority for Review 6")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add Review 6 to the Focus Five" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add Review 5 to the Focus Five" })).not.toBeInTheDocument();
-  });
-
-  it("keeps the pin and priority entry usable while a column sort is active", async () => {
-    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
-
-    // Sorting is how you find the title you want to promote, so it must not
-    // switch off the controls that set the Focus Five.
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
-
-    expect(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" })).toBeEnabled();
-    expect(screen.getByLabelText("Priority for Review 1")).toBeEnabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
-
-    // The five is already full, so pinning Review 7 in displaces Review 5.
-    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
-    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
-    expect(calls).toEqual(expect.arrayContaining([
-      { itemId: "review-7", inFocus: "true" },
-      { itemId: "review-5", inFocus: "false" }
-    ]));
-  });
-
-  it("pins a queue review into the Focus Five", async () => {
-    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(7)} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Add Review 7 to the Focus Five" }));
-
-    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
-    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
-    expect(calls).toEqual(expect.arrayContaining([
-      { itemId: "review-7", inFocus: "true" },
-      { itemId: "review-5", inFocus: "false" }
-    ]));
-  });
-
-  it("removes a review from the Focus Five without pulling in a replacement, and offers it back as the recommended next", async () => {
-    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const focus = screen.getByTestId("content-review-focus-five");
-    expect(within(focus).getByText("3 of 5")).toBeVisible();
-    expect(within(focus).queryByText(/Recommended next/)).not.toBeInTheDocument();
-    expect(within(focus).getByText("Zebra Chronicles")).toBeVisible();
-
-    fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
-
-    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.setContentReviewFocusMembership.mock.calls[0][0] as FormData;
-    expect(formData.get("itemId")).toBe("review-zebra");
-    expect(formData.get("inFocus")).toBe("false");
-
-    // Two of five now — nothing backfilled the open slot on its own.
-    expect(within(focus).getByText("2 of 5")).toBeVisible();
-    expect(within(focus).getByRole("button", { name: "Add recommended review Zebra Chronicles to the Focus Five" })).toBeVisible();
-  });
-
-  it("adds a named review to the Focus Five even when all five slots are full", async () => {
-    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={buildManyReviews(8)} />);
-
-    const focus = screen.getByTestId("content-review-focus-five");
-    expect(within(focus).getByText("5 of 5")).toBeVisible();
-
-    fireEvent.click(within(focus).getByRole("button", { name: /^Add review$/ }));
-    const picker = screen.getByTestId("content-review-focus-picker");
-
-    // Only reviews outside the five are offered.
-    expect(within(picker).queryByRole("button", { name: "Add Review 2 to the Focus Five" })).not.toBeInTheDocument();
-    expect(within(picker).getByRole("button", { name: "Add Review 6 to the Focus Five" })).toBeVisible();
-
-    fireEvent.change(within(picker).getByLabelText("Search reviews to add"), { target: { value: "Review 8" } });
-    expect(within(picker).queryByRole("button", { name: "Add Review 6 to the Focus Five" })).not.toBeInTheDocument();
-    fireEvent.click(within(picker).getByRole("button", { name: "Add Review 8 to the Focus Five" }));
-
-    // Review 8 takes the fifth slot and the previous fifth drops back to the queue.
-    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(2));
-    const calls = actionMocks.setContentReviewFocusMembership.mock.calls.map(([formData]) => ({ itemId: (formData as FormData).get("itemId"), inFocus: (formData as FormData).get("inFocus") }));
-    expect(calls).toEqual(expect.arrayContaining([
-      { itemId: "review-8", inFocus: "true" },
-      { itemId: "review-5", inFocus: "false" }
-    ]));
-    expect(screen.queryByTestId("content-review-focus-picker")).not.toBeInTheDocument();
-  });
-
-  it("disables adding only when every review is already in the Focus Five", () => {
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const focus = screen.getByTestId("content-review-focus-five");
-    expect(within(focus).getByText("3 of 5")).toBeVisible();
-    // Three reviews, nothing left in the queue to promote.
-    expect(within(focus).getByRole("button", { name: /^Add review$/ })).toBeDisabled();
-    expect(within(focus).queryByRole("button", { name: /Add recommended review/ })).not.toBeInTheDocument();
-  });
-
-  it("keeps the Focus Five editable while the queue below is sorted", async () => {
-    actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort by Provider" }));
-
-    const focus = screen.getByTestId("content-review-focus-five");
-    expect(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" })).toBeEnabled();
-    expect(within(focus).getByTestId("content-review-focus-row-review-zebra")).toHaveAttribute("draggable", "true");
-
-    fireEvent.click(within(focus).getByRole("button", { name: "Remove Zebra Chronicles from the Focus Five" }));
-    await waitFor(() => expect(actionMocks.setContentReviewFocusMembership).toHaveBeenCalledTimes(1));
-  });
-
-  it("reorders within the Focus Five by dragging", async () => {
-    actionMocks.reorderContentReviewItems.mockResolvedValue(undefined);
-    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebraItem, alphaItem, betaItem]} />);
-
-    const focus = screen.getByTestId("content-review-focus-five");
-    const dataTransfer = { effectAllowed: "", getData: vi.fn(() => "review-beta"), setData: vi.fn() };
-    fireEvent.dragStart(within(focus).getByTestId("content-review-focus-row-review-beta"), { dataTransfer });
-    fireEvent.drop(within(focus).getByTestId("content-review-focus-row-review-zebra"), { dataTransfer });
-
-    await waitFor(() => expect(actionMocks.reorderContentReviewItems).toHaveBeenCalledTimes(1));
-    const formData = actionMocks.reorderContentReviewItems.mock.calls[0][0] as FormData;
-    expect(formData.getAll("itemIds")).toEqual(["review-beta", "review-zebra", "review-alpha"]);
   });
 });

@@ -1,59 +1,44 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, GripVertical, Handshake, History, Pin, Plus, Radar, Save, Search, Trash2, X, XCircle } from "lucide-react";
-import { type DragEvent, type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
-import { SoftButton } from "@/components/ui/soft-button";
+import { ChevronDown, ChevronRight, ChevronUp, History, Plus, Search, SlidersHorizontal, Star } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/components/ui/soft-surface";
-import { budgetSourceOptions } from "@/features/budget/budget-source";
 import {
-  FOCUS_LIMIT,
-  QUEUE_GROUP_TEST_IDS,
-  QUEUE_SORT_LABELS,
   type QueueFilters,
+  type QueueLane,
   type QueueSort,
   type QueueSortColumn,
-  type QueueView,
+  QUEUE_GROUP_TEST_IDS,
   emptyQueueFilters,
   groupQueueItems,
-  focusFiveItems,
-  isDecisionQueueStatus,
+  isPriorityListFull,
+  laneHeading,
+  laneItems,
   matchesQueueFilters,
-  moveGroup,
-  moveQueueItem,
-  moveQueueItemToGroupEnd,
-  moveQueueItemToPosition,
+  needsDecisionItems,
   nextSortState,
-  recommendedNextItem,
-  renumberQueue,
+  priorityItems,
   resolveGroupOrder,
-  shouldClearFocusOnStatusChange,
+  shouldClearPriorityOnStatusChange,
   sortQueueItems
 } from "../content-review-queue";
 import {
   addContentReviewItem,
   deleteContentReviewItem,
-  reorderContentReviewGroups,
-  reorderContentReviewItems,
-  sendReviewToRoadmap,
   setContentReviewFocusMembership,
   updateContentReviewItem
 } from "../planning-actions";
-import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
-import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
+import { REVIEW_STATUSES, TONE_CLASSES, TONE_SWATCH_CLASSES } from "../planning-constants";
+import { formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewGroupOrderRow, ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "../planning-types";
-import { isLikelyNotesHtml, plainTextToNotesHtml } from "../rich-text";
-import { ColoredSelect } from "./colored-select";
-import { ContentReviewFocusFive } from "./content-review-focus-five";
-import { ContentReviewFocusPicker } from "./content-review-focus-picker";
+import { ContentReviewAddModal, type ContentReviewAddFormValues } from "./content-review-add-modal";
+import { ContentReviewDetailPanel } from "./content-review-detail-panel";
+import { ContentReviewPrioritiesPicker } from "./content-review-priorities-picker";
+import { ContentReviewRail } from "./content-review-rail";
 import { ContentReviewRecapPanel } from "./content-review-recap-panel";
-import { ContentReviewUpdateLog } from "./content-review-update-log";
-import { PageHead } from "./planning-shell";
-import { ProviderCombobox } from "./provider-combobox";
-import { RichTextNotes } from "./rich-text-notes";
+import { ContentReviewToast, type ContentReviewToastState } from "./content-review-toast";
 
 type ContentReviewDashboardProps = {
-  /** Rendered here rather than by PlanningShell so the page actions can reach client state. */
   pageTitle?: string;
   pageDescription?: string;
   fiscalYearId: string;
@@ -64,113 +49,94 @@ type ContentReviewDashboardProps = {
   isDemo?: boolean;
   currentUserEmail?: string | null;
 };
-type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
-type DragKind = "item" | "group";
 
-const decisionQueueGridClass = "md:grid-cols-[4.25rem_4.5rem_1.3fr_1fr_0.9fr_1fr]";
-const compactControlClass = "min-h-9 w-full rounded-md border-0 bg-transparent px-0 text-sm font-bold normal-case tracking-normal outline-none focus:bg-panel-warm focus:px-2 focus:ring-2 focus:ring-formed-blue";
+const COLUMN_GRID_CLASS = "grid-cols-[minmax(180px,3fr)_150px_minmax(0,1.2fr)_96px]";
 
-/**
- * Marks an element as a valid drop target. Cancelling dragover is what allows
- * the drop at all, and dropEffect has to match the effectAllowed set on
- * dragstart or the browser refuses the drop.
- */
-function allowDrop(event: DragEvent<HTMLElement>) {
-  event.preventDefault();
-  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-}
+const SORT_LABELS: Record<QueueSortColumn, string> = {
+  priority: "Priority",
+  title: "Title",
+  reviewStatus: "Status",
+  proposedRateCents: "Rate",
+  provider: "Provider"
+};
 
-const blankDraft = (): ContentReviewItem => ({
-  id: "draft",
-  title: "",
-  provider: "",
-  genre: "",
-  format: "",
-  reviewStatus: "not_started",
-  budgetSource: "misc_licensing",
-  minutes: null,
-  notes: "",
-  proposedRateCents: null,
-  reviewLink: "",
-  comparableContent: "",
-  isCoproductionOpportunity: false,
-  priorityRank: null
-});
+const statusLabel = (status: ReviewStatus) => REVIEW_STATUSES.find((option) => option.value === status)?.label ?? status;
+const statusTone = (status: ReviewStatus) => REVIEW_STATUSES.find((option) => option.value === status)?.tone ?? "slate";
 
-const REVIEW_DESCRIPTION = "Work titles, proposed rates, provider fields, radar targets, and approval states in one queue.";
-
-export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescription = REVIEW_DESCRIPTION, fiscalYearId, items, providerOptions = [], groupOrder = [], updates = [], isDemo, currentUserEmail }: ContentReviewDashboardProps) {
+export function ContentReviewDashboard({
+  pageDescription,
+  fiscalYearId,
+  items,
+  providerOptions = [],
+  groupOrder = [],
+  updates = [],
+  isDemo,
+  currentUserEmail
+}: ContentReviewDashboardProps) {
   const [records, setRecords] = useState(items);
-  const [selectedId, setSelectedId] = useState(() => items.find((item) => isDecisionQueueStatus(item.reviewStatus))?.id ?? items[0]?.id ?? "");
-  const [draft, setDraft] = useState<ContentReviewItem | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [isPending, startTransition] = useTransition();
-  const selected = selectedId === "draft" ? draft : records.find((item) => item.id === selectedId) ?? null;
-  const [openStatusModal, setOpenStatusModal] = useState<ReviewStatusModalKey | null>(null);
-  const editorSectionRef = useRef<HTMLElement>(null);
-  const shouldFocusEditorRef = useRef(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lane, setLane] = useState<QueueLane>("priorities");
   const [filters, setFilters] = useState<QueueFilters>(emptyQueueFilters);
+  const [showFilters, setShowFilters] = useState(false);
   const [sort, setSort] = useState<QueueSort>(null);
-  const [view, setView] = useState<QueueView>("grouped");
-  const [statusOrder, setStatusOrder] = useState<ReviewStatus[]>(() => resolveGroupOrder(groupOrder));
+  const [collapsed, setCollapsed] = useState<Set<ReviewStatus>>(() => new Set());
   const [updateLog, setUpdateLog] = useState<ContentReviewUpdate[]>(updates);
-  const [isRecapOpen, setIsRecapOpen] = useState(false);
-  const [isFocusPickerOpen, setIsFocusPickerOpen] = useState(false);
-  const [dragKind, setDragKind] = useState<DragKind | null>(null);
-  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
-  const [draggedStatus, setDraggedStatus] = useState<ReviewStatus | null>(null);
-  const [orderStatus, setOrderStatus] = useState("");
-  const [isOrdering, startOrdering] = useTransition();
-  // Tracks the last status the server knows about so a save can tell a real
-  // transition from an unrelated edit and mirror the server-side log entry.
-  const persistedStatusRef = useRef(new Map(items.map((item) => [item.id, item.reviewStatus])));
+  const [toast, setToast] = useState<ContentReviewToastState>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [showRecap, setShowRecap] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [, startTransition] = useTransition();
+  const statusOrder = useMemo(() => resolveGroupOrder(groupOrder), [groupOrder]);
+
+  const selected = selectedId ? records.find((item) => item.id === selectedId) ?? null : null;
+  const priorities = useMemo(() => priorityItems(records), [records]);
+  const selectedUpdates = useMemo(() => (selected ? updateLog.filter((update) => update.itemId === selected.id) : []), [selected, updateLog]);
+  const providerFilterOptions = useMemo(
+    () => Array.from(new Set([...records.map((item) => (item.provider ?? "").trim()), ...providerOptions.map((option) => option.trim())].filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [records, providerOptions]
+  );
+  const pickerCandidates = useMemo(
+    () => needsDecisionItems(records).filter((item) => !item.inFocus),
+    [records]
+  );
+
+  const laneBase = laneItems(records, lane, priorities);
+  const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
+  const filteredLane = laneBase.filter((item) => matchesQueueFilters(item, filters));
+  const heading = laneHeading(lane, laneBase.length, records.filter((item) => item.id !== "draft").length);
+  const isGrouped = lane === "all" && !sort && filters.search.trim() === "";
 
   function selectItem(id: string) {
-    if (id !== selectedId) setSaveState("idle");
-    shouldFocusEditorRef.current = true;
     setSelectedId(id);
   }
 
-  function selectItemFromModal(id: string) {
-    shouldFocusEditorRef.current = true;
-    selectItem(id);
-    setOpenStatusModal(null);
-    setIsRecapOpen(false);
+  function closeDetail() {
+    setSelectedId(null);
   }
 
-  function changeItem(id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) {
-    setSelectedId(id);
-    setSaveState("unsaved");
-    if (id === "draft") {
-      setDraft((current) => current ? { ...current, [field]: value } : current);
-      return;
-    }
-    if (field === "reviewStatus" && typeof value === "string") {
-      const item = records.find((record) => record.id === id);
-      if (item && shouldClearFocusOnStatusChange(item, value as ReviewStatus)) {
-        setFocusMembership(id, false);
-      }
-    }
-    setRecords((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+  function selectLane(nextLane: QueueLane) {
+    setLane(nextLane);
+    setCollapsed(new Set());
+    setFilters((current) => ({ ...current, status: "all" }));
   }
 
-  function logLocalStatusChange(itemId: string, fromStatus: ReviewStatus | null, toStatus: ReviewStatus, kind: ContentReviewUpdate["kind"] = "status_change") {
-    setUpdateLog((current) => [{
-      id: `local-${itemId}-${Date.now()}`,
-      itemId,
-      kind,
-      body: null,
-      fromStatus,
-      toStatus,
-      authorEmail: null,
-      createdAt: new Date().toISOString()
-    }, ...current]);
+  function toggleGroup(status: ReviewStatus) {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  }
+
+  function toggleSort(column: QueueSortColumn) {
+    setSort((current) => nextSortState(current, column));
   }
 
   function itemFormData(item: ContentReviewItem) {
     const formData = new FormData();
     formData.set("fiscalYearId", fiscalYearId);
-    if (item.id !== "draft") formData.set("itemId", item.id);
+    formData.set("itemId", item.id);
     formData.set("title", item.title);
     formData.set("provider", item.provider ?? "");
     formData.set("genre", item.genre ?? "");
@@ -186,1041 +152,398 @@ export function ContentReviewDashboard({ pageTitle = "Content Review", pageDescr
     return formData;
   }
 
-  function save(item: ContentReviewItem) {
-    if (isDemo || isPending || !item.title.trim()) return;
-    setSaveState("saving");
-    const previousStatus = persistedStatusRef.current.get(item.id) ?? null;
+  function persistItem(item: ContentReviewItem) {
+    if (isDemo) return;
     startTransition(async () => {
       try {
-        const formData = itemFormData(item);
-        if (item.id === "draft") {
-          const savedItem = await addContentReviewItem(formData);
-          setRecords((current) => [savedItem, ...current]);
-          persistedStatusRef.current.set(savedItem.id, savedItem.reviewStatus);
-          logLocalStatusChange(savedItem.id, null, savedItem.reviewStatus, "created");
-          setDraft(null);
-          setSelectedId(savedItem.id);
-        } else {
-          await updateContentReviewItem(formData);
-          persistedStatusRef.current.set(item.id, item.reviewStatus);
-          if (previousStatus && previousStatus !== item.reviewStatus) {
-            logLocalStatusChange(item.id, previousStatus, item.reviewStatus);
-          }
-        }
-        setSaveState("saved");
+        await updateContentReviewItem(itemFormData(item));
       } catch {
-        setSaveState("error");
+        // Best-effort autosave; the field keeps its edited value locally either way.
       }
     });
   }
 
-  function addDraft() {
-    const next = blankDraft();
-    setDraft(next);
-    shouldFocusEditorRef.current = true;
-    setSelectedId("draft");
-    setSaveState("idle");
-  }
-
-  const queue = draft ? [draft, ...records] : records;
-  const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
-  const filteredQueue = queue.filter((item) => matchesQueueFilters(item, filters));
-  // Dragging a row is relative to its neighbours, so it only makes sense in the
-  // manual order. Pinning and typing a priority are absolute — they name a slot
-  // outright — so they stay available while a column sort is on, which is
-  // exactly when you are hunting for the title you want to promote.
-  const canDrag = !isDemo && sort === null && !isOrdering;
-  const canSetPriority = !isDemo && !isOrdering;
-  const priorityByIdMap = useMemo(() => new Map(records.map((item, index) => [item.id, index + 1])), [records]);
-  const groupedQueue = groupQueueItems(filteredQueue, statusOrder);
-  const flatQueue = sortQueueItems(filteredQueue, sort);
-  const providerFilterOptions = useMemo(
-    () => Array.from(new Set([...records.map((item) => (item.provider ?? "").trim()), ...providerOptions.map((option) => option.trim())].filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [records, providerOptions]
-  );
-  const activeQueue = queue.filter((item) => isDecisionQueueStatus(item.reviewStatus));
-  const radarContent = queue.filter((item) => item.reviewStatus === "on_the_radar");
-  const acquisitionTargetContent = queue.filter((item) => item.reviewStatus === "acquisition_target");
-  const contractedContent = queue.filter((item) => item.reviewStatus === "contracted");
-  const rejectedContent = queue.filter((item) => item.reviewStatus === "rejected");
-  const coproductionContent = queue.filter((item) => item.isCoproductionOpportunity);
-  const acquisitionTargetTotalCents = acquisitionTargetContent.reduce((total, item) => total + (item.proposedRateCents ?? 0), 0);
-  const modalConfig = openStatusModal ? REVIEW_STATUS_MODAL_CONFIGS[openStatusModal] : null;
-  const modalItems = openStatusModal === "active" ? activeQueue : openStatusModal === "radar" ? radarContent : openStatusModal === "acquisitionTarget" ? acquisitionTargetContent : openStatusModal === "contracted" ? contractedContent : openStatusModal === "coproduction" ? coproductionContent : rejectedContent;
-  const selectedUpdates = selected ? updateLog.filter((update) => update.itemId === selected.id) : [];
-  const focusFive = focusFiveItems(records);
-  const focusCandidates = records.filter((item) => item.id !== "draft" && !item.inFocus);
-  const recommendedNext = focusFive.length < FOCUS_LIMIT ? recommendedNextItem(records) : null;
-  const updateCountById = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const update of updateLog) counts.set(update.itemId, (counts.get(update.itemId) ?? 0) + 1);
-    return counts;
-  }, [updateLog]);
-
-  function saveItemOrder(nextRecords: ContentReviewItem[], movedItemId?: string, movedToStatus?: ReviewStatus) {
-    const previousRecords = records;
-    const renumbered = renumberQueue(nextRecords);
-    setRecords(renumbered);
+  function persistFocus(itemId: string, inFocus: boolean) {
     if (isDemo) return;
-
-    const formData = new FormData();
-    formData.set("fiscalYearId", fiscalYearId);
-    renumbered.forEach((item) => formData.append("itemIds", item.id));
-    if (movedItemId) formData.set("movedItemId", movedItemId);
-    if (movedItemId && movedToStatus) formData.set("movedToStatus", movedToStatus);
-
-    setOrderStatus("Saving order");
-    startOrdering(async () => {
-      try {
-        await reorderContentReviewItems(formData);
-        setOrderStatus("Order saved");
-        if (movedItemId && movedToStatus) {
-          const previousStatus = persistedStatusRef.current.get(movedItemId) ?? null;
-          persistedStatusRef.current.set(movedItemId, movedToStatus);
-          if (previousStatus !== movedToStatus) logLocalStatusChange(movedItemId, previousStatus, movedToStatus);
-        }
-      } catch {
-        setRecords(previousRecords);
-        setOrderStatus("Order error");
-      }
-    });
-  }
-
-  function applyItemMove(nextRecords: ContentReviewItem[], itemId: string, nextStatus?: ReviewStatus) {
-    const withStatus = nextStatus
-      ? nextRecords.map((item) => item.id === itemId ? { ...item, reviewStatus: nextStatus } : item)
-      : nextRecords;
-    saveItemOrder(withStatus, itemId, nextStatus);
-  }
-
-  function saveGroupOrder(nextOrder: ReviewStatus[]) {
-    const previousOrder = statusOrder;
-    setStatusOrder(nextOrder);
-    if (isDemo) return;
-
-    const formData = new FormData();
-    formData.set("fiscalYearId", fiscalYearId);
-    nextOrder.forEach((status) => formData.append("reviewStatuses", status));
-
-    setOrderStatus("Saving order");
-    startOrdering(async () => {
-      try {
-        await reorderContentReviewGroups(formData);
-        setOrderStatus("Order saved");
-      } catch {
-        setStatusOrder(previousOrder);
-        setOrderStatus("Order error");
-      }
-    });
-  }
-
-  function endDrag() {
-    setDragKind(null);
-    setDraggedItemId(null);
-    setDraggedStatus(null);
-  }
-
-  function startItemDrag(event: DragEvent<HTMLElement>, itemId: string) {
-    if (!canDrag || itemId === "draft") {
-      event.preventDefault();
-      return;
-    }
-    setDragKind("item");
-    setDraggedItemId(itemId);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", itemId);
-  }
-
-  function startGroupDrag(event: DragEvent<HTMLElement>, status: ReviewStatus) {
-    if (!canDrag) {
-      event.preventDefault();
-      return;
-    }
-    setDragKind("group");
-    setDraggedStatus(status);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", status);
-  }
-
-  function dropOnRow(event: DragEvent<HTMLElement>, targetId: string) {
-    event.preventDefault();
-    event.stopPropagation();
-    const sourceId = (dragKind === "item" ? draggedItemId : null) ?? event.dataTransfer.getData("text/plain");
-    endDrag();
-    if (!canDrag || !sourceId || sourceId === targetId) return;
-
-    const dragged = records.find((item) => item.id === sourceId);
-    const target = records.find((item) => item.id === targetId);
-    if (!dragged || !target) return;
-
-    const nextStatus = target.reviewStatus !== dragged.reviewStatus ? target.reviewStatus : undefined;
-    applyItemMove(moveQueueItem(records, sourceId, targetId), sourceId, nextStatus);
-  }
-
-  /**
-   * The Focus Five panel is always rendered in the manual order, so reordering
-   * inside it stays meaningful even while the queue below is sorted.
-   */
-  function startFocusDrag(event: DragEvent<HTMLElement>, itemId: string) {
-    if (!canSetPriority) {
-      event.preventDefault();
-      return;
-    }
-    setDragKind("item");
-    setDraggedItemId(itemId);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", itemId);
-  }
-
-  function dropOnFocusRow(event: DragEvent<HTMLElement>, targetId: string) {
-    event.preventDefault();
-    event.stopPropagation();
-    const sourceId = (dragKind === "item" ? draggedItemId : null) ?? event.dataTransfer.getData("text/plain");
-    endDrag();
-    if (!canSetPriority || !sourceId || sourceId === targetId) return;
-    const next = moveQueueItem(records, sourceId, targetId);
-    if (next === records) return;
-    saveItemOrder(next, sourceId);
-  }
-
-  function dropOnGroup(event: DragEvent<HTMLElement>, targetStatus: ReviewStatus) {
-    event.preventDefault();
-    const payload = event.dataTransfer.getData("text/plain");
-    const kind = dragKind;
-    const sourceItemId = draggedItemId;
-    const sourceStatus = draggedStatus;
-    endDrag();
-    if (!canDrag) return;
-
-    if (kind === "group" && sourceStatus) {
-      saveGroupOrder(moveGroup(statusOrder, sourceStatus, targetStatus));
-      return;
-    }
-
-    const itemId = kind === "item" ? sourceItemId : payload;
-    if (!itemId) return;
-    const dragged = records.find((item) => item.id === itemId);
-    if (!dragged || dragged.reviewStatus === targetStatus) return;
-    applyItemMove(moveQueueItemToGroupEnd(records, itemId, targetStatus), itemId, targetStatus);
-  }
-
-  /**
-   * Toggles Focus Five membership on its own, leaving priority_rank alone —
-   * removing a review just removes it, it never pulls another one in behind
-   * it. Adding one while the five is already full displaces the last slot,
-   * the same way pinning always has.
-   */
-  function setFocusMembership(itemId: string, inFocus: boolean) {
-    if (!canSetPriority) return;
-    const displacedId = inFocus && focusFive.length >= FOCUS_LIMIT ? focusFive[focusFive.length - 1]?.id : undefined;
-    setRecords((current) => current.map((item) => {
-      if (item.id === itemId) return { ...item, inFocus };
-      if (displacedId && item.id === displacedId) return { ...item, inFocus: false };
-      return item;
-    }));
-    if (isDemo) return;
-    persistFocusMembership(itemId, inFocus);
-    if (displacedId) persistFocusMembership(displacedId, false);
-  }
-
-  function persistFocusMembership(itemId: string, inFocus: boolean) {
     const formData = new FormData();
     formData.set("fiscalYearId", fiscalYearId);
     formData.set("itemId", itemId);
     formData.set("inFocus", inFocus ? "true" : "false");
-    startOrdering(async () => {
+    startTransition(async () => {
       try {
         await setContentReviewFocusMembership(formData);
       } catch {
-        setRecords((current) => current.map((item) => item.id === itemId ? { ...item, inFocus: !inFocus } : item));
+        setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, inFocus: !inFocus } : entry)));
       }
     });
   }
 
-  function releaseFromFocus(itemId: string) {
-    setFocusMembership(itemId, false);
+  function logLocalStatusChange(itemId: string, fromStatus: ReviewStatus, toStatus: ReviewStatus) {
+    setUpdateLog((current) => [{
+      id: `local-${itemId}-${Date.now()}`,
+      itemId,
+      kind: "status_change",
+      body: null,
+      fromStatus,
+      toStatus,
+      authorEmail: currentUserEmail ?? null,
+      createdAt: new Date().toISOString()
+    }, ...current]);
   }
 
-  function moveGroupBy(status: ReviewStatus, delta: number) {
-    if (isDemo || isOrdering) return;
-    const index = statusOrder.indexOf(status);
-    const targetIndex = index + delta;
-    if (index < 0 || targetIndex < 0 || targetIndex >= statusOrder.length) return;
-    saveGroupOrder(moveGroup(statusOrder, status, statusOrder[targetIndex]));
+  function changeStatus(itemId: string, nextStatus: ReviewStatus) {
+    const item = records.find((entry) => entry.id === itemId);
+    if (!item || item.reviewStatus === nextStatus) return;
+    const previousStatus = item.reviewStatus;
+    const previousInFocus = Boolean(item.inFocus);
+    const clearFocus = shouldClearPriorityOnStatusChange(item, nextStatus);
+    const snapshot = records;
+
+    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, reviewStatus: nextStatus, inFocus: clearFocus ? false : entry.inFocus } : entry)));
+    logLocalStatusChange(itemId, previousStatus, nextStatus);
+    persistItem({ ...item, reviewStatus: nextStatus, inFocus: clearFocus ? false : item.inFocus });
+    if (clearFocus) persistFocus(itemId, false);
+
+    setToast({
+      message: `Moved to ${statusLabel(nextStatus)}.`,
+      undo: () => {
+        setRecords(snapshot);
+        persistItem({ ...item, reviewStatus: previousStatus, inFocus: previousInFocus });
+        if (clearFocus) persistFocus(itemId, previousInFocus);
+      }
+    });
   }
 
-  function moveToPosition(itemId: string, position: number) {
-    if (!canSetPriority) return;
-    const next = moveQueueItemToPosition(records, itemId, position);
-    if (next === records) return;
-    saveItemOrder(next, itemId);
+  function commitRate(itemId: string, cents: number | null) {
+    const item = records.find((entry) => entry.id === itemId);
+    if (!item || item.proposedRateCents === cents) return;
+    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, proposedRateCents: cents } : entry)));
+    persistItem({ ...item, proposedRateCents: cents });
   }
 
-  function toggleSort(column: QueueSortColumn) {
-    setSort((current) => nextSortState(current, column));
+  function commitNotes(itemId: string, notes: string) {
+    const item = records.find((entry) => entry.id === itemId);
+    if (!item) return;
+    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, notes } : entry)));
+    persistItem({ ...item, notes });
   }
 
-  useEffect(() => {
-    if (!shouldFocusEditorRef.current || openStatusModal) return;
-    shouldFocusEditorRef.current = false;
-    editorSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-    editorSectionRef.current?.focus({ preventScroll: true });
-  }, [openStatusModal, selectedId]);
+  function togglePriority(itemId: string) {
+    const item = records.find((entry) => entry.id === itemId);
+    if (!item) return;
+    const nextInFocus = !item.inFocus;
+    if (nextInFocus && isPriorityListFull(records)) {
+      setToast({ message: "Priorities is full — remove something first." });
+      return;
+    }
+    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, inFocus: nextInFocus } : entry)));
+    persistFocus(itemId, nextInFocus);
+    if (!nextInFocus) {
+      setToast({
+        message: "Removed from Priorities.",
+        undo: () => {
+          setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, inFocus: true } : entry)));
+          persistFocus(itemId, true);
+        }
+      });
+    }
+  }
 
-  const rowProps = {
-    isDemo,
-    canDrag,
-    canSetPriority,
-    draggedItemId,
-    priorityById: priorityByIdMap,
-    onSelect: selectItem,
-    onChange: changeItem,
-    onDragStart: startItemDrag,
-    onDragEnd: endDrag,
-    onDrop: dropOnRow,
-    onMoveToPosition: moveToPosition,
-    onSetFocus: setFocusMembership
-  };
+  function deleteItem(itemId: string) {
+    if (isDemo) return;
+    setRecords((current) => current.filter((entry) => entry.id !== itemId));
+    if (selectedId === itemId) setSelectedId(null);
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("itemId", itemId);
+    startTransition(async () => {
+      try {
+        await deleteContentReviewItem(formData);
+      } catch {
+        // Deletion is rare enough that a failed request just needs a page refresh to reconcile.
+      }
+    });
+  }
+
+  const [isAdding, startAdding] = useTransition();
+
+  function submitAdd(values: ContentReviewAddFormValues) {
+    if (isDemo) {
+      setShowAdd(false);
+      return;
+    }
+    const formData = new FormData();
+    formData.set("fiscalYearId", fiscalYearId);
+    formData.set("title", values.title);
+    formData.set("provider", values.provider);
+    formData.set("genre", values.genre);
+    formData.set("format", values.format);
+    formData.set("reviewStatus", values.reviewStatus);
+    formData.set("budgetSource", values.budgetSource);
+    formData.set("minutes", values.minutes);
+    formData.set("notes", values.notes);
+    formData.set("proposedRate", values.proposedRate);
+    formData.set("reviewLink", values.reviewLink);
+    formData.set("comparableContent", "");
+    formData.set("isCoproductionOpportunity", values.isCoproductionOpportunity ? "true" : "false");
+
+    startAdding(async () => {
+      try {
+        const saved = await addContentReviewItem(formData);
+        setRecords((current) => [saved, ...current]);
+        setUpdateLog((current) => [{
+          id: `local-${saved.id}-${Date.now()}`,
+          itemId: saved.id,
+          kind: "created",
+          body: null,
+          fromStatus: null,
+          toStatus: saved.reviewStatus,
+          authorEmail: currentUserEmail ?? null,
+          createdAt: new Date().toISOString()
+        }, ...current]);
+        if (values.addToPriorities && !isPriorityListFull([...records, saved])) {
+          setRecords((current) => current.map((entry) => (entry.id === saved.id ? { ...entry, inFocus: true } : entry)));
+          persistFocus(saved.id, true);
+        }
+        setLane(saved.reviewStatus);
+        setSelectedId(saved.id);
+        setShowAdd(false);
+      } catch {
+        // Keep the modal open so the values are not lost on a failed save.
+      }
+    });
+  }
 
   return (
-    <div className="grid min-w-0 gap-5">
-      <PageHead
-        title={pageTitle}
-        description={pageDescription}
-        actions={<>
-          <SoftButton type="button" variant="secondary" onClick={() => setIsRecapOpen(true)}><History className="h-4 w-4" />Weekly recap</SoftButton>
-          <SoftButton type="button" variant="primary" onClick={addDraft}><Plus className="h-4 w-4" />Add content</SoftButton>
-        </>}
+    <div className="-mx-5 flex min-w-0 flex-wrap items-start md:-mx-10">
+      {pageDescription ? <p className="w-full bg-formed-blue-soft px-5 py-2 text-xs font-semibold text-formed-blue md:px-10">{pageDescription}</p> : null}
+
+      <ContentReviewRail
+        items={records}
+        priorities={priorities}
+        lane={lane}
+        canEdit={!isDemo}
+        onSelectLane={selectLane}
+        onSelectPriority={selectItem}
+        onRemovePriority={togglePriority}
+        onAddPriority={() => setShowPicker(true)}
       />
-      <section aria-label="Review status summary" className="grid min-w-0 gap-3.5 sm:grid-cols-2 lg:grid-cols-6">
-        <StatusCard label="Active decisions" value={activeQueue.length} helper="Ready to work now" tone="active" onClick={() => setOpenStatusModal("active")} />
-        <StatusCard label="Co-productions" value={coproductionContent.length} helper="Potential partner projects" tone="coproduction" onClick={() => setOpenStatusModal("coproduction")} />
-        <StatusCard label="On the radar" value={radarContent.length} helper="Long shots and weak-contact targets" tone="radar" onClick={() => setOpenStatusModal("radar")} />
-        <StatusCard label="Acquisition targets" value={acquisitionTargetContent.length} secondaryValue={formatOptionalCurrency(acquisitionTargetTotalCents || null) || "$0"} helper="Total value approved by the team, no contract yet" tone="acquisitionTarget" onClick={() => setOpenStatusModal("acquisitionTarget")} />
-        <StatusCard label="Contracted" value={contractedContent.length} helper="Ready for roadmap follow-up" tone="contracted" onClick={() => setOpenStatusModal("contracted")} />
-        <StatusCard label="Rejected" value={rejectedContent.length} helper="Archived decisions" tone="rejected" onClick={() => setOpenStatusModal("rejected")} />
+
+      <section className="min-w-0 flex-1 px-[18px] pb-[60px] pt-[24px] md:min-w-[540px] md:px-[26px] md:pt-[30px]">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-[32px] leading-[1.05] md:text-[38px]">{heading.title}</h1>
+            <p className="mt-1 text-[13px] leading-normal text-muted">{heading.subline}</p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => setShowRecap(true)}
+              className="inline-flex min-h-9 items-center gap-1.5 border border-hairline bg-panel px-3.5 py-2 text-[13px] font-semibold text-foreground transition hover:bg-panel-warm"
+            >
+              <History className="h-4 w-4" aria-hidden="true" />Weekly recap
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAdd(true)}
+              className="inline-flex min-h-9 items-center gap-1.5 border border-formed-blue bg-formed-blue px-3.5 py-2 text-[13px] font-semibold text-white transition hover:border-formed-blue-hover hover:bg-formed-blue-hover"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />Add content
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-[15px] w-[15px] -translate-y-1/2 text-faint" aria-hidden="true" />
+            <input
+              aria-label="Search titles"
+              type="search"
+              placeholder="Search titles"
+              value={filters.search}
+              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+              className="min-h-9 w-full border border-hairline bg-panel py-2 pl-9 pr-3 text-[13px] font-normal normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFilters((current) => !current)}
+            className={cn(
+              "inline-flex min-h-9 items-center gap-1.5 border px-3 py-2 text-[13px] font-semibold transition",
+              isFiltering ? "border-formed-blue-border bg-formed-blue-soft text-formed-blue-hover" : "border-hairline bg-panel text-foreground hover:bg-panel-warm"
+            )}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />{isFiltering ? "Filters on" : "Filter"}
+          </button>
+        </div>
+
+        {showFilters ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2 border border-hairline bg-panel px-3.5 py-3" style={{ animation: "fadein 150ms ease" }}>
+            <select
+              aria-label="Filter by review status"
+              value={filters.status}
+              onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as QueueFilters["status"] }))}
+              className="min-h-9 border border-hairline bg-panel px-2 text-[13px] font-medium normal-case tracking-normal"
+            >
+              <option value="all">All statuses</option>
+              {REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select
+              aria-label="Filter by provider"
+              value={filters.provider}
+              onChange={(event) => setFilters((current) => ({ ...current, provider: event.target.value }))}
+              className="min-h-9 border border-hairline bg-panel px-2 text-[13px] font-medium normal-case tracking-normal"
+            >
+              <option value="all">All providers</option>
+              {providerFilterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+            {isFiltering ? (
+              <button type="button" onClick={() => setFilters(emptyQueueFilters)} className="text-[13px] font-semibold text-muted underline hover:text-foreground">Clear</button>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className={cn("mb-2 hidden gap-2.5 border-b border-hairline-strong px-3 pb-2 md:grid", COLUMN_GRID_CLASS)}>
+          <SortHeader column="title" sort={sort} onToggle={toggleSort} />
+          <SortHeader column="reviewStatus" sort={sort} onToggle={toggleSort} />
+          <SortHeader column="provider" sort={sort} onToggle={toggleSort} />
+          <SortHeader column="proposedRateCents" sort={sort} onToggle={toggleSort} align="justify-end" />
+        </div>
+
+        {filteredLane.length === 0 ? (
+          <div className="grid place-items-center gap-3 py-16 text-center">
+            <p className="font-display text-xl leading-[1.3]">Nothing here — this lane is clear.</p>
+            {isFiltering ? <button type="button" onClick={() => setFilters(emptyQueueFilters)} className="border border-hairline bg-panel px-3.5 py-2 text-[13px] font-semibold hover:bg-panel-warm">Clear filters</button> : null}
+          </div>
+        ) : isGrouped ? (
+          <div className="grid gap-0">
+            {groupQueueItems(filteredLane, statusOrder).map(({ status, items: groupItems }) => {
+              if (groupItems.length === 0) return null;
+              const isOpen = !collapsed.has(status.value);
+              return (
+                <div key={status.value} data-testid={QUEUE_GROUP_TEST_IDS[status.value]}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(status.value)}
+                    className={cn("mt-2.5 flex w-full items-center gap-2 px-3 py-2.5 text-left", TONE_CLASSES[status.tone].field)}
+                  >
+                    {isOpen ? <ChevronDown className="h-3 w-3 shrink-0" aria-hidden="true" /> : <ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />}
+                    <span className="text-[12.5px] font-bold">{status.label}</span>
+                    <span className="text-xs font-semibold">{groupItems.length}</span>
+                  </button>
+                  {isOpen ? groupItems.map((item) => <QueueRow key={item.id} item={item} selected={selectedId === item.id} onSelect={selectItem} />) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid gap-0">
+            {sortQueueItems(filteredLane, sort).map((item) => <QueueRow key={item.id} item={item} selected={selectedId === item.id} onSelect={selectItem} />)}
+          </div>
+        )}
       </section>
 
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,468px)]">
-        <div className="grid min-w-0 gap-4">
-          <ContentReviewFocusFive
-            items={focusFive}
-            recommendedNext={recommendedNext}
-            selectedId={selectedId}
-            canReorder={canSetPriority}
-            draggedItemId={draggedItemId}
-            updateCountById={updateCountById}
-            canAdd={canSetPriority && focusCandidates.length > 0}
-            onAdd={() => setIsFocusPickerOpen(true)}
-            onAddRecommended={(itemId) => setFocusMembership(itemId, true)}
-            onSelect={selectItemFromModal}
-            onRelease={releaseFromFocus}
-            onDragStart={startFocusDrag}
-            onDragEnd={endDrag}
-            onDrop={dropOnFocusRow}
-          />
-          {radarContent.length > 0 ? (
-            <div className="flex flex-col gap-3 rounded-soft border border-guild-gold bg-guild-gold-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-panel text-guild-gold-ink">
-                  <Radar className="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-                <p className="text-[13px] font-semibold leading-snug text-guild-gold-ink">
-                  {radarContent.length} On the Radar {radarContent.length === 1 ? "piece is" : "pieces are"} waiting for follow-up. Open the list and decide who gets a next touch.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenStatusModal("radar")}
-                className="shrink-0 rounded-lg border border-guild-gold bg-panel px-3 py-1.5 text-[13px] font-semibold text-guild-gold-ink transition-colors hover:bg-guild-gold-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
-              >
-                View items
-              </button>
-            </div>
-          ) : null}
-          <section data-testid="content-review-decision-queue-block" className="rounded-soft border border-hairline bg-panel-warm p-5">
-            <div className="mb-4 grid gap-0.5">
-              <h2 className="font-display text-lg">Decision queue</h2>
-              <p className="text-xs text-muted">Drag to set your review order, or sort a column to look at the list another way.</p>
-            </div>
-            <QueueFilterBar
-              filters={filters}
-              providerOptions={providerFilterOptions}
-              matchCount={filteredQueue.length}
-              totalCount={queue.length}
-              isFiltering={isFiltering}
-              sort={sort}
-              view={view}
-              orderStatus={orderStatus}
-              onChange={setFilters}
-              onClear={() => setFilters(emptyQueueFilters)}
-              onClearSort={() => setSort(null)}
-              onChangeView={setView}
-            />
-            <QueueColumnHeader sort={sort} onToggleSort={toggleSort} />
-            <div data-testid="content-review-active-queue" className="grid gap-4">
-              {queue.length === 0 ? <p className="rounded-lg bg-white p-5 font-bold text-muted">Add content to start the decision queue.</p> : null}
-              {queue.length > 0 && filteredQueue.length === 0 ? <p data-testid="content-review-no-matches" className="rounded-lg bg-white p-5 font-bold text-muted">No reviews match these filters.</p> : null}
-              {queue.length > 0 && view === "priority" ? (
-                <div data-testid="content-review-priority-list" className="grid gap-3">
-                  {flatQueue.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} {...rowProps} />)}
-                </div>
-              ) : null}
-              {view === "grouped" ? groupedQueue.map(({ status, items: groupItems }) => {
-                if (isFiltering && groupItems.length === 0) return null;
-                if (queue.length === 0) return null;
-                return <ContentReviewGroup
-                  key={status.value}
-                  title={status.label}
-                  count={groupItems.length}
-                  tone={status.tone}
-                  testId={QUEUE_GROUP_TEST_IDS[status.value]}
-                  open={isFiltering}
-                  canReorder={canDrag}
-                  isDragging={dragKind === "group" && draggedStatus === status.value}
-                  onDragStart={(event) => startGroupDrag(event, status.value)}
-                  onDragEnd={endDrag}
-                  onDrop={(event) => dropOnGroup(event, status.value)}
-                  onMoveBy={(delta) => moveGroupBy(status.value, delta)}
-                  isDragActive={dragKind !== null}
-                >
-                  {sortQueueItems(groupItems, sort).map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} {...rowProps} />)}
-                </ContentReviewGroup>;
-              }) : null}
-            </div>
-          </section>
-        </div>
-
-        <section ref={editorSectionRef} tabIndex={-1} className="h-fit min-w-0 rounded-soft border border-hairline bg-panel-warm p-5 outline-none focus-visible:ring-2 focus-visible:ring-formed-blue">
-          {selected ? <ReviewEditor item={selected} providerOptions={providerOptions} isDemo={isDemo} isPending={isPending} saveState={isPending ? "saving" : saveState} onChange={(field, value) => changeItem(selected.id, field, value)} onSave={() => save(selected)} fiscalYearId={fiscalYearId} updates={selectedUpdates} onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])} onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))} /> : <div className="grid min-h-64 place-items-center text-center text-muted"><div><h2 className="text-xl font-semibold">Select a review</h2><p>Choose a queue item or add new content.</p></div></div>}
-        </section>
-      </div>
-
-      {modalConfig ? <ReviewStatusModal
-        config={modalConfig}
-        items={modalItems}
-        selectedId={selectedId}
-        isDemo={isDemo}
-        priorityById={priorityByIdMap}
-        onClose={() => setOpenStatusModal(null)}
-        onSelect={selectItem}
-        onOpenDetail={selectItemFromModal}
-        onChange={changeItem}
-      /> : null}
-
-      {isFocusPickerOpen ? <ContentReviewFocusPicker
-        candidates={focusCandidates}
-        onPick={(itemId) => {
-          setFocusMembership(itemId, true);
-          setIsFocusPickerOpen(false);
-        }}
-        onClose={() => setIsFocusPickerOpen(false)}
-      /> : null}
-
-      {isRecapOpen ? <ContentReviewRecapPanel
-        items={records}
-        updates={updateLog}
-        currentUserEmail={currentUserEmail}
-        onClose={() => setIsRecapOpen(false)}
-        onSelect={selectItemFromModal}
-      /> : null}
-    </div>
-  );
-}
-
-type StatusCardTone = "neutral" | "active" | "coproduction" | "radar" | "acquisitionTarget" | "contracted" | "rejected";
-type ReviewStatusModalKey = "active" | "coproduction" | "radar" | "acquisitionTarget" | "contracted" | "rejected";
-
-/**
- * Only Active decisions carries a tint, so the tile you are meant to work from
- * reads first; the rest stay flat and let their numbers do the work.
- */
-const STATUS_CARD_TONES: Record<StatusCardTone, { card: string; label: string; value: string; secondaryValue: string; Icon: typeof CheckCircle2 }> = {
-  neutral: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: CheckCircle2 },
-  active: { card: "border-tone-cyan-line bg-deep-teal-soft", label: "text-deep-teal", value: "text-deep-teal", secondaryValue: "text-deep-teal", Icon: ArrowRight },
-  coproduction: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: Handshake },
-  radar: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: Radar },
-  acquisitionTarget: { card: "border-guild-gold bg-guild-gold-soft", label: "text-guild-gold-ink", value: "text-guild-gold-ink", secondaryValue: "text-augustine-blue", Icon: CheckCircle2 },
-  contracted: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: CheckCircle2 },
-  rejected: { card: "border-hairline bg-panel-warm", label: "text-muted", value: "text-foreground", secondaryValue: "text-foreground", Icon: XCircle }
-};
-
-function StatusCard({ label, value, secondaryValue, helper, tone = "neutral", onClick }: { label: string; value: number; secondaryValue?: string; helper: string; tone?: StatusCardTone; onClick?: () => void }) {
-  const toneClasses = STATUS_CARD_TONES[tone];
-  const cardClass = cn(
-    "grid min-w-0 content-start gap-1.5 rounded-soft border px-4 py-4 text-left transition-colors",
-    toneClasses.card,
-    onClick && "cursor-pointer hover:border-hairline-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
-  );
-  const content = <>
-    <span className={cn("text-xs font-semibold", toneClasses.label)}>{label}</span>
-    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-      <span className={cn("font-display text-3xl leading-none", toneClasses.value)}>{value}</span>
-      {secondaryValue ? <span className={cn("font-display text-3xl leading-none", toneClasses.secondaryValue)}>{secondaryValue}</span> : null}
-    </span>
-    <span className="text-xs leading-snug text-muted [text-wrap:pretty]">{helper}</span>
-  </>;
-
-  if (onClick) {
-    return <button type="button" onClick={onClick} className={cardClass} aria-label={`${label}: ${value}. Open ${label.toLowerCase()} reviews`}>
-      {content}
-    </button>;
-  }
-
-  return <div className={cardClass}>{content}</div>;
-}
-
-const REVIEW_STATUS_MODAL_CONFIGS: Record<ReviewStatusModalKey, { title: string; eyebrow: string; description: string; empty: string; testId: string; tone: StatusCardTone }> = {
-  active: {
-    title: "Active decisions",
-    eyebrow: "Active decision",
-    description: "Current reviews that are ready for a clear yes, no, or next-step decision.",
-    empty: "No active decisions right now.",
-    testId: "content-review-active-modal-content",
-    tone: "active"
-  },
-  coproduction: {
-    title: "Co-productions",
-    eyebrow: "Potential co-production",
-    description: "Reviews flagged as possible partner projects rather than standard licensing decisions.",
-    empty: "No potential co-productions yet.",
-    testId: "content-review-coproduction-content",
-    tone: "coproduction"
-  },
-  radar: {
-    title: "On the radar",
-    eyebrow: "Radar target",
-    description: "Long shots, weak-contact targets, and pieces worth keeping warm.",
-    empty: "No radar targets yet.",
-    testId: "content-review-radar-content",
-    tone: "radar"
-  },
-  acquisitionTarget: {
-    title: "Acquisition targets",
-    eyebrow: "Acquisition target",
-    description: "The team wants this content, but it is not under contract with the provider yet.",
-    empty: "No acquisition targets yet.",
-    testId: "content-review-acquisition-target-modal-content",
-    tone: "acquisitionTarget"
-  },
-  contracted: {
-    title: "Contracted",
-    eyebrow: "Contracted review",
-    description: "Content with a signed agreement, ready for roadmap follow-up.",
-    empty: "No contracted reviews yet.",
-    testId: "content-review-contracted-modal-content",
-    tone: "contracted"
-  },
-  rejected: {
-    title: "Rejected",
-    eyebrow: "Rejected review",
-    description: "Archived decisions that stay available without crowding active work.",
-    empty: "No rejected reviews yet.",
-    testId: "content-review-rejected-modal-content",
-    tone: "rejected"
-  }
-};
-
-function ReviewStatusModal({ config, items, selectedId, isDemo, priorityById, onClose, onSelect, onOpenDetail, onChange }: { config: (typeof REVIEW_STATUS_MODAL_CONFIGS)[ReviewStatusModalKey]; items: ContentReviewItem[]; selectedId: string; isDemo?: boolean; priorityById: Map<string, number>; onClose: () => void; onSelect: (id: string) => void; onOpenDetail: (id: string) => void; onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const toneClasses = STATUS_CARD_TONES[config.tone];
-  const titleId = `review-status-modal-${config.tone}`;
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
-    else dialog.setAttribute("open", "");
-  }, []);
-
-  function closeDialog() {
-    const dialog = dialogRef.current;
-    if (dialog?.open && typeof dialog.close === "function") dialog.close();
-    else dialog?.removeAttribute("open");
-    onClose();
-  }
-
-  function closeFromBackdrop(event: MouseEvent<HTMLDialogElement>) {
-    if (event.target === event.currentTarget) closeDialog();
-  }
-
-  function closeFromEscape(event: KeyboardEvent<HTMLDialogElement>) {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    closeDialog();
-  }
-
-  return createPortal(<dialog
-    ref={dialogRef}
-    open
-    style={{ display: "block", visibility: "visible" }}
-    aria-labelledby={titleId}
-    onClick={closeFromBackdrop}
-    onKeyDown={closeFromEscape}
-    onClose={onClose}
-    className="fixed left-1/2 top-1/2 z-50 block w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60"
-  >
-    <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-      <header className={cn("flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-7", toneClasses.card)}>
-        <div>
-          <p className={cn("text-xs font-semibold uppercase tracking-wide", toneClasses.label)}>{items.length} {config.eyebrow}{items.length === 1 ? "" : "s"}</p>
-          <h2 id={titleId} className="font-display text-3xl">{config.title}</h2>
-          <p className="mt-1 text-sm font-medium text-muted">{config.description}</p>
-        </div>
-        <button type="button" onClick={closeDialog} aria-label={`Close ${config.title} reviews`} className="rounded-md bg-white p-3 text-foreground shadow-sm ring-1 ring-hairline transition-colors hover:bg-panel-warm">
-          <X className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </header>
-      <div data-testid={config.testId} className="grid min-h-0 gap-2 overflow-y-auto p-5 sm:p-7">
-        {items.length ? items.map((item) => <ReviewSummaryRow key={item.id} item={item} active={selectedId === item.id} isDemo={isDemo} canDrag={false} priorityById={priorityById} onSelect={onSelect} onOpenDetail={onOpenDetail} onChange={onChange} />) : <p className="rounded-lg bg-panel-warm p-5 font-bold text-muted">{config.empty}</p>}
-      </div>
-      <footer className="flex shrink-0 justify-end border-t border-hairline p-4 sm:px-7">
-        <button type="button" onClick={closeDialog} className="min-h-12 rounded-md px-5 py-3 text-sm font-semibold uppercase tracking-wide text-muted hover:bg-panel-warm">Close</button>
-      </footer>
-    </div>
-  </dialog>, document.body);
-}
-
-const filterControlClass = "min-h-10 w-full rounded-md border-0 bg-white px-3 text-sm font-bold text-foreground shadow-sm ring-1 ring-hairline outline-none focus:ring-2 focus:ring-formed-blue";
-
-function QueueFilterBar({ filters, providerOptions, matchCount, totalCount, isFiltering, sort, view, orderStatus, onChange, onClear, onClearSort, onChangeView }: { filters: QueueFilters; providerOptions: string[]; matchCount: number; totalCount: number; isFiltering: boolean; sort: QueueSort; view: QueueView; orderStatus: string; onChange: (filters: QueueFilters) => void; onClear: () => void; onClearSort: () => void; onChangeView: (view: QueueView) => void }) {
-  return <div data-testid="content-review-queue-filters" className="mb-4 grid gap-2 rounded-lg bg-white/70 p-3 ring-1 ring-hairline">
-    <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-        <input
-          aria-label="Filter by title"
-          type="search"
-          placeholder="Search titles"
-          value={filters.search}
-          onChange={(event) => onChange({ ...filters, search: event.target.value })}
-          className={cn(filterControlClass, "pl-9 font-medium normal-case tracking-normal")}
+      {selected ? (
+        <ContentReviewDetailPanel
+          item={selected}
+          allItems={records}
+          fiscalYearId={fiscalYearId}
+          isDemo={isDemo}
+          updates={selectedUpdates}
+          onClose={closeDetail}
+          onStatusChange={(status) => changeStatus(selected.id, status)}
+          onRateCommit={(cents) => commitRate(selected.id, cents)}
+          onNotesCommit={(notes) => commitNotes(selected.id, notes)}
+          onTogglePriority={() => togglePriority(selected.id)}
+          onDelete={() => deleteItem(selected.id)}
+          onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])}
+          onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))}
         />
-      </div>
-      <select
-        aria-label="Filter by review status"
-        value={filters.status}
-        onChange={(event) => onChange({ ...filters, status: event.target.value as QueueFilters["status"] })}
-        className={filterControlClass}
-      >
-        <option value="all">All statuses</option>
-        {REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select>
-      <select
-        aria-label="Filter by provider"
-        value={filters.provider}
-        onChange={(event) => onChange({ ...filters, provider: event.target.value })}
-        className={filterControlClass}
-      >
-        <option value="all">All providers</option>
-        {providerOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
-    </div>
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <p aria-live="polite" className="text-xs font-semibold uppercase tracking-wide text-muted">
-          {isFiltering ? `Showing ${matchCount} of ${totalCount}` : `${totalCount} ${totalCount === 1 ? "review" : "reviews"}`}
-        </p>
-        {sort ? <button
-          type="button"
-          onClick={onClearSort}
-          className="inline-flex min-h-8 items-center gap-1 rounded-md bg-formed-blue-soft px-3 text-xs font-semibold uppercase tracking-wide text-formed-blue transition hover:bg-formed-blue-soft focus:outline-none focus:ring-2 focus:ring-formed-blue"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden="true" />Sorted by {QUEUE_SORT_LABELS[sort.column]} · Back to my order
-        </button> : null}
-        {orderStatus ? <span aria-live="polite" className="text-xs font-semibold uppercase tracking-wide text-muted">{orderStatus}</span> : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Queue layout" className="flex gap-1 rounded-md bg-panel-warm p-1">
-          <button
-            type="button"
-            aria-pressed={view === "grouped"}
-            onClick={() => onChangeView("grouped")}
-            className={cn("min-h-8 rounded px-2 text-[10px] font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-formed-blue", view === "grouped" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
-          >
-            Group by status
-          </button>
-          <button
-            type="button"
-            aria-pressed={view === "priority"}
-            onClick={() => onChangeView("priority")}
-            className={cn("min-h-8 rounded px-2 text-[10px] font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-formed-blue", view === "priority" ? "bg-white text-foreground shadow-sm" : "text-muted hover:text-foreground")}
-          >
-            Priority order
-          </button>
-        </div>
-        {isFiltering ? <button type="button" onClick={onClear} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-panel-warm px-3 text-xs font-semibold uppercase tracking-wide text-muted transition hover:bg-hairline hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue">
-          <X className="h-3.5 w-3.5" aria-hidden="true" />Clear filters
-        </button> : null}
-      </div>
-    </div>
-  </div>;
-}
+      ) : null}
 
-function QueueColumnHeader({ sort, onToggleSort }: { sort: QueueSort; onToggleSort: (column: QueueSortColumn) => void }) {
-  return <div data-testid="content-review-queue-header" className={cn("mb-2 hidden gap-2 px-3 text-center text-[10px] font-semibold uppercase tracking-wide text-muted md:grid", decisionQueueGridClass)}>
-    <SortHeaderCell column="priority" sort={sort} onToggleSort={onToggleSort} align="justify-start" />
-    <span aria-hidden="true" />
-    <SortHeaderCell column="title" sort={sort} onToggleSort={onToggleSort} />
-    <SortHeaderCell column="reviewStatus" sort={sort} onToggleSort={onToggleSort} />
-    <SortHeaderCell column="proposedRateCents" sort={sort} onToggleSort={onToggleSort} />
-    <SortHeaderCell column="provider" sort={sort} onToggleSort={onToggleSort} />
-  </div>;
-}
+      <ContentReviewToast toast={toast} onDismiss={() => setToast(null)} />
 
-function SortHeaderCell({ column, sort, onToggleSort, align = "justify-center" }: { column: QueueSortColumn; sort: QueueSort; onToggleSort: (column: QueueSortColumn) => void; align?: string }) {
-  const active = sort?.column === column ? sort.direction : null;
-  const label = QUEUE_SORT_LABELS[column];
-  return <span aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}>
-    <button
-      type="button"
-      onClick={() => onToggleSort(column)}
-      aria-label={`Sort by ${label}`}
-      className={cn(
-        "inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue",
-        align,
-        active ? "text-formed-blue" : "text-muted"
-      )}
-    >
-      {label}
-      {active === "asc" ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : null}
-      {active === "desc" ? <ChevronDown className="h-3 w-3" aria-hidden="true" /> : null}
-    </button>
-  </span>;
-}
+      {showPicker ? (
+        <ContentReviewPrioritiesPicker
+          candidates={pickerCandidates}
+          onPick={(itemId) => {
+            togglePriority(itemId);
+            setShowPicker(false);
+          }}
+          onClose={() => setShowPicker(false)}
+        />
+      ) : null}
 
-type ReviewSummaryRowProps = {
-  item: ContentReviewItem;
-  active: boolean;
-  isDemo?: boolean;
-  canDrag: boolean;
-  canSetPriority?: boolean;
-  draggedItemId?: string | null;
-  priorityById: Map<string, number>;
-  onSelect: (id: string) => void;
-  onOpenDetail?: (id: string) => void;
-  onChange: (id: string, field: keyof ContentReviewItem, value: string | number | boolean | null) => void;
-  onDragStart?: (event: DragEvent<HTMLElement>, id: string) => void;
-  onDragEnd?: () => void;
-  onDrop?: (event: DragEvent<HTMLElement>, id: string) => void;
-  onMoveToPosition?: (id: string, position: number) => void;
-  onSetFocus?: (id: string, inFocus: boolean) => void;
-};
+      {showRecap ? (
+        <ContentReviewRecapPanel
+          items={records}
+          updates={updateLog}
+          currentUserEmail={currentUserEmail}
+          onClose={() => setShowRecap(false)}
+          onSelect={(itemId) => {
+            selectItem(itemId);
+            setShowRecap(false);
+          }}
+        />
+      ) : null}
 
-function ReviewSummaryRow({ item, active, isDemo, canDrag, canSetPriority, draggedItemId, priorityById, onSelect, onOpenDetail, onChange, onDragStart, onDragEnd, onDrop, onMoveToPosition, onSetFocus }: ReviewSummaryRowProps) {
-  const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
-  const isDraft = item.id === "draft";
-  const draggable = Boolean(canDrag && onDragStart && !isDraft);
-  return (
-    <div
-      aria-current={active ? "true" : undefined}
-      data-testid={`content-review-row-${item.id}`}
-      draggable={draggable}
-      onDragStart={onDragStart ? (event) => onDragStart(event, item.id) : undefined}
-      onDragEnd={onDragEnd}
-      onDragOver={onDrop ? allowDrop : undefined}
-      onDrop={onDrop ? (event) => onDrop(event, item.id) : undefined}
-      onClick={() => (onOpenDetail ?? onSelect)(item.id)}
-      className={cn("relative grid gap-2 overflow-hidden rounded-lg border border-l-[3px] border-hairline bg-panel px-3 py-2.5 transition-colors cursor-pointer", decisionQueueGridClass, TONE_CLASSES[status.tone].accent, active && "border-formed-blue bg-formed-blue-soft", draggedItemId === item.id && "opacity-60")}
-    >
-      {item.isCoproductionOpportunity ? <span aria-label="Potential co-production opportunity" title="Potential co-production opportunity" className="absolute right-2 top-0 z-10 rounded-b-md bg-formed-blue-soft px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-formed-blue">Co-prod</span> : null}
-      <PriorityCell
-        item={item}
-        position={priorityById.get(item.id) ?? null}
-        canDrag={draggable}
-        canSetPriority={Boolean(canSetPriority && !isDraft)}
-        onMoveToPosition={onMoveToPosition}
-        onSetFocus={onSetFocus}
-      />
-      <input aria-label="Summary Title" value={item.title} placeholder="Untitled review" disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "title", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-sm font-semibold focus:bg-panel-warm" />
-      <select aria-label="Summary Review Status" value={item.reviewStatus} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => { onChange(item.id, "reviewStatus", event.target.value as ReviewStatus); }} className={cn("min-h-9 min-w-0 w-full rounded-lg border-0 px-2 text-xs font-bold", TONE_CLASSES[status.tone].field)}>{REVIEW_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-      <CurrencyInput ariaLabel="Summary Proposed Yearly Rate" value={item.proposedRateCents} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(value) => onChange(item.id, "proposedRateCents", value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-right text-sm tabular-nums focus:bg-panel-warm" />
-      <input aria-label="Summary Provider" value={item.provider ?? ""} disabled={isDemo} onFocus={() => onSelect(item.id)} onChange={(event) => onChange(item.id, "provider", event.target.value)} className="min-h-9 min-w-0 w-full rounded-lg border-0 bg-transparent px-2 text-[13px] text-muted focus:bg-panel-warm" />
+      {showAdd ? (
+        <ContentReviewAddModal isSubmitting={isAdding} onSubmit={submitAdd} onClose={() => setShowAdd(false)} />
+      ) : null}
     </div>
   );
 }
 
-/**
- * The drag handle and the review's standing share one cell. Only the Focus Five
- * carry a number; everything below shows a pin that lifts a review into the
- * five. Typing a number is the keyboard route to the move a drag performs.
- */
-function PriorityCell({ item, position, canDrag, canSetPriority, onMoveToPosition, onSetFocus }: { item: ContentReviewItem; position: number | null; canDrag: boolean; canSetPriority: boolean; onMoveToPosition?: (id: string, position: number) => void; onSetFocus?: (id: string, inFocus: boolean) => void }) {
-  const [draftValue, setDraftValue] = useState<string | null>(null);
-  const label = item.title || "Untitled review";
-
-  if (position === null) {
-    return <span className="flex items-center text-xs font-semibold uppercase tracking-wide text-muted">New</span>;
-  }
-
-  const focused = Boolean(item.inFocus);
-
-  function commit() {
-    const parsed = Number.parseInt(draftValue ?? "", 10);
-    setDraftValue(null);
-    if (!Number.isFinite(parsed) || parsed === position) return;
-    onMoveToPosition?.(item.id, parsed);
-  }
-
-  const handle = canDrag ? <span
-    aria-hidden="true"
-    title={`Drag to reorder ${label}`}
-    className="flex min-h-10 cursor-grab items-center text-muted active:cursor-grabbing"
-  >
-    <GripVertical className="h-4 w-4" />
-  </span> : null;
-
-  if (!focused) {
-    return <span className="flex items-center gap-1">
-      {handle}
+function SortHeader({ column, sort, onToggle, align = "justify-start" }: { column: QueueSortColumn; sort: QueueSort; onToggle: (column: QueueSortColumn) => void; align?: string }) {
+  const active = sort?.column === column ? sort.direction : null;
+  return (
+    <span role="columnheader" aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}>
       <button
         type="button"
-        aria-label={`Add ${label} to the Focus Five`}
-        title="Add to the Focus Five"
-        disabled={!onSetFocus || !canSetPriority}
-        onClick={() => onSetFocus?.(item.id, true)}
-        className="flex min-h-10 w-9 items-center justify-center rounded-md text-muted transition hover:bg-guild-gold-soft hover:text-guild-gold-ink focus:outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+        onClick={() => onToggle(column)}
+        aria-label={`Sort by ${SORT_LABELS[column]}`}
+        className={cn(
+          "inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[.07em] transition",
+          align,
+          active ? "text-formed-blue" : "text-muted hover:text-foreground"
+        )}
       >
-        <Pin className="h-4 w-4" aria-hidden="true" />
+        {SORT_LABELS[column]}
+        {active === "asc" ? <ChevronUp className="h-[11px] w-[11px]" aria-hidden="true" /> : null}
+        {active === "desc" ? <ChevronDown className="h-[11px] w-[11px]" aria-hidden="true" /> : null}
       </button>
-    </span>;
-  }
-
-  return <span className="flex items-center gap-1">
-    {handle}
-    <input
-      aria-label={`Priority for ${label}`}
-      inputMode="numeric"
-      disabled={!onMoveToPosition || !canSetPriority}
-      value={draftValue ?? String(position)}
-      onChange={(event) => setDraftValue(event.target.value)}
-      onBlur={() => setDraftValue(null)}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          setDraftValue(null);
-          return;
-        }
-        if (event.key !== "Enter") return;
-        event.preventDefault();
-        commit();
-      }}
-      className="min-h-10 w-9 rounded-md bg-guild-gold-soft px-1 text-center text-sm font-semibold text-guild-gold-ink outline-none ring-1 ring-guild-gold focus:ring-2 focus:ring-formed-blue disabled:bg-amber-100 disabled:text-amber-900"
-    />
-  </span>;
+    </span>
+  );
 }
 
-/**
- * Two <summary> quirks shape this markup, both verified in a browser:
- *
- * 1. A drag that begins anywhere inside a <summary> fires dragstart but never
- *    completes a drop, so the handle sits beside the <details> and is
- *    positioned back over the header line. A <button> swallows drops the same
- *    way, which is why the handle is a focusable <span> instead.
- * 2. A <summary> under the cursor also swallows the drop itself. Groups render
- *    collapsed, so the summary is nearly the whole target — during a drag it
- *    stops taking pointer events and the drop lands on this wrapper.
- */
-function ContentReviewGroup({ title, count, testId, tone, open, canReorder, isDragging, isDragActive, onDragStart, onDragEnd, onDrop, onMoveBy, children }: { title: string; count: number; testId: string; tone?: keyof typeof TONE_CLASSES; open?: boolean; canReorder?: boolean; isDragging?: boolean; isDragActive?: boolean; onDragStart?: (event: DragEvent<HTMLElement>) => void; onDragEnd?: () => void; onDrop?: (event: DragEvent<HTMLElement>) => void; onMoveBy?: (delta: number) => void; children: ReactNode }) {
-  const isDraggable = Boolean(canReorder && onDragStart);
-  return <div
-    data-testid={testId}
-    onDragOver={onDrop ? allowDrop : undefined}
-    onDrop={onDrop}
-    className={cn("relative rounded-md border border-hairline bg-white py-3 shadow-sm transition", tone && cn("border-l-4", TONE_CLASSES[tone].accent), isDragging && "opacity-60")}
-  >
-    {isDraggable ? <span
-      draggable
-      role="button"
-      tabIndex={0}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onKeyDown={(event) => {
-        if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-        event.preventDefault();
-        onMoveBy?.(event.key === "ArrowUp" ? -1 : 1);
-      }}
-      aria-label={`Drag the ${title} group. Press the up and down arrow keys to move it.`}
-      className="absolute left-1.5 top-3 z-10 flex h-6 w-5 cursor-grab items-center justify-center rounded text-muted transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-formed-blue active:cursor-grabbing"
+function QueueRow({ item, selected, onSelect }: { item: ContentReviewItem; selected: boolean; onSelect: (id: string) => void }) {
+  const tone = statusTone(item.reviewStatus);
+  return (
+    <button
+      type="button"
+      data-testid={`content-review-row-${item.id}`}
+      aria-current={selected ? "true" : undefined}
+      onClick={() => onSelect(item.id)}
+      className={cn(
+        "grid grid-cols-1 gap-1.5 border-b border-hairline border-l-[3px] px-3 py-3 text-left transition-colors md:gap-2.5",
+        COLUMN_GRID_CLASS,
+        TONE_CLASSES[tone].accent,
+        selected ? "border-l-formed-blue bg-formed-blue-soft" : "bg-panel hover:bg-panel-warm"
+      )}
     >
-      <GripVertical className="h-4 w-4" aria-hidden="true" />
-    </span> : null}
-    <details open={open} className="group">
-      <summary className={cn("flex cursor-pointer list-none items-center gap-3 px-3 pb-1 text-sm font-semibold [&::-webkit-details-marker]:hidden", isDraggable && "pl-8", isDragActive && "pointer-events-none")}>
-        <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-panel-warm text-xs font-black leading-none text-muted">
-          <span className="group-open:hidden">+</span>
-          <span className="hidden group-open:inline">−</span>
-        </span>
-        <span className="flex-1">{title}</span>
-        <span className="rounded-full bg-panel-warm px-2 py-1 text-[10px] uppercase tracking-wide text-muted">{count}</span>
-      </summary>
-      <div className="mt-2 grid gap-3 px-3">{count ? children : <p className="rounded-md bg-panel-warm p-3 text-sm font-bold text-muted">No items.</p>}</div>
-    </details>
-  </div>;
-}
-
-function ReviewEditor({ item, providerOptions, isDemo, isPending, saveState, onChange, onSave, fiscalYearId, updates, onUpdateAdded, onUpdateDeleted }: { item: ContentReviewItem; providerOptions: string[]; isDemo?: boolean; isPending: boolean; saveState: SaveState; onChange: (field: keyof ContentReviewItem, value: string | number | boolean | null) => void; onSave: () => void; fiscalYearId: string; updates: ContentReviewUpdate[]; onUpdateAdded: (update: ContentReviewUpdate) => void; onUpdateDeleted: (updateId: string) => void }) {
-  const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
-  const [isPipelinePending, startPipelineTransition] = useTransition();
-
-  function sendToRoadmap() {
-    if (isDemo || item.id === "draft") return;
-    setPipelineMessage(null);
-    startPipelineTransition(async () => {
-      try {
-        const formData = new FormData();
-        formData.set("fiscalYearId", fiscalYearId);
-        formData.set("itemId", item.id);
-        await sendReviewToRoadmap(formData);
-        setPipelineMessage("Sent to Roadmap as TBD. Open the Roadmap backlog to schedule it.");
-      } catch {
-        setPipelineMessage("Could not send this review to the roadmap.");
-      }
-    });
-  }
-
-  return <div className="grid min-w-0 gap-3.5">
-    <div className="flex items-start justify-between gap-4"><div className="grid min-w-0 gap-1"><p className="text-xs font-semibold text-formed-blue">Selected review</p><h2 className="font-display text-2xl leading-tight">{item.id === "draft" ? "New content review" : item.title}</h2></div><span aria-live="polite" className="shrink-0 text-[11px] font-semibold text-faint">{saveState === "idle" ? "" : saveState}</span></div>
-    {item.isCoproductionOpportunity ? <p className="inline-flex w-fit rounded-md bg-formed-blue-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-formed-blue">Potential co-production opportunity</p> : null}
-    <div className="grid gap-1 border-y border-hairline">
-      <CompactField label="Detail title"><Field label="Detail Title" value={item.title} onChange={(value) => onChange("title", value)} disabled={isDemo} hideLabel /></CompactField>
-      <CompactField label="Proposed yearly rate"><CurrencyField label="Proposed Yearly Rate" value={item.proposedRateCents} onChange={(value) => onChange("proposedRateCents", value)} disabled={isDemo} hideLabel /></CompactField>
-      <CompactField label="Provider">
-        <ProviderCombobox
-          id={`review-provider-${item.id}`}
-          value={item.provider ?? ""}
-          options={providerOptions}
-          disabled={isDemo}
-          onChange={(value) => onChange("provider", value)}
-          hideLabel
-          inputClassName={compactControlClass}
-        />
-      </CompactField>
-      <CompactField label="Status"><ColoredSelect label="Review Status" name="detailReviewStatus" value={item.reviewStatus} options={REVIEW_STATUSES} onChange={(event) => onChange("reviewStatus", event.target.value)} disabled={isDemo} compact /></CompactField>
-      <CompactField label="Opportunity"><OpportunityField checked={Boolean(item.isCoproductionOpportunity)} disabled={isDemo} onChange={(value) => onChange("isCoproductionOpportunity", value)} /></CompactField>
-      <CompactField label="Budget"><SelectField label="Budget Source" value={item.budgetSource ?? "misc_licensing"} options={budgetSourceOptions} onChange={(value) => onChange("budgetSource", value)} disabled={isDemo} hideLabel /></CompactField>
-      <CompactField label="Minutes"><Field label="Minutes Of Content" type="number" value={item.minutes != null ? String(item.minutes) : ""} onChange={(value) => onChange("minutes", value === "" ? null : Number(value))} disabled={isDemo} hideLabel /></CompactField>
-      <CompactField label="Metadata">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <ColoredSelect label="Genre" name="detailGenre" value={item.genre ?? ""} options={CONTENT_GENRES} onChange={(event) => onChange("genre", event.target.value)} disabled={isDemo} compact />
-          <ColoredSelect label="Format" name="detailFormat" value={item.format ?? ""} options={CONTENT_FORMATS} onChange={(event) => onChange("format", event.target.value)} disabled={isDemo} compact />
-        </div>
-      </CompactField>
-      <CompactField label="Link"><LinkField label="Review Link" value={item.reviewLink ?? ""} onChange={(value) => onChange("reviewLink", value)} disabled={isDemo} hideLabel /></CompactField>
-    </div>
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className="md:col-span-2"><RichTextNotes label="Notes" value={combineReviewNotes(item)} onChange={(value) => { onChange("notes", value); onChange("comparableContent", ""); }} disabled={isDemo} /></div>
-    </div>
-    <ContentReviewUpdateLog
-      fiscalYearId={fiscalYearId}
-      itemId={item.id}
-      updates={updates}
-      isDemo={isDemo}
-      onAdded={onUpdateAdded}
-      onDeleted={onUpdateDeleted}
-    />
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap gap-2">
-        {item.id !== "draft" ? <form action={deleteContentReviewItem} onSubmit={(event) => { if (!window.confirm(`Delete ${item.title}? This cannot be undone.`)) event.preventDefault(); }}><input type="hidden" name="fiscalYearId" value={fiscalYearId} /><input type="hidden" name="itemId" value={item.id} /><SoftButton type="submit" variant="ghost" className="text-danger" disabled={isDemo}><Trash2 className="h-4 w-4" />Delete review</SoftButton></form> : null}
-        {item.id !== "draft" && item.reviewStatus === "contracted" ? <SoftButton type="button" variant="ghost" disabled={isDemo || isPipelinePending || !item.minutes || !item.proposedRateCents} title={!item.minutes ? "Add the minutes of content before sending this to the roadmap." : !item.proposedRateCents ? "Add a proposed rate before sending this to the roadmap." : undefined} onClick={sendToRoadmap}><ArrowRight className="h-4 w-4" />{isPipelinePending ? "Sending..." : "Send to roadmap"}</SoftButton> : null}
-      </div>
-      <SoftButton type="button" variant="primary" onClick={onSave} disabled={isDemo || isPending || !item.title.trim()}><Save className="h-4 w-4" />Save changes</SoftButton>
-    </div>
-    {pipelineMessage ? <p role="status" className="rounded-md bg-deep-teal-soft px-4 py-3 text-sm font-bold text-deep-teal">{pipelineMessage}</p> : null}
-  </div>;
-}
-
-function CompactField({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="grid gap-3 border-t border-hairline py-2 first:border-t-0 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center">
-    <span className="text-xs font-semibold text-muted">{label}</span>
-    <div className="min-w-0">{children}</div>
-  </div>;
-}
-
-function Field({ label, value, onChange, disabled, hideLabel, type = "text" }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean; type?: string }) {
-  const input = <input aria-label={label} type={type} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"} />;
-
-  if (hideLabel) return input;
-
-  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{input}</label>;
-}
-
-function LinkField({ label, value, onChange, disabled, hideLabel }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
-  const trimmedValue = value.trim();
-  const canOpen = /^https?:\/\//.test(trimmedValue);
-
-  const field = <div className="flex flex-wrap gap-2">
-    <input aria-label={label} type="url" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={cn("min-w-0 flex-1", hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal")} />
-    {canOpen ? <a href={trimmedValue} target="_blank" rel="noreferrer" className={cn("inline-flex items-center justify-center gap-2 rounded-md bg-formed-blue-soft text-xs font-semibold uppercase tracking-wide text-formed-blue ring-1 ring-formed-blue-border hover:bg-formed-blue-soft", hideLabel ? "min-h-9 px-3" : "min-h-11 px-4")}><ExternalLink className="h-4 w-4" aria-hidden="true" />Open</a> : null}
-  </div>;
-
-  if (hideLabel) return field;
-
-  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{field}</label>;
-}
-
-function SelectField({ label, value, options, onChange, disabled, hideLabel }: { label: string; value: string; options: readonly { label: string; value: string }[]; onChange: (value: string) => void; disabled?: boolean; hideLabel?: boolean }) {
-  const select = <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>;
-
-  if (hideLabel) return select;
-
-  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{select}</label>;
-}
-
-function CurrencyField({ label, value, onChange, disabled, hideLabel }: { label: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; hideLabel?: boolean }) {
-  const input = <CurrencyInput ariaLabel={label} value={value} onChange={onChange} disabled={disabled} className={hideLabel ? compactControlClass : "min-h-11 rounded-md border-0 bg-panel-warm px-3 text-sm font-medium normal-case tracking-normal"} />;
-
-  if (hideLabel) return input;
-
-  return <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide">{label}{input}</label>;
-}
-
-function OpportunityField({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: (value: boolean) => void }) {
-  return <label className="inline-flex min-h-9 w-fit items-center gap-2 rounded-full bg-panel-warm px-3 text-xs font-semibold text-muted ring-1 ring-hairline">
-    <input
-      aria-label="Potential co-production opportunity"
-      type="checkbox"
-      checked={checked}
-      disabled={disabled}
-      onChange={(event) => onChange(event.target.checked)}
-      className="h-4 w-4 accent-slate-700"
-    />
-    Potential co-production
-  </label>;
-}
-
-function CurrencyInput({ ariaLabel, value, onChange, disabled, onClick, onFocus, className }: { ariaLabel: string; value: number | null; onChange: (value: number | null) => void; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLInputElement>; onFocus?: React.FocusEventHandler<HTMLInputElement>; className: string }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftValue, setDraftValue] = useState("");
-
-  return <input
-    aria-label={ariaLabel}
-    inputMode="decimal"
-    value={isEditing ? draftValue : formatOptionalCurrency(value)}
-    disabled={disabled}
-    onClick={onClick}
-    onFocus={(event) => {
-      onFocus?.(event);
-      setDraftValue(value === null ? "" : String(value / 100));
-      setIsEditing(true);
-    }}
-    onBlur={() => setIsEditing(false)}
-    onChange={(event) => {
-      setDraftValue(event.target.value);
-      onChange(dollarsToOptionalCents(event.target.value));
-    }}
-    className={className}
-  />;
-}
-
-/**
- * Notes and the legacy Comparable Content column share one visible editor. Notes may still be
- * plain text from before rich text landed, so both halves are normalised to markup here.
- */
-function combineReviewNotes(item: ContentReviewItem) {
-  const notes = item.notes?.trim() ?? "";
-  const comparable = item.comparableContent?.trim() ?? "";
-  const notesHtml = notes && !isLikelyNotesHtml(notes) ? plainTextToNotesHtml(notes) : notes;
-  const comparableHtml = comparable ? plainTextToNotesHtml(comparable) : "";
-  return [notesHtml, comparableHtml].filter(Boolean).join("");
+      <span className="flex min-w-0 items-center gap-2">
+        {item.inFocus ? <Star className="h-3.5 w-3.5 shrink-0 fill-tone-amber-line text-tone-amber-line" aria-hidden="true" /> : null}
+        <span className="min-w-0 text-[14px] font-semibold leading-[1.35] [overflow-wrap:anywhere] [text-wrap:pretty]">{item.title || "Untitled review"}</span>
+        {item.isCoproductionOpportunity ? <span className="shrink-0 border border-formed-blue-border bg-formed-blue-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[.06em] text-formed-blue-hover">CO-PROD</span> : null}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0", TONE_SWATCH_CLASSES[tone])} />
+        <span className="text-[12px] font-medium text-muted">{statusLabel(item.reviewStatus)}</span>
+      </span>
+      <span className="truncate text-[12.5px] font-normal text-muted">{item.provider || ""}</span>
+      <span className="text-right text-[12.5px] font-medium tabular-nums">
+        {item.proposedRateCents ? formatOptionalCurrency(item.proposedRateCents) : <span className="text-faint">—</span>}
+      </span>
+    </button>
+  );
 }

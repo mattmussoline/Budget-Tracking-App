@@ -82,21 +82,31 @@ export function ContentReviewUpdateLog({ fiscalYearId, itemId, updates, isDemo, 
       {updates.length ? <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">{updates.length} {updates.length === 1 ? "entry" : "entries"}</span> : null}
     </div>
 
-    <div className="relative">
-      <MessageSquarePlus className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-      <input
-        aria-label="Log an update"
-        value={body}
-        disabled={disabled}
-        placeholder={isDraft ? "Save this review before logging updates" : "Type an update and press Enter"}
-        onChange={(event) => setBody(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" || event.shiftKey) return;
-          event.preventDefault();
-          submit();
-        }}
-        className="min-h-11 w-full rounded-md border-0 bg-panel-warm pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-60"
-      />
+    <div className="flex items-center gap-2">
+      <div className="relative min-w-0 flex-1">
+        <MessageSquarePlus className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <input
+          aria-label="Log an update"
+          value={body}
+          disabled={disabled}
+          placeholder={isDraft ? "Save this review before logging updates" : "Type an update and press Enter"}
+          onChange={(event) => setBody(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey) return;
+            event.preventDefault();
+            submit();
+          }}
+          className="min-h-11 w-full rounded-md border-0 bg-panel-warm pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-60"
+        />
+      </div>
+      <button
+        type="button"
+        disabled={disabled || !body.trim()}
+        onClick={submit}
+        className="shrink-0 rounded-md bg-formed-blue px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-formed-blue-hover disabled:opacity-40"
+      >
+        Save
+      </button>
     </div>
 
     {error ? <p role="status" className="rounded-md bg-danger-soft px-3 py-2 text-xs font-bold text-danger">{error}</p> : null}

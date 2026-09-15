@@ -71,3 +71,39 @@ export const TONE_CLASSES: Record<PlanningTone, { accent: string; field: string;
   orange: { accent: "border-tone-orange-line", field: "bg-tone-orange-bg text-tone-orange-ink", chip: "bg-tone-orange-bg text-tone-orange-ink" },
   slate: { accent: "border-tone-slate-line", field: "bg-tone-slate-bg text-tone-slate-ink", chip: "bg-tone-slate-bg text-tone-slate-ink" }
 };
+
+/** A 6x6px filled swatch color for a tone — the Content Review redesign's replacement for filled status pills. */
+export const TONE_SWATCH_CLASSES: Record<PlanningTone, string> = {
+  blue: "bg-tone-blue-line",
+  amber: "bg-tone-amber-line",
+  green: "bg-tone-green-line",
+  purple: "bg-tone-purple-line",
+  red: "bg-tone-red-line",
+  cyan: "bg-tone-cyan-line",
+  orange: "bg-tone-orange-line",
+  slate: "bg-tone-slate-line"
+};
+
+/** A `border-l-*` variant of the swatch color, for the Content Review rail's selected-lane left edge. */
+export const TONE_BORDER_L_CLASSES: Record<PlanningTone, string> = {
+  blue: "border-l-tone-blue-line",
+  amber: "border-l-tone-amber-line",
+  green: "border-l-tone-green-line",
+  purple: "border-l-tone-purple-line",
+  red: "border-l-tone-red-line",
+  cyan: "border-l-tone-cyan-line",
+  orange: "border-l-tone-orange-line",
+  slate: "border-l-tone-slate-line"
+};
+
+/** Text-only ink color for a tone, for the Content Review rail's resting (unselected) lane labels. */
+export const TONE_INK_CLASSES: Record<PlanningTone, string> = {
+  blue: "text-tone-blue-ink",
+  amber: "text-tone-amber-ink",
+  green: "text-tone-green-ink",
+  purple: "text-tone-purple-ink",
+  red: "text-tone-red-ink",
+  cyan: "text-tone-cyan-ink",
+  orange: "text-tone-orange-ink",
+  slate: "text-tone-slate-ink"
+};
