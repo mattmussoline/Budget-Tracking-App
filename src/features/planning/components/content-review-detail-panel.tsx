@@ -19,9 +19,14 @@ const PANEL_MAX_WIDTH = 860;
 const PANEL_DEFAULT_WIDTH = 352;
 const PANEL_WIDTH_STORAGE_KEY = "content-review:detail-width";
 
+/** The rail and the queue keep this much room between them, so the panel can never swallow the page. */
+const RESERVED_WIDTH = 234 + 520;
+
 function clampPanelWidth(value: number) {
   if (!Number.isFinite(value)) return PANEL_DEFAULT_WIDTH;
-  return Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.round(value)));
+  const viewportCeiling = typeof window === "undefined" ? PANEL_MAX_WIDTH : window.innerWidth - RESERVED_WIDTH;
+  const ceiling = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, viewportCeiling));
+  return Math.min(ceiling, Math.max(PANEL_MIN_WIDTH, Math.round(value)));
 }
 
 /** Inline fields sit on the panel background until hovered or focused, so the panel still reads as a summary. */
@@ -228,7 +233,7 @@ export function ContentReviewDetailPanel({
   return (
     <aside
       style={{ "--cr-detail-width": `${panelWidth}px` } as React.CSSProperties}
-      className="relative w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:w-[var(--cr-detail-width)] min-[1126px]:max-w-[70vw] min-[1126px]:border-t-0 min-[1126px]:border-l"
+      className="relative w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:w-[var(--cr-detail-width)] min-[1126px]:border-t-0 min-[1126px]:border-l"
     >
       <div
         role="separator"

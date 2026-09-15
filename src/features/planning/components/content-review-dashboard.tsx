@@ -321,9 +321,11 @@ export function ContentReviewDashboard({
   }
 
   return (
-    <div className="-mx-5 -mb-12 -mt-8 flex min-h-[calc(100vh-62px)] min-w-0 flex-wrap items-stretch md:-mx-10">
-      {pageDescription ? <p className="w-full bg-formed-blue-soft px-5 py-2 text-xs font-semibold text-formed-blue md:px-10">{pageDescription}</p> : null}
+    <div className="-mx-5 -mb-12 -mt-8 flex min-h-[calc(100vh-62px)] min-w-0 flex-col md:-mx-10">
+      {pageDescription ? <p className="bg-formed-blue-soft px-5 py-2 text-xs font-semibold text-formed-blue md:px-10">{pageDescription}</p> : null}
 
+      {/* The workspace never wraps: the rail and detail panel are fixed columns and the queue absorbs the rest, so widening the panel cannot push it onto its own row. */}
+      <div className="flex min-w-0 flex-1 flex-col items-stretch md:flex-row">
       <ContentReviewRail
         items={records}
         priorities={priorities}
@@ -335,7 +337,8 @@ export function ContentReviewDashboard({
         onAddPriority={() => setShowPicker(true)}
       />
 
-      <section className="min-w-0 flex-1 px-[18px] pb-[60px] pt-[24px] md:min-w-[540px] md:px-[26px] md:pt-[30px]">
+      <div className="flex min-w-0 flex-1 flex-col items-stretch min-[1126px]:flex-row">
+      <section className="min-w-0 flex-1 px-[18px] pb-[60px] pt-[24px] md:px-[26px] md:pt-[30px]">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-[32px] leading-[1.05] md:text-[38px]">{heading.title}</h1>
@@ -474,6 +477,8 @@ export function ContentReviewDashboard({
           onUpdateDeleted={(updateId) => setUpdateLog((current) => current.filter((entry) => entry.id !== updateId))}
         />
       ) : null}
+      </div>
+      </div>
 
       <ContentReviewToast toast={toast} onDismiss={() => setToast(null)} />
 
