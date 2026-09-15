@@ -47,13 +47,13 @@ export function ContentReviewRail({ items, priorities, lane, canEdit, onSelectLa
             const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
             const label = item.title || "Untitled review";
             return (
-              <li key={item.id} className="flex items-center gap-2 border-b border-hairline py-[7px]">
-                <span aria-hidden="true" className="w-[9px] shrink-0 font-display text-[13px] leading-none text-muted">{index + 1}</span>
+              <li key={item.id} className="flex items-center gap-2 border-b border-hairline py-2.5">
+                <span aria-hidden="true" className="w-[9px] shrink-0 font-display text-[14px] leading-none text-muted">{index + 1}</span>
                 <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0", TONE_SWATCH_CLASSES[status.tone])} />
                 <button
                   type="button"
                   onClick={() => onSelectPriority(item.id)}
-                  className="min-w-0 flex-1 truncate text-left text-[12px] font-semibold leading-[1.35] [overflow-wrap:anywhere] hover:text-formed-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
+                  className="min-w-0 flex-1 truncate text-left text-[13.5px] font-semibold leading-[1.35] [overflow-wrap:anywhere] hover:text-formed-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
                 >
                   {label}
                 </button>

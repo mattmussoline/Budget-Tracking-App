@@ -319,7 +319,7 @@ export function ContentReviewDashboard({
   }
 
   return (
-    <div className="-mx-5 flex min-w-0 flex-wrap items-start md:-mx-10">
+    <div className="-mx-5 -mt-8 flex min-w-0 flex-wrap items-start md:-mx-10">
       {pageDescription ? <p className="w-full bg-formed-blue-soft px-5 py-2 text-xs font-semibold text-formed-blue md:px-10">{pageDescription}</p> : null}
 
       <ContentReviewRail
@@ -342,7 +342,7 @@ export function ContentReviewDashboard({
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {acquisitionTargetCount > 0 ? (
               <div className="flex min-h-9 items-center gap-1.5 border border-tone-amber-line bg-tone-amber-line px-3.5 py-2 text-[13px]">
-                <span className="font-semibold text-white">Acquisition target</span>
+                <span className="font-semibold text-white">Acquisition Targets</span>
                 <span className="text-white">
                   {acquisitionTargetCount} · {formatOptionalCurrency(acquisitionTargetTotal) || "$0.00"} · no contract
                 </span>
