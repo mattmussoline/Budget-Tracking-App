@@ -233,7 +233,7 @@ export function ContentReviewDetailPanel({
   return (
     <aside
       style={{ "--cr-detail-width": `${panelWidth}px` } as React.CSSProperties}
-      className="relative w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:w-[var(--cr-detail-width)] min-[1126px]:border-t-0 min-[1126px]:border-l"
+      className="relative w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:self-start min-[1126px]:w-[var(--cr-detail-width)] min-[1126px]:border-t-0 min-[1126px]:border-l"
     >
       <div
         role="separator"
