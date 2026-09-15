@@ -45,6 +45,19 @@ const needsDecision: ContentReviewItem = { ...item, id: "needs-1", title: "Block
 const radarItem: ContentReviewItem = { ...item, id: "radar-1", title: "Long Shot Series", reviewStatus: "on_the_radar" };
 const acquisitionItem: ContentReviewItem = { ...item, id: "acq-1", title: "Acquisition Candidate", reviewStatus: "acquisition_target", proposedRateCents: 500000 };
 
+/**
+ * The All reviews lane opens with every status group collapsed, so tests that
+ * assert on rows expand the groups first.
+ */
+function openAllReviews({ expandGroups = true } = {}) {
+  fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+  if (!expandGroups) return;
+  for (const group of screen.queryAllByTestId(/^content-review-group-/)) {
+    const header = group.querySelector("button");
+    if (header) fireEvent.click(header);
+  }
+}
+
 describe("ContentReviewDashboard", () => {
   it("lands on the Priorities lane and renders the three-region layout", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[pinned1, pinned2, needsDecision]} isDemo />);
@@ -61,7 +74,7 @@ describe("ContentReviewDashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Needs a decision/ }));
     expect(screen.getByRole("heading", { name: "Needs a decision", level: 1 })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     expect(screen.getByRole("heading", { name: "All reviews", level: 1 })).toBeVisible();
     expect(screen.getByText("4 titles in the FY26 queue")).toBeVisible();
   });
@@ -76,7 +89,7 @@ describe("ContentReviewDashboard", () => {
   it("selects a row and opens the fixed detail panel without a draft flow", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
 
     expect(screen.getByText("Selected review")).toBeVisible();
@@ -87,7 +100,7 @@ describe("ContentReviewDashboard", () => {
   it("closes the detail panel and expands the queue full width", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
     fireEvent.click(screen.getByRole("button", { name: "Close selected review" }));
 
@@ -98,7 +111,7 @@ describe("ContentReviewDashboard", () => {
     actionMocks.updateContentReviewItem.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
     fireEvent.change(screen.getByLabelText("Review Status"), { target: { value: "in_progress" } });
 
@@ -114,7 +127,7 @@ describe("ContentReviewDashboard", () => {
     actionMocks.setContentReviewFocusMembership.mockResolvedValue(undefined);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
     fireEvent.click(screen.getByRole("button", { name: "Add to Priorities" }));
 
@@ -131,7 +144,7 @@ describe("ContentReviewDashboard", () => {
     const many = [pinned1, pinned2, { ...pinned1, id: "pin-3" }, { ...pinned1, id: "pin-4" }, { ...pinned1, id: "pin-5" }, sixth];
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={many} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-6"));
     fireEvent.click(screen.getByRole("button", { name: "Add to Priorities" }));
 
@@ -161,7 +174,7 @@ describe("ContentReviewDashboard", () => {
   it("searches the queue by title", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision, radarItem]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.change(screen.getByLabelText("Search titles"), { target: { value: "long shot" } });
 
     expect(screen.getByTestId("content-review-row-radar-1")).toBeVisible();
@@ -171,7 +184,7 @@ describe("ContentReviewDashboard", () => {
   it("shows the empty state and clears filters", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.change(screen.getByLabelText("Search titles"), { target: { value: "nothing matches" } });
 
     expect(screen.getByText("Nothing here — this lane is clear.")).toBeVisible();
@@ -180,10 +193,19 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByTestId("content-review-row-needs-1")).toBeVisible();
   });
 
+  it("opens the All reviews lane with every status group collapsed", () => {
+    render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision, radarItem]} isDemo />);
+
+    openAllReviews({ expandGroups: false });
+    expect(screen.getByTestId("content-review-group-blocked")).toBeInTheDocument();
+    expect(screen.queryByTestId("content-review-row-needs-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("content-review-row-radar-1")).not.toBeInTheDocument();
+  });
+
   it("groups the All reviews lane by status and suppresses grouping while searching or sorted", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision, radarItem]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     expect(screen.getByTestId("content-review-group-blocked")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by Title" }));
@@ -195,7 +217,7 @@ describe("ContentReviewDashboard", () => {
     const alpha: ContentReviewItem = { ...needsDecision, id: "a", title: "Alpha" };
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[zebra, alpha]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     const titleOrder = () => screen.getAllByText(/Zebra|Alpha/).map((node) => node.textContent);
 
     expect(titleOrder()).toEqual(["Zebra", "Alpha"]);
@@ -229,7 +251,7 @@ describe("ContentReviewDashboard", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
     fireEvent.click(screen.getByRole("button", { name: "More fields" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -251,7 +273,7 @@ describe("ContentReviewDashboard", () => {
     });
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
     fireEvent.change(screen.getByLabelText("Log an update"), { target: { value: "Chased the rights paperwork." } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -274,7 +296,7 @@ describe("ContentReviewDashboard", () => {
   it("disables editing controls in demo mode", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[needsDecision]} isDemo />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^All reviews/ }));
+    openAllReviews();
     fireEvent.click(screen.getByTestId("content-review-row-needs-1"));
 
     expect(screen.getByLabelText("Review Status")).toBeDisabled();

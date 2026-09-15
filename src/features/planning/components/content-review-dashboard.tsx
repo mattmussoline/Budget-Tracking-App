@@ -127,7 +127,9 @@ export function ContentReviewDashboard({
 
   function selectLane(nextLane: QueueLane) {
     setLane(nextLane);
-    setCollapsed(new Set());
+    // All reviews opens as a table of contents: every status group starts collapsed
+    // so the whole queue is visible at once before drilling into one.
+    setCollapsed(nextLane === "all" ? new Set(statusOrder) : new Set());
     setFilters((current) => ({ ...current, status: "all" }));
   }
 
