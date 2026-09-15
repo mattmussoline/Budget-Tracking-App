@@ -133,7 +133,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
       activeSection="roadmap"
       topBarRight={<TopBarChip>FY{String(activeFiscalYear.fiscal_year).slice(-2)}</TopBarChip>}
     >
-      <RoadmapDashboard pageTitle="Roadmap" pageDescription="Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp." fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} />
+      <RoadmapDashboard pageTitle="Roadmap" pageDescription="Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp." fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} fiscalYearLabel={`FY${String(activeFiscalYear.fiscal_year).slice(-2)}`} />
     </PlanningShell>
   );
 }

@@ -4,8 +4,8 @@ import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef,
 import { createPortal } from "react-dom";
 import { Star, X } from "lucide-react";
 import { cn } from "@/components/ui/soft-surface";
-import { TONE_CLASSES, type PlanningTone } from "../planning-constants";
-import { formatRoadmapDateLabel, isMonthTbdRoadmapDate } from "../planning-model";
+import { ROADMAP_STATUS_META, TONE_CLASSES, TONE_SWATCH_CLASSES, type PlanningTone } from "../planning-constants";
+import { formatRoadmapDateLabel, formatRoadmapDateShortLabel, isMonthTbdRoadmapDate } from "../planning-model";
 import type { RoadmapCategory, RoadmapItem } from "../planning-types";
 
 type EditRoadmapModalProps = {
@@ -15,8 +15,8 @@ type EditRoadmapModalProps = {
   isOpen?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
-  /** "card" (default) is the full backlog/month-column trigger; "chip" is a compact single-line trigger for calendar day cells. */
-  variant?: "card" | "chip";
+  /** "card" (default) is the full backlog trigger; "month" is the board row; "chip" is a compact single-line trigger for calendar day cells. */
+  variant?: "card" | "month" | "chip";
   children: ReactNode;
 };
 
@@ -62,6 +62,7 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
   };
 
   const isTbd = item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate);
+  const statusMeta = ROADMAP_STATUS_META[item.status] ?? ROADMAP_STATUS_META.planned;
 
   return <>
     {variant === "chip" ? <button
@@ -73,6 +74,27 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
       className={cn("block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold transition-colors hover:brightness-95", TONE_CLASSES[tone].chip, isTbd && "italic")}
     >
       {item.title}
+    </button> : variant === "month" ? <button
+      ref={triggerRef}
+      type="button"
+      onClick={openDialog}
+      aria-label={`Edit ${item.title}`}
+      className={cn("grid w-full grid-cols-[3px_minmax(0,1fr)] border-b border-hairline bg-panel text-left transition-colors hover:bg-panel-warm")}
+    >
+      <span className={cn("block", TONE_SWATCH_CLASSES[tone])} />
+      <span className="grid gap-1.5 px-3 py-2.5">
+        <span className="flex items-start gap-1.5">
+          <span className="min-w-0 flex-1 text-[14.5px] font-semibold leading-tight">{item.title}</span>
+          {item.featuredInIndividualMarketing ? <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-guild-gold text-guild-gold-ink" aria-label="Individual marketing campaign" /> : null}
+        </span>
+        <span className="flex items-center gap-2.5">
+          <span className={cn("text-xs font-semibold", isTbd || !item.releaseDate ? "text-danger" : "text-foreground")}>{formatRoadmapDateShortLabel(item.releaseDate)}</span>
+          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted">
+            <span className={cn("h-1.5 w-1.5 rounded-full", TONE_SWATCH_CLASSES[statusMeta.tone])} />
+            {statusMeta.label}
+          </span>
+        </span>
+      </span>
     </button> : <button
       ref={triggerRef}
       type="button"

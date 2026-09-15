@@ -50,6 +50,20 @@ export const CONTENT_FORMATS = [
   "Ministry Resource"
 ].map((label, index) => ({ label, value: label, tone: (["blue", "cyan", "green", "amber", "purple", "red", "orange"] as const)[index % 7] }));
 
+/**
+ * Board presentation for each roadmap status. The design's status colors map
+ * onto the existing tone lines exactly, so statuses stay consistent with the
+ * category swatches instead of introducing a second colour system.
+ * "Live" is the board's shorter label for the `released` status.
+ */
+export const ROADMAP_STATUS_META = {
+  planned: { label: "Planned", tone: "slate" },
+  scheduled: { label: "Scheduled", tone: "blue" },
+  in_progress: { label: "In progress", tone: "purple" },
+  blocked: { label: "Blocked", tone: "red" },
+  released: { label: "Live", tone: "green" }
+} as const satisfies Record<string, { label: string; tone: PlanningTone }>;
+
 export const ROADMAP_COLORS = [
   { label: "Blue", value: "blue", tone: "blue" },
   { label: "Amber", value: "amber", tone: "amber" },

@@ -84,87 +84,21 @@ describe("RoadmapDashboard", () => {
 
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
-    expect(screen.getAllByText("Parish").some((element) => element.classList.contains("bg-tone-blue-bg"))).toBe(true);
+    expect(within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Filter Parish" }).querySelector(".bg-tone-blue-line")).toBeTruthy();
   });
 
-  it("summarizes fiscal-year roadmap progress at a glance", () => {
+  it("summarizes fiscal-year roadmap progress in the rail", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
-    const summary = screen.getByTestId("roadmap-summary");
+    const rail = screen.getByTestId("roadmap-rail");
 
-    expect(summary).not.toHaveAttribute("open");
-    expect(summary).toHaveClass("bg-panel-warm");
-    expect(within(summary).getByRole("heading", { name: "Fiscal year at a glance" })).toBeVisible();
-    expect(within(summary).getByText("2 released")).not.toBeVisible();
-
-    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
-
-    expect(summary).toHaveAttribute("open");
-    expect(within(summary).getAllByText("5 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
-    expect(within(summary).getByText("2 released")).toBeVisible();
-    expect(within(summary).getByText("1 unscheduled")).toBeVisible();
-    expect(within(summary).getByText("Top audiences")).toBeVisible();
-    expect(within(summary).getByText("Kids")).toBeVisible();
-    expect(within(summary).getByText("Top provider")).toBeVisible();
-    expect(within(summary).getByText("Thomistic")).toBeVisible();
-    expect(within(summary).getByText("Top genre")).toBeVisible();
-    expect(within(summary).getByText("Top format")).toBeVisible();
-    expect(within(summary).getByText("Scripture")).toBeVisible();
-    expect(within(summary).getByText("Formation Series")).toBeVisible();
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Already Live" }));
-    expect(within(screen.getByRole("dialog", { name: "Already Live" })).getByText("Recent Film")).toBeVisible();
-    expect(within(screen.getByRole("dialog", { name: "Already Live" })).getByText("Older Film")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close Already Live" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Being Worked On" }));
-    expect(within(screen.getByRole("dialog", { name: "Being Worked On" })).getByText("Undated Film")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close Being Worked On" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Need A Date" }));
-    expect(within(screen.getByRole("dialog", { name: "Need A Date" })).getByText("Undated Film")).toBeVisible();
-    expect(within(screen.getByRole("dialog", { name: "Need A Date" })).getByText("Unscheduled")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close Need A Date" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Providers" }));
-    const providersDialog = screen.getByRole("dialog", { name: "Top Providers" });
-    expect(within(providersDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
-    expect(within(providersDialog).getByText("Thomistic")).toBeVisible();
-    expect(within(providersDialog).getByText("67%")).toBeVisible();
-    expect(within(providersDialog).getByText("2 titles")).toBeVisible();
-    expect(screen.queryByTestId("roadmap-pie-tooltip")).not.toBeInTheDocument();
-    fireEvent.mouseEnter(within(providersDialog).getByRole("img", { name: "Thomistic: 2 titles, 67%" }));
-    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("Thomistic");
-    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("2 titles");
-    expect(screen.getByTestId("roadmap-pie-tooltip")).toHaveTextContent("67%");
-    fireEvent.mouseLeave(within(providersDialog).getByRole("img", { name: "Thomistic: 2 titles, 67%" }));
-    expect(screen.queryByTestId("roadmap-pie-tooltip")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Close Top Providers" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Audiences" }));
-    const audiencesDialog = screen.getByRole("dialog", { name: "Top Audiences" });
-    expect(within(audiencesDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
-    expect(within(audiencesDialog).getByText("Kids")).toBeVisible();
-    expect(within(audiencesDialog).getByText("50%")).toBeVisible();
-    expect(within(audiencesDialog).getByText("2 titles")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close Top Audiences" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Genres" }));
-    const genresDialog = screen.getByRole("dialog", { name: "Top Genres" });
-    expect(within(genresDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
-    expect(within(genresDialog).getByText("Scripture")).toBeVisible();
-    expect(within(genresDialog).getByText("67%")).toBeVisible();
-    expect(within(genresDialog).getByText("2 titles")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close Top Genres" }));
-
-    fireEvent.click(within(summary).getByRole("button", { name: "Open Top Formats" }));
-    const formatsDialog = screen.getByRole("dialog", { name: "Top Formats" });
-    expect(within(formatsDialog).getByRole("img", { name: "Percent breakdown" })).toBeVisible();
-    expect(within(formatsDialog).getByText("Formation Series")).toBeVisible();
-    expect(within(formatsDialog).getByText("67%")).toBeVisible();
+    expect(within(rail).getByText("Already live").closest("div")).toHaveTextContent("2");
+    expect(within(rail).getByText("In progress").closest("div")).toHaveTextContent("1");
+    expect(within(rail).getByText("Need a date").closest("div")).toHaveTextContent("1");
+    expect(within(rail).getByText("Total secured")).toBeVisible();
   });
 
-  it("excludes dated releases outside the fiscal-year window from the at-a-glance summary", () => {
+  it("excludes dated releases outside the fiscal-year window from the rail counts", () => {
     const items: RoadmapItem[] = [
       { id: "kids-before-fy", title: "June Kids Release", provider: "Provider", releaseDate: "2026-06-03", status: "released", notes: null, categoryId: "cat-kids" },
       { id: "kids-in-fy", title: "August Kids Release", provider: "Provider", releaseDate: "2026-08-05", status: "in_progress", notes: null, categoryId: "cat-kids" },
@@ -173,12 +107,119 @@ describe("RoadmapDashboard", () => {
 
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={items} ongoingSeries={series} categories={categories} fiscalYearStartMonth="2026-07" startMonth="2026-07" monthCount={12} isDemo />);
 
-    const summary = screen.getByTestId("roadmap-summary");
-    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
+    const rail = screen.getByTestId("roadmap-rail");
 
-    expect(within(summary).getAllByText("2 titles").some((element) => element.classList.contains("text-xl"))).toBe(true);
-    expect(summary).toHaveTextContent("Kids 2");
-    expect(within(summary).queryByText("1 released")).not.toBeInTheDocument();
+    // The June release lands before the fiscal year starts, so it must not count as live.
+    expect(within(rail).getByText("Already live").closest("div")).toHaveTextContent("0");
+    expect(within(rail).getByText("In progress").closest("div")).toHaveTextContent("1");
+    expect(within(rail).getByText("Need a date").closest("div")).toHaveTextContent("1");
+  });
+
+  it("opens present mode from the rail and shows the window as dark month columns", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} fiscalYearLabel="FY27" isDemo />);
+
+    expect(screen.queryByTestId("roadmap-present")).not.toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Present to team" }));
+
+    const present = screen.getByTestId("roadmap-present");
+    expect(present).toHaveAttribute("aria-modal", "true");
+    expect(within(present).getByRole("heading", { name: "January 2027 – June 2027" })).toBeVisible();
+    expect(within(present).getByText("FY27 · Content roadmap")).toBeVisible();
+    expect(within(present).getByText(/5 titles · 2 live · 1 in progress · 1 awaiting a date/)).toBeVisible();
+
+    // One column per month in the window, capped at six.
+    expect(within(present).getAllByTestId("roadmap-present-column")).toHaveLength(6);
+    expect(within(present).getByText("Aquinas 101")).toBeVisible();
+    expect(within(present).getByText("Individual marketing campaign")).toBeVisible();
+  });
+
+  it("caps present mode at six columns for a twelve-month window", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={12} isDemo />);
+
+    fireEvent.click(within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Present to team" }));
+
+    const board = screen.getAllByTestId("roadmap-present-column")[0].parentElement;
+    expect(board).toHaveStyle({ gridTemplateColumns: "repeat(6, minmax(0, 1fr))" });
+    expect(screen.getAllByTestId("roadmap-present-column")).toHaveLength(12);
+  });
+
+  it("leaves present mode with the exit button or Escape", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const present = () => screen.queryByTestId("roadmap-present");
+    const openPresent = () => fireEvent.click(within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Present to team" }));
+
+    openPresent();
+    fireEvent.click(screen.getByRole("button", { name: "Exit present mode" }));
+    expect(present()).not.toBeInTheDocument();
+
+    openPresent();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(present()).not.toBeInTheDocument();
+  });
+
+  it("carries the active filters into present mode", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Filter Parish" }));
+    fireEvent.click(within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Present to team" }));
+
+    const present = screen.getByTestId("roadmap-present");
+    expect(within(present).getByText("Aquinas 101")).toBeVisible();
+    expect(within(present).queryByText("Undated Film")).not.toBeInTheDocument();
+  });
+
+  it("ranks the Mix by minutes across provider, genre, format and category", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const mix = screen.getByTestId("roadmap-mix");
+    expect(within(mix).getByText("All 6 titles · ranked by minutes — click any row to filter the roadmap above.")).toBeVisible();
+
+    // Thomistic is 92 + 96; the three provider-less titles total 45 + 88 + 70 and outrank it.
+    const providers = within(screen.getByTestId("roadmap-mix-provider")).getAllByRole("button");
+    expect(providers).toHaveLength(3);
+    expect(providers[0]).toHaveTextContent("No provider");
+    expect(providers[0]).toHaveTextContent("203");
+    expect(providers[0]).toHaveTextContent("3 titles");
+    expect(providers[1]).toHaveTextContent("Thomistic");
+    expect(providers[1]).toHaveTextContent("188");
+    expect(providers[2]).toHaveTextContent("Augustine Institute");
+    expect(providers[2]).toHaveTextContent("100");
+
+    // Categories rank by their own minutes, with uncategorised titles falling back.
+    const categoryRows = within(screen.getByTestId("roadmap-mix-category")).getAllByRole("button");
+    expect(categoryRows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining("No category"),
+      expect.stringContaining("Kids"),
+      expect.stringContaining("Parish"),
+      expect.stringContaining("Adult")
+    ]);
+  });
+
+  it("filters the roadmap from a Mix row without collapsing the list it came from", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    const providerList = screen.getByTestId("roadmap-mix-provider");
+    fireEvent.click(within(providerList).getByRole("button", { name: "Filter by Provider Thomistic" }));
+
+    expect(screen.getByText("Filtered to Provider: Thomistic — 2 titles.")).toBeVisible();
+    // The list still ranks every provider, so the row can be unpicked.
+    expect(within(providerList).getAllByRole("button")).toHaveLength(3);
+    expect(within(providerList).getByRole("button", { name: "Clear Provider Thomistic filter" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(within(providerList).getByRole("button", { name: "Clear Provider Thomistic filter" }));
+    expect(screen.queryByText(/^Filtered to /)).not.toBeInTheDocument();
+  });
+
+  it("stacks a Mix row on top of the category key filter", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Filter Kids" }));
+    // The Mix now ranks only the Kids titles, so Thomistic carries just Recent Film.
+    fireEvent.click(within(screen.getByTestId("roadmap-mix-provider")).getByRole("button", { name: "Filter by Provider Thomistic" }));
+
+    expect(screen.getByText("Filtered to Kids + Provider: Thomistic — 1 title.")).toBeVisible();
   });
 
   it("uses the next future exact date for Next up", () => {
@@ -190,11 +231,11 @@ describe("RoadmapDashboard", () => {
 
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={julyItems} ongoingSeries={series} categories={categories} startMonth="2026-07" monthCount={6} isDemo />);
 
-    const summary = screen.getByTestId("roadmap-summary");
-    fireEvent.click(within(summary).getByText("Fiscal year at a glance"));
+    const nextUp = within(screen.getByTestId("roadmap-rail")).getByRole("button", { name: "Open Future July Release" });
 
-    expect(within(summary).getByText("Future July Release")).toBeVisible();
-    expect(within(summary).queryByText("GK Chesterton")).not.toBeInTheDocument();
+    expect(nextUp).toHaveTextContent("Next up");
+    expect(nextUp).toHaveTextContent("Future July Release");
+    expect(nextUp).not.toHaveTextContent("GK Chesterton");
   });
 
   it("filters the roadmap when key chips are clicked", () => {
@@ -247,7 +288,8 @@ describe("RoadmapDashboard", () => {
   it("shows and edits the exact release date", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
-    expect(screen.getByText("January 24, 2027")).toBeVisible();
+    // Board rows show the short form; the full date stays in the edit modal.
+    expect(screen.getByText("Jan 24")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Edit Aquinas 101" }));
 
     const dialog = screen.getByRole("dialog", { name: "Edit Roadmap Item" });
@@ -260,7 +302,7 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const card = screen.getByRole("button", { name: "Edit Aquinas 101" });
-    expect(within(card).getByText("Spotlight")).toBeVisible();
+    expect(within(card).getByLabelText("Individual marketing campaign")).toBeVisible();
     expect(within(card).queryByText("Scripture")).not.toBeInTheDocument();
     expect(within(card).queryByText("Formation Series")).not.toBeInTheDocument();
 
@@ -308,7 +350,7 @@ describe("RoadmapDashboard", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const januaryAddButton = screen.getByRole("button", { name: "Add item to January 2027" });
-    expect(januaryAddButton).toHaveTextContent("Add item");
+    expect(januaryAddButton).toHaveTextContent("Add");
     expect(januaryAddButton).toHaveClass("!text-muted");
 
     fireEvent.click(januaryAddButton);
@@ -403,7 +445,9 @@ describe("RoadmapDashboard", () => {
     const februaryColumn = columns.find((column) => within(column).queryByRole("heading", { name: "February 2027" }));
     expect(februaryColumn).toBeTruthy();
     expect(within(februaryColumn!).getByText("February TBD Series")).toBeVisible();
-    expect(within(screen.getByRole("button", { name: "Edit February TBD Series" })).getByText("TBD")).toHaveClass("bg-danger-soft", "text-danger");
+    const februaryDate = within(screen.getByRole("button", { name: "Edit February TBD Series" })).getByText("TBD");
+    expect(februaryDate).toHaveClass("text-danger");
+    expect(februaryDate).not.toHaveClass("bg-danger-soft");
 
     fireEvent.click(within(screen.getByTestId("roadmap-backlog")).getByText("Backlog"));
     expect(within(screen.getByTestId("roadmap-backlog")).queryByText("February TBD Series")).not.toBeInTheDocument();
@@ -629,7 +673,7 @@ describe("RoadmapDashboard", () => {
     const timeline = screen.getByTestId("roadmap-month-scroll");
     expect(timeline).toHaveClass("overflow-x-auto");
     expect(timeline).not.toHaveClass("h-[70vh]", "md:h-[600px]");
-    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[248px]");
+    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[286px]");
 
     fireEvent.click(screen.getByRole("button", { name: "Expand roadmap" }));
 

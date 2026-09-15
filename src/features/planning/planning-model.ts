@@ -64,6 +64,16 @@ export function formatRoadmapDateLabel(value: string | null | undefined) {
   return value?.trim() || "Unscheduled";
 }
 
+/**
+ * Board-row date: "Jul 21". The month column already carries the month, so a
+ * month-TBD or undated item keeps the short "TBD" / "Unscheduled" wording.
+ */
+export function formatRoadmapDateShortLabel(value: string | null | undefined) {
+  if (!isExactRoadmapDate(value)) return formatRoadmapDateLabel(value);
+  const [year, month, day] = value!.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const monthNumbers: Record<string, string> = {
   january: "01", february: "02", march: "03", april: "04", may: "05", june: "06",
   july: "07", august: "08", september: "09", october: "10", november: "11", december: "12"

@@ -33,7 +33,7 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
     >
       <RoadmapDashboard
         pageTitle="Roadmap Demo"
-        pageDescription="Explore a fake content roadmap with expandable summary rankings for audiences, providers, genres, formats, plus Licensing Summary and ClickUp handoff controls."
+        pageDescription="Explore a fake content roadmap: plan releases by month, rank the year by provider, genre, format and category, and try the Licensing Summary and ClickUp handoff controls."
         fiscalYearId="demo-fy26"
         roadmapItems={demoRoadmapItems}
         ongoingSeries={demoOngoingSeries}
@@ -42,6 +42,7 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
         startMonth={startMonth}
         monthCount={monthCount}
         routeBasePath="/demo/roadmap"
+        fiscalYearLabel="FY26"
         isDemo
       />
     </PlanningShell>

@@ -2,35 +2,36 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { CalendarPlus, Check, ChevronDown, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Send, Star, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Maximize2, Minimize2, Plus, Presentation, Send, Star, Trash2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, type SelectHTMLAttributes, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
 import { cn } from "@/components/ui/soft-surface";
 import { PageHead } from "./planning-shell";
-import { DashboardPopout } from "@/features/budget/components/dashboard-popout";
 import { budgetSourceOptions, buildMinutesByBudgetSourceSummary, getBudgetSourceLabel } from "@/features/budget/budget-source";
 import { formatCurrency } from "@/lib/currency";
 import {
   addOngoingSeries, addRoadmapItem, deleteOngoingSeries, deleteRoadmapItem, sendRoadmapItemToBudget, sendRoadmapItemToClickUp, sendRoadmapMonthToClickUp,
   updateOngoingSeries, updateRoadmapItem
 } from "../planning-actions";
-import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningOption, type PlanningTone } from "../planning-constants";
+import { CONTENT_FORMATS, CONTENT_GENRES, TONE_CLASSES, type PlanningOption } from "../planning-constants";
 import {
   buildMonthWindow,
-  formatRoadmapDate,
-  formatRoadmapDateLabel,
   getRoadmapMonthKey,
   isExactRoadmapDate,
   isMonthTbdRoadmapDate,
   parseMonthAnchor,
   shiftMonthAnchor
 } from "../planning-model";
+import { buildRoadmapMix, matchesMixFilter, type MixFilter } from "../roadmap-mix";
 import { ROADMAP_STATUSES, type OngoingSeries, type RoadmapCategory, type RoadmapItem } from "../planning-types";
 import { AddRoadmapModal } from "./add-roadmap-modal";
 import { CategoryManagerModal } from "./category-manager-modal";
 import { EditRoadmapModal } from "./edit-roadmap-modal";
+import { RoadmapMix } from "./roadmap-mix";
+import { RoadmapPresent } from "./roadmap-present";
+import { RoadmapRail } from "./roadmap-rail";
 import { ProviderCombobox } from "./provider-combobox";
 
 type RoadmapDashboardProps = {
@@ -45,6 +46,8 @@ type RoadmapDashboardProps = {
   startMonth: string;
   monthCount: 6 | 9 | 12;
   routeBasePath?: "/roadmap" | "/demo/roadmap";
+  /** Shown as the present-mode eyebrow, e.g. "FY27". */
+  fiscalYearLabel?: string;
   isDemo?: boolean;
 };
 
@@ -62,18 +65,32 @@ type RoadmapFilter = { id: string; label: string };
 
 const ROADMAP_DESCRIPTION = "Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp.";
 
-export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROADMAP_DESCRIPTION, fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, routeBasePath = "/roadmap", isDemo }: RoadmapDashboardProps) {
+export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROADMAP_DESCRIPTION, fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, routeBasePath = "/roadmap", fiscalYearLabel, isDemo }: RoadmapDashboardProps) {
   const [focusedMonthKey, setFocusedMonthKey] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
+  const [mixFilter, setMixFilter] = useState<MixFilter | null>(null);
   const [isRoadmapFocus, setIsRoadmapFocus] = useState(false);
   const [activeRoadmapItemId, setActiveRoadmapItemId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"cards" | "calendar">("cards");
+  const [isPresenting, setIsPresenting] = useState(false);
   const [calendarMonthKey, setCalendarMonthKey] = useState(() => parseMonthAnchor(null));
   const months = buildMonthWindow(startMonth, monthCount);
   const displayedMonths = focusedMonthKey ? months.filter((month) => month.key === focusedMonthKey) : months;
   const visibleKeys = new Set(months.map((month) => month.key));
+  /** Category filter only. The Mix ranks from this — ranking the Mix-filtered list would collapse each list to its own selected row. */
   const filteredItems = activeFilter ? roadmapItems.filter((item) => item.categoryId === activeFilter.id) : roadmapItems;
-  const backlog = filteredItems.filter((item) => {
+  const visibleItems = mixFilter ? filteredItems.filter((item) => matchesMixFilter(item, mixFilter)) : filteredItems;
+  const mixLists = buildRoadmapMix(filteredItems, categories, mixFilter);
+  const clearAllFilters = () => {
+    setActiveFilter(null);
+    setMixFilter(null);
+  };
+  const filterSummary = [activeFilter?.label, mixFilter?.label].filter(Boolean).join(" + ");
+  const pickMixFilter = (next: MixFilter | null) => {
+    setMixFilter(next);
+    setFocusedMonthKey(null);
+  };
+  const backlog = visibleItems.filter((item) => {
     const monthKey = getRoadmapMonthKey(item.releaseDate);
     return !monthKey || !visibleKeys.has(monthKey);
   });
@@ -82,36 +99,59 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
   const releasedByMonth = groupReleasedItemsByMonth(releasedBacklog);
   const otherBacklog = backlog.filter((item) => !releasedBacklog.some((released) => released.id === item.id));
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
-  const summary = buildRoadmapSummary(roadmapItems, categories, getTodayKey(), fiscalYearStartMonth);
+  const summary = buildRoadmapSummary(roadmapItems, getTodayKey(), fiscalYearStartMonth);
   const minutesByBudgetSource = buildMinutesByBudgetSourceSummary([
     ...roadmapItems.filter((item) => isInFiscalYearSnapshot(item.releaseDate, fiscalYearStartMonth)),
     ...ongoingSeries
   ]);
   const providerOptions = useMemo(() => Array.from(new Set(roadmapItems.map((item) => item.provider).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)), [roadmapItems]);
   const href = (start: string, count = monthCount) => `${routeBasePath}?fy=${fiscalYearId}&start=${start}&months=${count}` as Route;
+  const categoryCounts = new Map<string, number>();
+  for (const item of roadmapItems) {
+    if (item.categoryId) categoryCounts.set(item.categoryId, (categoryCounts.get(item.categoryId) ?? 0) + 1);
+  }
+  const jumpToBacklog = () => {
+    const node = document.getElementById("roadmap-backlog");
+    if (node) window.scrollTo({ top: node.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" });
+  };
+  const presentMonths = months.map((month) => ({
+    key: month.key,
+    label: month.date.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+    items: visibleItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key)
+  }));
   const today = parseMonthAnchor(null);
 
   return <div className="grid min-w-0 gap-5">
-    {!isRoadmapFocus ? <PageHead
-      title={pageTitle}
-      description={pageDescription}
-      actions={<>
-        <CategoryManagerModal fiscalYearId={fiscalYearId} categories={categories} isDemo={isDemo} />
-        <AddRoadmapModal>
-          <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} isDemo={isDemo} />
-        </AddRoadmapModal>
-      </>}
-    /> : null}
+    {!isRoadmapFocus ? <PageHead title={pageTitle} description={pageDescription} /> : null}
+
+    <div className={cn("grid min-w-0 gap-5", !isRoadmapFocus && "xl:grid-cols-[288px_minmax(0,1fr)] xl:items-start")}>
+      {!isRoadmapFocus ? <RoadmapRail
+        minutes={minutesByBudgetSource}
+        categories={categories.filter((category) => category.isActive)}
+        categoryCounts={categoryCounts}
+        activeCategoryId={activeFilter?.id ?? null}
+        onToggleCategory={(category) => setActiveFilter(activeFilter?.id === category.id ? null : { id: category.id, label: category.name })}
+        hasFilter={Boolean(filterSummary)}
+        onClearFilter={clearAllFilters}
+        nextRelease={summary.nextRelease}
+        onOpenNextRelease={setActiveRoadmapItemId}
+        stats={{ released: summary.releasedCount, inProgress: summary.inProgressCount, needsDate: summary.unscheduledCount, backlog: backlog.length }}
+        onJumpToBacklog={jumpToBacklog}
+        actions={<>
+          <AddRoadmapModal>
+            <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} isDemo={isDemo} />
+          </AddRoadmapModal>
+          <CategoryManagerModal fiscalYearId={fiscalYearId} categories={categories} isDemo={isDemo} />
+          <SoftButton type="button" variant="secondary" className="w-full justify-center" onClick={() => { setFocusedMonthKey(null); setIsPresenting(true); }}>
+            <Presentation className="h-4 w-4" aria-hidden="true" />
+            Present to team
+          </SoftButton>
+        </>}
+      /> : null}
+
+      <div className="grid min-w-0 gap-5">
 
     {!isRoadmapFocus ? <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-      <div className="flex flex-wrap items-center gap-2" aria-label="Roadmap filters">
-        <span className="mr-1 text-xs font-semibold text-muted">Key</span>
-        {categories.filter((category) => category.isActive).map((category) => {
-          const tone = (category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
-          const isActive = activeFilter?.id === category.id;
-          return <button key={category.id} type="button" aria-label={isActive ? `Clear ${category.name} filter` : `Filter ${category.name}`} aria-pressed={isActive} onClick={() => setActiveFilter(isActive ? null : { id: category.id, label: category.name })} className={cn("rounded-md px-2.5 py-1 text-xs font-semibold transition-colors", TONE_CLASSES[tone].chip, isActive && "ring-2 ring-formed-blue")}>{category.name}</button>;
-        })}
-      </div>
       <nav aria-label="Roadmap timeline controls" className="flex flex-wrap items-center gap-3.5">
         {viewMode === "cards" ? <>
           <div className="flex items-center overflow-hidden rounded-lg border border-hairline bg-panel">
@@ -139,20 +179,32 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
       </nav>
     </div> : null}
 
-    {!isRoadmapFocus ? <RoadmapSummary summary={summary} /> : null}
 
-    {!isRoadmapFocus ? <MinutesByBudgetSourcePanel items={minutesByBudgetSource} /> : null}
-
-    {viewMode === "cards" ? <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div className="grid gap-0.5"><h2 className="font-display text-2xl">{months[0].label} – {months[months.length - 1].label}</h2><p className="text-sm text-muted">{activeFilter ? `Filtered by ${activeFilter.label}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{activeFilter ? <SoftButton type="button" variant="ghost" onClick={() => setActiveFilter(null)}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
+    {viewMode === "cards" ? <section className={cn("min-w-0", isRoadmapFocus && "fixed inset-3 z-50 overflow-auto rounded-lg bg-white p-4 shadow-2xl ring-1 ring-hairline md:inset-6")}><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div className="grid gap-0.5"><h2 className="font-display text-2xl">{months[0].label} – {months[months.length - 1].label}</h2><p className="text-sm text-muted">{filterSummary ? `Filtered to ${filterSummary} — ${visibleItems.length} ${visibleItems.length === 1 ? "title" : "titles"}.` : "Scroll through the roadmap, or click a month to see it at a glance."}</p></div><div className="flex flex-wrap gap-2">{filterSummary ? <SoftButton type="button" variant="ghost" onClick={clearAllFilters}><X className="h-4 w-4" aria-hidden="true" />Clear filter</SoftButton> : null}{focusedMonthKey ? <SoftButton type="button" variant="primary" className="shadow-sm ring-1 ring-formed-blue-border" onClick={() => setFocusedMonthKey(null)}><ChevronLeft className="h-4 w-4" aria-hidden="true" />Show all months</SoftButton> : null}<SoftButton type="button" variant={isRoadmapFocus ? "primary" : "ghost"} className={cn(!isRoadmapFocus && "shadow-sm ring-1 ring-formed-blue-border")} onClick={() => setIsRoadmapFocus((value) => !value)}>{isRoadmapFocus ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}{isRoadmapFocus ? "Exit focus view" : "Expand roadmap"}</SoftButton></div></div>
       <div data-testid="roadmap-month-scroll" className={cn("flex gap-3 overflow-x-auto overflow-y-visible", isRoadmapFocus && "min-h-[calc(100vh-13rem)]")}>
         {displayedMonths.map((month) => {
-          const items = filteredItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key);
-          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start rounded-soft border border-hairline bg-panel-warm p-3.5", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[248px]")}><button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="mb-2.5 grid w-full gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-panel"><h3 className="font-display text-lg">{month.label}</h3><p className="text-[11px] font-semibold text-muted">{items.length} {items.length === 1 ? "release" : "releases"}</p></button><MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} /><AddRoadmapModal triggerLabel="Add item" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-4 w-4" aria-hidden="true" />} triggerClassName="mb-2.5 min-h-8 w-full justify-center border-dashed !border-hairline-strong bg-transparent px-2.5 py-1.5 text-xs !text-muted hover:!bg-panel hover:!text-foreground"><RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} /></AddRoadmapModal><div className={cn("grid gap-2", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</div></article>;
+          const items = visibleItems.filter((item) => getRoadmapMonthKey(item.releaseDate) === month.key);
+          const monthMinutes = items.reduce((sum, item) => sum + (Number(item.minutes) || 0), 0);
+          return <article data-testid="roadmap-month-column" key={month.key} className={cn("shrink-0 self-start overflow-hidden rounded-soft border border-hairline bg-panel", focusedMonthKey ? "w-full min-w-full" : isRoadmapFocus ? "w-[360px]" : "w-[286px]")}>
+            <button type="button" aria-label={`Focus ${month.label}`} onClick={() => setFocusedMonthKey(month.key)} className="flex w-full flex-wrap items-baseline justify-between gap-2 border-b border-hairline bg-panel-warm px-3.5 py-3 text-left transition-colors hover:bg-hairline/40">
+              <h3 className="font-display text-xl">{month.label}</h3>
+              <span className="text-[11px] font-semibold text-faint">{items.length} {items.length === 1 ? "release" : "releases"} · {monthMinutes} min</span>
+            </button>
+            <div className={cn("grid", focusedMonthKey && "md:grid-cols-2 xl:grid-cols-3")}>
+              {items.length ? items.map((item) => <RoadmapCard key={item.id} variant="month" item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />) : <p className="border-b border-hairline px-3.5 py-4 text-xs text-faint">Nothing scheduled this month.</p>}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+              <AddRoadmapModal triggerLabel="Add" triggerAriaLabel={`Add item to ${month.label}`} triggerIcon={<Plus className="h-3 w-3" aria-hidden="true" />} triggerClassName="min-h-0 border-0 bg-transparent p-0 text-[11.5px] !text-muted hover:!bg-transparent hover:!text-foreground">
+                <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} defaultReleaseDate={`${month.key}-01`} idPrefix={`new-${month.key}`} isDemo={isDemo} />
+              </AddRoadmapModal>
+              <MonthClickUpButton fiscalYearId={fiscalYearId} monthKey={month.key} monthLabel={month.label} items={items} isDemo={isDemo} />
+            </div>
+          </article>;
         })}
       </div>
     </section> : <RoadmapCalendar
       monthKey={calendarMonthKey}
-      items={filteredItems}
+      items={visibleItems}
       categoryMap={categoryMap}
       categories={categories}
       fiscalYearId={fiscalYearId}
@@ -164,7 +216,7 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
 
     {!isRoadmapFocus ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <SeriesTable fiscalYearId={fiscalYearId} ongoingSeries={ongoingSeries} isDemo={isDemo} />
-      <details data-testid="roadmap-backlog" className="self-start rounded-soft border border-hairline bg-panel-warm" open>
+      <details id="roadmap-backlog" data-testid="roadmap-backlog" className="self-start rounded-soft border border-hairline bg-panel-warm" open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
           <div className="grid min-w-0 gap-0.5">
             <h2 className="font-display text-lg">Backlog</h2>
@@ -178,6 +230,22 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription = ROAD
         <div className="grid gap-3 border-t border-hairline px-5 pb-4 pt-3">{backlog.length ? <><BacklogGroup title="In progress" count={otherBacklog.length} testId="backlog-other-content" defaultOpen>{otherBacklog.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup><BacklogGroup title="Already released content" count={releasedBacklog.length} testId="backlog-released-content">{releasedByMonth.map(({ monthKey, monthLabel, items }) => <BacklogGroup key={monthKey} title={monthLabel} count={items.length} testId={`released-month-${monthKey}`}>{items.map((item) => <RoadmapCard key={item.id} item={item} category={item.categoryId ? categoryMap.get(item.categoryId) : undefined} categories={categories} fiscalYearId={fiscalYearId} isDemo={isDemo} providerOptions={providerOptions} isOpen={activeRoadmapItemId === item.id} onOpen={() => setActiveRoadmapItemId(item.id)} onClose={() => setActiveRoadmapItemId((currentId) => currentId === item.id ? null : currentId)} />)}</BacklogGroup>)}</BacklogGroup></> : <p className="text-sm text-faint">No backlog items.</p>}</div>
       </details>
     </div> : null}
+
+    {!isRoadmapFocus ? <RoadmapMix lists={mixLists} rankedTitleCount={filteredItems.length} isFiltered={Boolean(filterSummary)} activeFilter={mixFilter} onPick={pickMixFilter} /> : null}
+      </div>
+    </div>
+
+    {isPresenting ? <RoadmapPresent
+      fiscalYearLabel={fiscalYearLabel}
+      rangeLabel={`${months[0].label} – ${months[months.length - 1].label}`}
+      months={presentMonths}
+      columns={Math.min(monthCount, 6)}
+      minutes={minutesByBudgetSource}
+      categories={categories.filter((category) => category.isActive)}
+      categoryMap={categoryMap}
+      stats={{ total: summary.totalTitles, released: summary.releasedCount, inProgress: summary.inProgressCount, needsDate: summary.unscheduledCount }}
+      onExit={() => setIsPresenting(false)}
+    /> : null}
   </div>;
 }
 
@@ -189,372 +257,16 @@ type RoadmapSummaryData = {
   releasedItems: RoadmapItem[];
   inProgressItems: RoadmapItem[];
   unscheduledItems: RoadmapItem[];
-  audienceRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
-  providerRankings: Array<{ name: string; count: number }>;
-  genreRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
-  formatRankings: Array<{ name: string; count: number; tone: PlanningTone }>;
-  nextRelease: { title: string; date: string } | null;
+  nextRelease: { id: string; title: string; date: string } | null;
 };
 
-const RANKING_COLORS = ["#2563eb", "#d97706", "#059669", "#7c3aed", "#0891b2", "#ea580c", "#475569"];
-const TONE_HEX: Record<PlanningTone, string> = {
-  blue: "#327fef",
-  amber: "#c79a3c",
-  green: "#4e7a44",
-  purple: "#7a5c94",
-  red: "#a4343a",
-  cyan: "#176c72",
-  orange: "#c1703c",
-  slate: "#b3a996"
-};
 
-function RoadmapSummary({ summary }: { summary: RoadmapSummaryData }) {
-  const topAudiences = summary.audienceRankings.slice(0, 3);
-  const topProvider = summary.providerRankings[0] ?? null;
-  const topGenre = summary.genreRankings[0] ?? null;
-  const topFormat = summary.formatRankings[0] ?? null;
 
-  return <details data-testid="roadmap-summary" className="group rounded-soft border border-hairline bg-panel-warm">
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
-      <div className="grid min-w-0 gap-0.5">
-        <h2 className="font-display text-lg">Fiscal year at a glance</h2>
-        <p className="text-xs text-muted [text-wrap:pretty]">July – June roadmap snapshot. Expand for audience, provider, genre, and format rankings.</p>
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2.5">
-        <span className="rounded-md bg-tone-slate-bg px-2 py-0.5 text-[11px] font-bold text-muted">{summary.totalTitles} {summary.totalTitles === 1 ? "title" : "titles"}</span>
-        {summary.nextRelease ? <span className="rounded-md bg-formed-blue-soft px-2 py-0.5 text-[11px] font-bold text-formed-blue">Next up</span> : null}
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-hairline bg-panel text-muted">
-          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden="true" />
-        </span>
-      </div>
-    </summary>
-    <div className="border-t border-hairline px-5 py-4">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-sm font-bold text-augustine-blue">Snapshot of what is live, moving, and still needs a date.</p>
-        </div>
-        {summary.nextRelease ? <div className="rounded-md border border-guild-gold bg-guild-gold-soft px-3 py-2 text-right text-xs font-bold text-guild-gold-ink">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide">Next up</span>
-          <span className="block text-foreground">{summary.nextRelease.title}</span>
-          <span>{formatRoadmapDate(summary.nextRelease.date)}</span>
-        </div> : null}
-      </div>
-      <div className="grid gap-3 md:grid-cols-4">
-        <SummaryMetric
-          title="Total Content"
-          value={`${summary.totalTitles} ${summary.totalTitles === 1 ? "title" : "titles"}`}
-          label="Total content"
-          accentClassName="bg-formed-blue"
-          description="Every roadmap item in this fiscal-year snapshot."
-        >
-          <SummaryRows rows={[
-            ["Total content", String(summary.totalTitles)],
-            ["Already live", String(summary.releasedCount)],
-            ["Being worked on", String(summary.inProgressCount)],
-            ["Need a date", String(summary.unscheduledCount)]
-          ]} />
-        </SummaryMetric>
-        <SummaryMetric
-          title="Already Live"
-          value={`${summary.releasedCount} released`}
-          label="Already live"
-          accentClassName="bg-deep-teal"
-          description="Roadmap items marked as released."
-        >
-          <StatusItemList items={summary.releasedItems} emptyText="No released items yet." />
-        </SummaryMetric>
-        <SummaryMetric
-          title="Being Worked On"
-          value={`${summary.inProgressCount} in progress`}
-          label="Being worked on"
-          accentClassName="bg-deep-teal"
-          description="Roadmap items currently marked in progress."
-        >
-          <StatusItemList items={summary.inProgressItems} emptyText="No in-progress items yet." />
-        </SummaryMetric>
-        <SummaryMetric
-          title="Need A Date"
-          value={`${summary.unscheduledCount} unscheduled`}
-          label="Need a date"
-          accentClassName="bg-guild-gold"
-          description="Roadmap items without an exact release date."
-        >
-          <StatusItemList items={summary.unscheduledItems} emptyText="Every item has an exact release date." />
-        </SummaryMetric>
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <DashboardPopout
-          title="Top Audiences"
-          eyebrow={`${summary.audienceRankings.length} audience${summary.audienceRankings.length === 1 ? "" : "s"}`}
-          description="Ranking by roadmap item count."
-          toneClassName="bg-formed-blue-soft text-augustine-blue"
-          triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-formed-blue-border p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Top audiences</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {topAudiences.length ? topAudiences.map((audience) => <span key={audience.name} className={cn("rounded-full px-3 py-1 text-xs font-semibold", TONE_CLASSES[audience.tone].chip)}>{audience.name} <span className="text-[10px] opacity-70">{audience.count}</span></span>) : <span className="text-sm font-bold text-muted">No audiences yet.</span>}
-          </div>
-          </div>}
-        >
-          <RankingBreakdown items={summary.audienceRankings} emptyText="No audiences yet." />
-        </DashboardPopout>
-        <DashboardPopout
-          title="Top Providers"
-          eyebrow={`${summary.providerRankings.length} provider${summary.providerRankings.length === 1 ? "" : "s"}`}
-          description="Ranking by roadmap item count."
-          toneClassName="bg-guild-gold-soft text-guild-gold-ink"
-          triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-guild-gold p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-guild-gold-ink">Top provider</h3>
-          <p className="mt-2 text-lg font-semibold text-foreground">{topProvider ? topProvider.name : "No provider yet"}</p>
-          <p className="text-xs font-bold text-muted">{topProvider ? `${topProvider.count} ${topProvider.count === 1 ? "title" : "titles"}` : "Provider names will show here once added."}</p>
-          </div>}
-        >
-          <RankingBreakdown items={summary.providerRankings} emptyText="No providers yet." />
-        </DashboardPopout>
-        <DashboardPopout
-          title="Top Genres"
-          eyebrow={`${summary.genreRankings.length} genre${summary.genreRankings.length === 1 ? "" : "s"}`}
-          description="Ranking by roadmap item count."
-          toneClassName="bg-guild-gold-soft text-guild-gold-ink"
-          triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-guild-gold p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-guild-gold-ink">Top genre</h3>
-          <p className="mt-2 text-lg font-semibold text-foreground">{topGenre ? topGenre.name : "No genre yet"}</p>
-          <p className="text-xs font-bold text-muted">{topGenre ? `${topGenre.count} ${topGenre.count === 1 ? "title" : "titles"}` : "Genre stats will show here once added."}</p>
-          </div>}
-        >
-          <RankingBreakdown items={summary.genreRankings} emptyText="No genres yet." />
-        </DashboardPopout>
-        <DashboardPopout
-          title="Top Formats"
-          eyebrow={`${summary.formatRankings.length} format${summary.formatRankings.length === 1 ? "" : "s"}`}
-          description="Ranking by roadmap item count."
-          toneClassName="bg-deep-teal-soft text-deep-teal"
-          triggerClassName="min-w-0 p-0 bg-white"
-          trigger={<div className="min-h-36 rounded-md border border-deep-teal p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-deep-teal">Top format</h3>
-          <p className="mt-2 text-lg font-semibold text-foreground">{topFormat ? topFormat.name : "No format yet"}</p>
-          <p className="text-xs font-bold text-muted">{topFormat ? `${topFormat.count} ${topFormat.count === 1 ? "title" : "titles"}` : "Format stats will show here once added."}</p>
-          </div>}
-        >
-          <RankingBreakdown items={summary.formatRankings} emptyText="No formats yet." />
-        </DashboardPopout>
-      </div>
-    </div>
-  </details>;
-}
 
-function MinutesByBudgetSourcePanel({ items }: { items: ReturnType<typeof buildMinutesByBudgetSourceSummary> }) {
-  const totalMinutes = items.reduce((sum, item) => sum + item.minutes, 0);
 
-  return <div data-testid="minutes-by-budget-source-panel" className="rounded-soft border border-deep-teal bg-deep-teal-soft p-5">
-    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-      <div className="grid gap-0.5">
-        <h2 className="font-display text-lg text-deep-teal">Minutes secured by budget line</h2>
-        <p className="text-xs text-muted [text-wrap:pretty]">Every roadmap item in this fiscal year, dated or still in the backlog, plus all ongoing series, totaled by budget source.</p>
-      </div>
-      <span className="rounded-md bg-deep-teal px-3 py-1 text-sm font-bold text-white shadow-sm">{totalMinutes.toLocaleString()} min total</span>
-    </div>
-    <div className="grid gap-3 md:grid-cols-4">
-      {items.map((item) => (
-        <div key={item.source} className="overflow-hidden rounded-lg border border-hairline bg-white">
-          <div className="h-1 bg-deep-teal" />
-          <div className="p-4">
-            <p className="font-display text-2xl text-deep-teal">{item.minutes.toLocaleString()}</p>
-            <p className="text-xs font-semibold text-muted">{item.label}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>;
-}
 
-function SummaryMetric({ title, value, label, accentClassName, description, children }: { title: string; value: string; label: string; accentClassName: string; description: string; children: ReactNode }) {
-  return <DashboardPopout
-    title={title}
-    eyebrow={value}
-    description={description}
-    toneClassName="bg-formed-blue-soft text-augustine-blue"
-    triggerClassName="min-w-0 p-0 bg-white"
-    trigger={<div className="overflow-hidden rounded-md">
-    <div className={cn("h-1", accentClassName)} />
-    <div className="p-4">
-    <p className="text-xl font-semibold text-foreground">{value}</p>
-    <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
-    </div>
-  </div>}
-  >
-    {children}
-  </DashboardPopout>;
-}
-
-function SummaryRows({ rows }: { rows: Array<[string, string]> }) {
-  return <div className="overflow-hidden rounded-lg border border-hairline">
-    {rows.map(([label, value]) => <div key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-hairline px-4 py-3 last:border-b-0">
-      <span className="text-sm font-bold text-muted">{label}</span>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-    </div>)}
-  </div>;
-}
-
-function StatusItemList({ items, emptyText }: { items: RoadmapItem[]; emptyText: string }) {
-  if (!items.length) return <p className="rounded-lg bg-panel-warm p-4 text-sm font-bold text-muted">{emptyText}</p>;
-
-  return <div className="grid gap-2">
-    {items.map((item) => <div key={item.id} className="rounded-lg border border-hairline bg-white p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-foreground">{item.title}</p>
-          <p className="text-sm font-bold text-muted">{item.provider?.trim() || "No provider"}</p>
-        </div>
-        <span className="rounded-full bg-panel-warm px-3 py-1 text-xs font-semibold text-muted">{formatRoadmapSummaryDate(item.releaseDate)}</span>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {item.genre ? <span className="rounded-full bg-guild-gold-soft px-3 py-1 text-xs font-semibold text-guild-gold-ink">{item.genre}</span> : null}
-        {item.format ? <span className="rounded-full bg-deep-teal-soft px-3 py-1 text-xs font-semibold text-deep-teal">{item.format}</span> : null}
-      </div>
-    </div>)}
-  </div>;
-}
-
-function RankingBreakdown({ items, emptyText }: { items: Array<{ name: string; count: number; tone?: PlanningTone }>; emptyText: string }) {
-  if (!items.length) return <p className="rounded-lg bg-panel-warm p-4 text-sm font-bold text-muted">{emptyText}</p>;
-
-  return <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-    <RankingPie items={items} />
-    <RankingList items={items} />
-  </div>;
-}
-
-function RankingList({ items }: { items: Array<{ name: string; count: number; tone?: PlanningTone }> }) {
-  const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
-
-  return <div className="grid content-start gap-2">
-    {items.map((item, index) => <div key={item.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-hairline bg-white p-3">
-      <span className="grid h-8 w-8 place-items-center rounded-md bg-panel-warm text-xs font-semibold text-muted">{index + 1}</span>
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: getRankingColor(item, index) }} />
-        <span className={cn("min-w-0 truncate text-sm font-semibold text-foreground", item.tone && TONE_CLASSES[item.tone].chip, item.tone && "rounded-full px-3 py-1")}>{item.name}</span>
-      </span>
-      <span className="text-sm font-semibold text-foreground">{Math.round((item.count / total) * 100)}%</span>
-      <span className="text-sm font-semibold text-muted">{item.count} {item.count === 1 ? "title" : "titles"}</span>
-    </div>)}
-  </div>;
-}
-
-function RankingPie({ items }: { items: Array<{ name: string; count: number; tone?: PlanningTone }> }) {
-  const [activeSlice, setActiveSlice] = useState<{ name: string; count: number; percent: number } | null>(null);
-  const total = Math.max(items.reduce((sum, item) => sum + item.count, 0), 1);
-  const size = 176;
-  const strokeWidth = 42;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  let runningShare = 0;
-
-  function showSlice(slice: { name: string; count: number; percent: number }) {
-    setActiveSlice(slice);
-  }
-
-  function hideSlice() {
-    setActiveSlice(null);
-  }
-
-  return <div className="relative grid justify-items-center gap-3 rounded-lg bg-panel-warm p-5 text-center">
-    <svg aria-label="Percent breakdown" role="img" viewBox={`0 0 ${size} ${size}`} className="h-44 w-44 -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
-      {items.map((item, index) => {
-        const share = item.count / total;
-        const percent = Math.round(share * 100);
-        const dashArray = `${share * circumference} ${circumference}`;
-        const dashOffset = -(runningShare * circumference);
-        const slice = { name: item.name, count: item.count, percent };
-        runningShare += share;
-        return <circle
-          key={item.name}
-          aria-label={`${item.name}: ${item.count} ${item.count === 1 ? "title" : "titles"}, ${percent}%`}
-          className="cursor-help outline-none transition-opacity hover:opacity-80 focus:opacity-80"
-          cx={size / 2}
-          cy={size / 2}
-          fill="none"
-          onBlur={hideSlice}
-          onFocus={() => showSlice(slice)}
-          onMouseEnter={() => showSlice(slice)}
-          onMouseLeave={hideSlice}
-          pointerEvents="stroke"
-          r={radius}
-          role="img"
-          stroke={getRankingColor(item, index)}
-          strokeDasharray={dashArray}
-          strokeDashoffset={dashOffset}
-          strokeLinecap="butt"
-          strokeWidth={strokeWidth}
-          tabIndex={0}
-        >
-          <title>{`${item.name}: ${item.count} ${item.count === 1 ? "title" : "titles"}, ${percent}%`}</title>
-        </circle>;
-      })}
-    </svg>
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Breakdown</p>
-      <p className="font-display text-2xl text-foreground">{total} {total === 1 ? "title" : "titles"}</p>
-    </div>
-    {activeSlice ? <div data-testid="roadmap-pie-tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-augustine-blue px-3 py-2 text-center text-xs font-semibold text-white shadow-lg">
-      <p>{activeSlice.name}</p>
-      <p className="font-bold opacity-85">{activeSlice.count} {activeSlice.count === 1 ? "title" : "titles"} · {activeSlice.percent}%</p>
-    </div> : null}
-  </div>;
-}
-
-function getRankingColor(item: { tone?: PlanningTone }, index: number) {
-  return item.tone ? TONE_HEX[item.tone] : RANKING_COLORS[index % RANKING_COLORS.length];
-}
-
-function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCategory[], todayKey: string, fiscalYearStartMonth: string): RoadmapSummaryData {
+function buildRoadmapSummary(roadmapItems: RoadmapItem[], todayKey: string, fiscalYearStartMonth: string): RoadmapSummaryData {
   const summaryItems = roadmapItems.filter((item) => isInFiscalYearSnapshot(item.releaseDate, fiscalYearStartMonth));
-  const categoryById = new Map(categories.map((category) => [category.id, category]));
-  const audienceCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
-  const providerCounts = new Map<string, number>();
-  const genreCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
-  const formatCounts = new Map<string, { name: string; count: number; tone: PlanningTone }>();
-  const genreToneByValue = new Map(CONTENT_GENRES.map((option) => [option.value, option.tone]));
-  const formatToneByValue = new Map(CONTENT_FORMATS.map((option) => [option.value, option.tone]));
-
-  for (const item of summaryItems) {
-    if (item.categoryId) {
-      const category = categoryById.get(item.categoryId);
-      if (category) {
-        const tone = (category.colorKey in TONE_CLASSES ? category.colorKey : "slate") as PlanningTone;
-        const existing = audienceCounts.get(category.id);
-        audienceCounts.set(category.id, { name: category.name, tone, count: (existing?.count ?? 0) + 1 });
-      }
-    }
-
-    const provider = item.provider?.trim();
-    if (provider) providerCounts.set(provider, (providerCounts.get(provider) ?? 0) + 1);
-
-    const genre = item.genre?.trim();
-    if (genre) {
-      const existing = genreCounts.get(genre);
-      genreCounts.set(genre, { name: genre, tone: genreToneByValue.get(genre) ?? "slate", count: (existing?.count ?? 0) + 1 });
-    }
-
-    const format = item.format?.trim();
-    if (format) {
-      const existing = formatCounts.get(format);
-      formatCounts.set(format, { name: format, tone: formatToneByValue.get(format) ?? "slate", count: (existing?.count ?? 0) + 1 });
-    }
-  }
-
-  const audienceRankings = Array.from(audienceCounts.values())
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  const providerRankings = Array.from(providerCounts.entries())
-    .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
-    .map(([name, count]) => ({ name, count }));
-  const genreRankings = Array.from(genreCounts.values())
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  const formatRankings = Array.from(formatCounts.values())
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const nextReleaseItem = summaryItems
     .filter((item) => isExactRoadmapDate(item.releaseDate) && item.releaseDate! >= todayKey)
     .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))[0];
@@ -570,11 +282,7 @@ function buildRoadmapSummary(roadmapItems: RoadmapItem[], categories: RoadmapCat
     releasedItems,
     inProgressItems,
     unscheduledItems,
-    audienceRankings,
-    providerRankings,
-    genreRankings,
-    formatRankings,
-    nextRelease: nextReleaseItem ? { title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
+    nextRelease: nextReleaseItem ? { id: nextReleaseItem.id, title: nextReleaseItem.title, date: nextReleaseItem.releaseDate! } : null
   };
 }
 
@@ -587,9 +295,6 @@ function sortRoadmapSummaryItems(items: RoadmapItem[], direction: "asc" | "desc"
   });
 }
 
-function formatRoadmapSummaryDate(releaseDate: string | null) {
-  return formatRoadmapDateLabel(releaseDate);
-}
 
 function isInFiscalYearSnapshot(releaseDate: string | null, fiscalYearStartMonth: string) {
   const monthKey = getRoadmapMonthKey(releaseDate);
@@ -647,8 +352,8 @@ function formatMonthKey(monthKey: string) {
   return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions, isDemo, isOpen, onOpen, onClose }: { item: RoadmapItem; category?: RoadmapCategory; categories: RoadmapCategory[]; fiscalYearId: string; providerOptions: string[]; isDemo?: boolean; isOpen: boolean; onOpen: () => void; onClose: () => void }) {
-  return <EditRoadmapModal item={item} category={category} isDemo={isDemo} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
+function RoadmapCard({ item, category, categories, fiscalYearId, providerOptions, isDemo, isOpen, onOpen, onClose, variant }: { item: RoadmapItem; category?: RoadmapCategory; categories: RoadmapCategory[]; fiscalYearId: string; providerOptions: string[]; isDemo?: boolean; isOpen: boolean; onOpen: () => void; onClose: () => void; variant?: "card" | "month" }) {
+  return <EditRoadmapModal item={item} category={category} isDemo={isDemo} isOpen={isOpen} onOpen={onOpen} onClose={onClose} variant={variant}>
     <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} item={item} isDemo={isDemo} />
   </EditRoadmapModal>;
 }
@@ -771,12 +476,11 @@ function MonthClickUpButton({ fiscalYearId, monthKey, monthLabel, items, isDemo 
     }
   };
 
-  return <div className="mb-3 grid gap-2">
-    <SoftButton type="button" variant="secondary" className="min-h-8 w-full justify-center px-2.5 py-1.5 text-xs" disabled={isDemo || isPushing || !hasItems} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
-      <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+  return <div className="grid justify-items-end gap-1.5">
+    <button type="button" className="text-[11px] font-semibold text-formed-blue transition-colors hover:text-formed-blue-hover disabled:cursor-not-allowed disabled:text-faint" disabled={isDemo || isPushing || !hasItems} onClick={handlePushMonth} aria-label={`Push ${monthLabel} to ClickUp`}>
       {isPushing ? "Checking..." : unpushedCount ? `Push ${unpushedCount} to ClickUp` : "Check ClickUp"}
-    </SoftButton>
-    {message ? <p role="status" className="rounded-md bg-formed-blue-soft px-3 py-2 text-xs font-bold text-formed-blue">{message}</p> : null}
+    </button>
+    {message ? <p role="status" className="rounded-md bg-formed-blue-soft px-2.5 py-1.5 text-[11px] font-bold text-formed-blue">{message}</p> : null}
   </div>;
 }
 
