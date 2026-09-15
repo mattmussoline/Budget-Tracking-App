@@ -225,18 +225,13 @@ export function ContentReviewDashboard({
     });
   }
 
-  function commitRate(itemId: string, cents: number | null) {
-    const item = records.find((entry) => entry.id === itemId);
-    if (!item || item.proposedRateCents === cents) return;
-    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, proposedRateCents: cents } : entry)));
-    persistItem({ ...item, proposedRateCents: cents });
-  }
-
-  function commitNotes(itemId: string, notes: string) {
+  /** Every inline detail-panel field saves the same way: patch the local record, then autosave the whole row. */
+  function commitFields(itemId: string, patch: Partial<ContentReviewItem>) {
     const item = records.find((entry) => entry.id === itemId);
     if (!item) return;
-    setRecords((current) => current.map((entry) => (entry.id === itemId ? { ...entry, notes } : entry)));
-    persistItem({ ...item, notes });
+    const next = { ...item, ...patch };
+    setRecords((current) => current.map((entry) => (entry.id === itemId ? next : entry)));
+    persistItem(next);
   }
 
   function togglePriority(itemId: string) {
@@ -467,12 +462,12 @@ export function ContentReviewDashboard({
           item={selected}
           allItems={records}
           fiscalYearId={fiscalYearId}
+          providerOptions={providerFilterOptions}
           isDemo={isDemo}
           updates={selectedUpdates}
           onClose={closeDetail}
           onStatusChange={(status) => changeStatus(selected.id, status)}
-          onRateCommit={(cents) => commitRate(selected.id, cents)}
-          onNotesCommit={(notes) => commitNotes(selected.id, notes)}
+          onFieldCommit={(patch) => commitFields(selected.id, patch)}
           onTogglePriority={() => togglePriority(selected.id)}
           onDelete={() => deleteItem(selected.id)}
           onUpdateAdded={(update) => setUpdateLog((current) => [update, ...current])}

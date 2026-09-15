@@ -96,7 +96,7 @@ export function ContentReviewUpdateLog({ fiscalYearId, itemId, updates, isDemo, 
             event.preventDefault();
             submit();
           }}
-          className="min-h-11 w-full rounded-md border-0 bg-panel-warm pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue disabled:opacity-60"
+          className="min-h-11 w-full rounded-md border border-hairline-strong bg-panel pl-9 pr-3 text-sm font-medium normal-case tracking-normal outline-none focus:border-formed-blue focus:ring-2 focus:ring-formed-blue disabled:opacity-60"
         />
       </div>
       <button

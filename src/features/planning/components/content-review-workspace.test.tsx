@@ -66,11 +66,11 @@ describe("ContentReviewDashboard", () => {
     expect(screen.getByText("4 titles in the FY26 queue")).toBeVisible();
   });
 
-  it("shows the On the Radar and Acquisition Target rail badges", () => {
+  it("shows the On the Radar rail badge and the Acquisition Targets header summary", () => {
     render(<ContentReviewDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" items={[radarItem, acquisitionItem]} isDemo />);
 
     expect(screen.getByText("1 to follow up")).toBeVisible();
-    expect(screen.getByText("$5,000.00 · no contract")).toBeVisible();
+    expect(screen.getByText("1 · $5,000.00 · no contract")).toBeVisible();
   });
 
   it("selects a row and opens the fixed detail panel without a draft flow", () => {

@@ -12,7 +12,10 @@ type ProviderComboboxProps = {
   label?: string;
   hideLabel?: boolean;
   inputClassName?: string;
+  placeholder?: string;
   onChange?: (value: string) => void;
+  /** Fires once the value has settled — a suggestion was picked, or focus left the combobox. */
+  onCommit?: (value: string) => void;
   onFocus?: () => void;
 };
 
@@ -26,7 +29,9 @@ export function ProviderCombobox({
   label = "Provider",
   hideLabel,
   inputClassName = "min-h-12 w-full rounded-md border-0 bg-panel-warm px-4 text-base font-medium normal-case tracking-normal text-foreground shadow-none placeholder:text-faint focus:border-2 focus:border-formed-blue focus:bg-white disabled:cursor-not-allowed disabled:opacity-70",
+  placeholder,
   onChange,
+  onCommit,
   onFocus
 }: ProviderComboboxProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -45,7 +50,9 @@ export function ProviderCombobox({
   }
 
   const closeOnBlur = (event: FocusEvent<HTMLDivElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false);
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    setIsOpen(false);
+    onCommit?.(currentValue);
   };
 
   const input = <input
@@ -53,6 +60,7 @@ export function ProviderCombobox({
     name={name}
     aria-label={hideLabel ? label : undefined}
     value={currentValue}
+    placeholder={placeholder}
     autoComplete="off"
     disabled={disabled}
     onFocus={() => {
@@ -73,6 +81,7 @@ export function ProviderCombobox({
         id={id}
         name={name}
         value={currentValue}
+        placeholder={placeholder}
         autoComplete="off"
         disabled={disabled}
         onFocus={() => {
@@ -87,7 +96,7 @@ export function ProviderCombobox({
       />
     </label>}
     {showSuggestions ? <div className="absolute z-20 mt-1 grid max-h-48 w-full overflow-auto rounded-md border border-hairline bg-white p-1 shadow-lg">
-      {suggestions.map((option) => <button key={option} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setProvider(option); setIsOpen(false); }} className="rounded px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-formed-blue-soft">{option}</button>)}
+      {suggestions.map((option) => <button key={option} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setProvider(option); setIsOpen(false); onCommit?.(option); }} className="rounded px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-formed-blue-soft">{option}</button>)}
     </div> : null}
   </div>;
 }
