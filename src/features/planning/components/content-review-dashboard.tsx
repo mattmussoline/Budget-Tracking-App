@@ -321,7 +321,7 @@ export function ContentReviewDashboard({
   }
 
   return (
-    <div className="-mx-5 -mt-8 flex min-w-0 flex-wrap items-start md:-mx-10">
+    <div className="-mx-5 -mb-12 -mt-8 flex min-h-[calc(100vh-62px)] min-w-0 flex-wrap items-stretch md:-mx-10">
       {pageDescription ? <p className="w-full bg-formed-blue-soft px-5 py-2 text-xs font-semibold text-formed-blue md:px-10">{pageDescription}</p> : null}
 
       <ContentReviewRail

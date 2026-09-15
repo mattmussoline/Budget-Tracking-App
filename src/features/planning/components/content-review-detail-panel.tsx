@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, X } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import { isPriorityListFull } from "../content-review-queue";
 import { sendReviewToRoadmap } from "../planning-actions";
@@ -12,6 +12,17 @@ import { notesHtmlToPlainText } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
+
+/** The panel can be widened by dragging its left edge; the chosen width is remembered per browser. */
+const PANEL_MIN_WIDTH = 320;
+const PANEL_MAX_WIDTH = 860;
+const PANEL_DEFAULT_WIDTH = 352;
+const PANEL_WIDTH_STORAGE_KEY = "content-review:detail-width";
+
+function clampPanelWidth(value: number) {
+  if (!Number.isFinite(value)) return PANEL_DEFAULT_WIDTH;
+  return Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.round(value)));
+}
 
 /** Inline fields sit on the panel background until hovered or focused, so the panel still reads as a summary. */
 const INLINE_FIELD_CLASS =
@@ -59,6 +70,70 @@ export function ContentReviewDetailPanel({
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
   const [isPipelinePending, startPipelineTransition] = useTransition();
   const priorityFull = isPriorityListFull(allItems) && !item.inFocus;
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
+  const panelWidthRef = useRef(PANEL_DEFAULT_WIDTH);
+
+  // Restore the remembered width after mount so the server and client markup match.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(PANEL_WIDTH_STORAGE_KEY);
+      if (stored) {
+        const next = clampPanelWidth(Number(stored));
+        panelWidthRef.current = next;
+        setPanelWidth(next);
+      }
+    } catch {
+      // Private browsing can block storage; the default width is fine.
+    }
+  }, []);
+
+  const applyPanelWidth = useCallback((next: number) => {
+    const clamped = clampPanelWidth(next);
+    panelWidthRef.current = clamped;
+    setPanelWidth(clamped);
+  }, []);
+
+  const persistPanelWidth = useCallback(() => {
+    try {
+      window.localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(panelWidthRef.current));
+    } catch {
+      // Ignore storage failures; the width still applies for this session.
+    }
+  }, []);
+
+  /** Dragging left grows the panel, so the delta is measured from the start point backwards. */
+  function startResize(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = panelWidthRef.current;
+    const handleMove = (moveEvent: PointerEvent) => applyPanelWidth(startWidth + (startX - moveEvent.clientX));
+    const handleUp = () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      document.body.style.removeProperty("cursor");
+      document.body.style.removeProperty("user-select");
+      persistPanelWidth();
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    document.body.style.setProperty("cursor", "col-resize");
+    document.body.style.setProperty("user-select", "none");
+  }
+
+  function resizeKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? 48 : 16;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      applyPanelWidth(panelWidthRef.current + step);
+      persistPanelWidth();
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      applyPanelWidth(panelWidthRef.current - step);
+      persistPanelWidth();
+    }
+  }
 
   // Selecting a different review resets drafts and collapses "More fields".
   useEffect(() => {
@@ -151,7 +226,27 @@ export function ContentReviewDetailPanel({
   const canOpenLink = /^https?:\/\//.test(trimmedLink);
 
   return (
-    <aside className="w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:w-[352px] min-[1126px]:border-t-0 min-[1126px]:border-l">
+    <aside
+      style={{ "--cr-detail-width": `${panelWidth}px` } as React.CSSProperties}
+      className="relative w-full shrink-0 self-stretch border-t border-hairline bg-panel-warm px-[22px] pb-[60px] pt-[30px] min-[1126px]:w-[var(--cr-detail-width)] min-[1126px]:max-w-[70vw] min-[1126px]:border-t-0 min-[1126px]:border-l"
+    >
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize selected review panel"
+        aria-valuenow={panelWidth}
+        aria-valuemin={PANEL_MIN_WIDTH}
+        aria-valuemax={PANEL_MAX_WIDTH}
+        tabIndex={0}
+        onPointerDown={startResize}
+        onKeyDown={resizeKeyDown}
+        onDoubleClick={() => {
+          applyPanelWidth(PANEL_DEFAULT_WIDTH);
+          persistPanelWidth();
+        }}
+        title="Drag to resize (double-click to reset)"
+        className="absolute left-0 top-0 z-10 hidden h-full w-[9px] -translate-x-1/2 cursor-col-resize touch-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-transparent hover:after:bg-formed-blue focus-visible:outline-none focus-visible:after:bg-formed-blue min-[1126px]:block"
+      />
       <div className="sticky top-[90px] grid min-w-0 gap-1">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[11.5px] font-semibold text-formed-blue">Selected review</p>
