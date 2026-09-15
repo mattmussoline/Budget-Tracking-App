@@ -7,12 +7,10 @@ import {
   PRIORITY_LIMIT,
   QUEUE_GROUP_ORDER,
   type QueueLane,
-  acquisitionTargetTotalCents,
   needsDecisionItems,
   radarFollowUpCount
 } from "../content-review-queue";
 import { REVIEW_STATUSES, TONE_BORDER_L_CLASSES, TONE_INK_CLASSES, TONE_SWATCH_CLASSES } from "../planning-constants";
-import { formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem } from "../planning-types";
 
 type ContentReviewRailProps = {
@@ -36,7 +34,6 @@ export function ContentReviewRail({ items, priorities, lane, canEdit, onSelectLa
   const totalCount = items.filter((item) => item.id !== "draft").length;
   const needsCount = needsDecisionItems(items).length;
   const radarCount = radarFollowUpCount(items);
-  const acquisitionTotal = acquisitionTargetTotalCents(items);
 
   return (
     <aside className="w-full shrink-0 self-stretch border-b border-hairline bg-panel-warm px-4 pb-8 pt-6 md:w-[234px] md:border-b-0 md:border-r">
@@ -118,9 +115,7 @@ export function ContentReviewRail({ items, priorities, lane, canEdit, onSelectLa
             const badge =
               statusValue === "on_the_radar" && radarCount > 0
                 ? `${radarCount} to follow up`
-                : statusValue === "acquisition_target" && count > 0
-                  ? `${formatOptionalCurrency(acquisitionTotal) || "$0.00"} · no contract`
-                  : null;
+                : null;
             return (
               <LaneButton
                 key={statusValue}

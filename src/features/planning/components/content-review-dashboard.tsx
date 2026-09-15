@@ -9,6 +9,7 @@ import {
   type QueueSort,
   type QueueSortColumn,
   QUEUE_GROUP_TEST_IDS,
+  acquisitionTargetTotalCents,
   emptyQueueFilters,
   groupQueueItems,
   isPriorityListFull,
@@ -99,6 +100,9 @@ export function ContentReviewDashboard({
     () => needsDecisionItems(records).filter((item) => !item.inFocus),
     [records]
   );
+
+  const acquisitionTargetCount = useMemo(() => records.filter((item) => item.reviewStatus === "acquisition_target").length, [records]);
+  const acquisitionTargetTotal = useMemo(() => acquisitionTargetTotalCents(records), [records]);
 
   const laneBase = laneItems(records, lane, priorities);
   const isFiltering = filters.search.trim() !== "" || filters.status !== "all" || filters.provider !== "all";
@@ -335,7 +339,15 @@ export function ContentReviewDashboard({
             <h1 className="font-display text-[32px] leading-[1.05] md:text-[38px]">{heading.title}</h1>
             <p className="mt-1 text-[13px] leading-normal text-muted">{heading.subline}</p>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {acquisitionTargetCount > 0 ? (
+              <div className="flex min-h-9 items-center gap-1.5 border border-tone-amber-line bg-tone-amber-line px-3.5 py-2 text-[13px]">
+                <span className="font-semibold text-white">Acquisition target</span>
+                <span className="text-white">
+                  {acquisitionTargetCount} · {formatOptionalCurrency(acquisitionTargetTotal) || "$0.00"} · no contract
+                </span>
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={() => setShowRecap(true)}
@@ -403,7 +415,7 @@ export function ContentReviewDashboard({
           </div>
         ) : null}
 
-        <div className={cn("mb-2 hidden gap-2.5 border-b border-hairline-strong px-3 pb-2 md:grid", COLUMN_GRID_CLASS)}>
+        <div className={cn("mb-2 hidden gap-2.5 border-b border-l-[3px] border-hairline-strong border-l-transparent px-3 pb-2 md:grid", COLUMN_GRID_CLASS)}>
           <SortHeader column="title" sort={sort} onToggle={toggleSort} />
           <SortHeader column="reviewStatus" sort={sort} onToggle={toggleSort} />
           <SortHeader column="provider" sort={sort} onToggle={toggleSort} />
