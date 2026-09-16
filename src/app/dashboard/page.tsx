@@ -1,12 +1,9 @@
 import { BudgetDashboard } from "@/features/budget/components/budget-dashboard";
 import { demoFiscalYear, demoLicenses } from "@/features/budget/demo-data";
-import { buildNeedsAttentionItems } from "@/features/budget/attention-model";
-import { buildBudgetSourceSummary } from "@/features/budget/budget-source";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
 import { selectFiscalYear } from "@/features/budget/fiscal-year-selection";
 import type { ContentLicense, PaymentCadence } from "@/features/budget/budget-types";
 import type { ProviderColorKey, ProviderColorOverrides } from "@/features/budget/provider-colors";
-import type { ContentReviewItem, ReviewStatus, RoadmapItem, RoadmapStatus } from "@/features/planning/planning-types";
 import { releaseDueScheduledRoadmapItems, syncReleasedRoadmapFormedLinks } from "@/features/planning/roadmap-auto-release";
 import { requireInternalSession } from "@/lib/auth/internal-auth-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -40,8 +37,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         fiscalYears={[demoFiscalYear]}
         model={model}
         licenses={demoLicenses}
-      mode="demo"
-      budgetSourceSummary={buildBudgetSourceSummary(demoLicenses)}
+        mode="demo"
       />
     );
   }
@@ -74,10 +70,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const [
     { data: licenseRows, error: licensesError },
     { data: providerColorRows, error: providerColorError },
-    { data: accessRows, error: accessError },
-    { data: roadmapRows, error: roadmapError },
-    { data: reviewRows, error: reviewError },
-    { data: attentionDismissalRows, error: attentionDismissalError }
+    { data: accessRows, error: accessError }
   ] = await Promise.all([
     admin
       .from("content_licenses")
@@ -91,21 +84,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     admin
       .from("app_access_invites")
       .select("email")
-      .order("email", { ascending: true }),
-    admin
-      .from("roadmap_items")
-      .select("id,title,provider,release_month,status,budget_source,minutes,cost_cents,notes,category_id,formed_url,formed_url_candidate")
-      .eq("fiscal_year_id", activeFiscalYear.id)
-      .order("created_at", { ascending: true }),
-    admin
-      .from("content_review_items")
-      .select("id,title,provider,genre,format,review_status,budget_source,minutes,notes,proposed_rate_cents,review_link,comparable_content,is_coproduction_opportunity")
-      .eq("fiscal_year_id", activeFiscalYear.id)
-      .order("created_at", { ascending: true }),
-    admin
-      .from("attention_dismissals")
-      .select("attention_key")
-      .eq("fiscal_year_id", activeFiscalYear.id)
+      .order("email", { ascending: true })
   ]);
 
   if (licensesError) {
@@ -118,15 +97,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   if (accessError) {
     throw new Error(accessError.message);
-  }
-  if (roadmapError) {
-    throw new Error(roadmapError.message);
-  }
-  if (reviewError) {
-    throw new Error(reviewError.message);
-  }
-  if (attentionDismissalError) {
-    throw new Error(attentionDismissalError.message);
   }
 
   const licenses: ContentLicense[] = (licenseRows ?? []).map((license) => ({
@@ -143,35 +113,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const providerColorOverrides: ProviderColorOverrides = Object.fromEntries(
     (providerColorRows ?? []).map((row) => [row.provider, row.color_key as ProviderColorKey])
   );
-  const roadmapItems: RoadmapItem[] = (roadmapRows ?? []).map((item) => ({
-    id: item.id,
-    title: item.title,
-    provider: item.provider,
-    releaseDate: item.release_month,
-    status: item.status as RoadmapStatus,
-    budgetSource: item.budget_source ?? "misc_licensing",
-    minutes: item.minutes,
-    costCents: item.cost_cents,
-    notes: item.notes,
-    categoryId: item.category_id,
-    formedUrl: item.formed_url,
-    formedUrlCandidate: item.formed_url_candidate
-  }));
-  const reviewItems: ContentReviewItem[] = (reviewRows ?? []).map((item) => ({
-    id: item.id,
-    title: item.title,
-    provider: item.provider,
-    genre: item.genre,
-    format: item.format,
-    reviewStatus: item.review_status as ReviewStatus,
-    budgetSource: item.budget_source ?? "misc_licensing",
-    minutes: item.minutes,
-    notes: item.notes,
-    proposedRateCents: item.proposed_rate_cents,
-    reviewLink: item.review_link,
-    comparableContent: item.comparable_content,
-    isCoproductionOpportunity: item.is_coproduction_opportunity
-  }));
 
   const model = buildDashboardModel({
     fiscalYear: activeFiscalYear.fiscal_year,
@@ -179,14 +120,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     budgetCents: activeFiscalYear.budget_cents,
     licenses
   });
-  const dismissedAttentionKeys = new Set((attentionDismissalRows ?? []).map((row) => row.attention_key));
-  const needsAttention = buildNeedsAttentionItems({
-    licenses,
-    reviewItems,
-    roadmapItems,
-    remainingBudgetCents: model.remainingCents
-  }).filter((item) => !dismissedAttentionKeys.has(item.id));
-  const budgetSourceSummary = buildBudgetSourceSummary([...licenses, ...roadmapItems, ...reviewItems]);
 
   return (
     <BudgetDashboard
@@ -198,8 +131,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       mode="live"
       userEmail={session.email}
       allowedEmails={(accessRows ?? []).map((row) => row.email)}
-      needsAttention={needsAttention}
-      budgetSourceSummary={budgetSourceSummary}
     />
   );
 }

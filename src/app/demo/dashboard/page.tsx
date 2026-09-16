@@ -1,18 +1,10 @@
-import { buildNeedsAttentionItems } from "@/features/budget/attention-model";
-import { buildBudgetSourceSummary } from "@/features/budget/budget-source";
 import { BudgetDashboard } from "@/features/budget/components/budget-dashboard";
 import { buildDashboardModel } from "@/features/budget/dashboard-model";
-import {
-  demoContentReviewItems,
-  demoFiscalYear,
-  demoLicenses,
-  demoProviderColorOverrides,
-  demoRoadmapItems
-} from "@/features/budget/demo-data";
+import { demoFiscalYear, demoLicenses, demoProviderColorOverrides } from "@/features/budget/demo-data";
 
 export const metadata = {
   title: "Demo Licensing Summary | Licensing Budget",
-  description: "Public sample licensing summary with popout metrics, provider mix, attention items, and dummy licensing budget data"
+  description: "Public sample licensing summary with fiscal-year health, payment timeline, provider mix, and dummy licensing budget data"
 };
 
 export default function DemoDashboardPage() {
@@ -22,17 +14,6 @@ export default function DemoDashboardPage() {
     budgetCents: demoFiscalYear.budget_cents,
     licenses: demoLicenses
   });
-  const needsAttention = buildNeedsAttentionItems({
-    licenses: demoLicenses,
-    reviewItems: demoContentReviewItems,
-    roadmapItems: demoRoadmapItems,
-    remainingBudgetCents: model.remainingCents
-  });
-  const budgetSourceSummary = buildBudgetSourceSummary([
-    ...demoLicenses,
-    ...demoRoadmapItems,
-    ...demoContentReviewItems
-  ]);
 
   return (
     <BudgetDashboard
@@ -42,8 +23,6 @@ export default function DemoDashboardPage() {
       licenses={demoLicenses}
       providerColorOverrides={demoProviderColorOverrides}
       mode="demo"
-      needsAttention={needsAttention}
-      budgetSourceSummary={budgetSourceSummary}
     />
   );
 }

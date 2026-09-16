@@ -58,3 +58,19 @@ export function buildMinutesByBudgetSourceSummary(items: Array<{ budgetSource?: 
     minutes: totals.get(option.value) ?? 0
   }));
 }
+
+/**
+ * One colour per budget line, so the rail bars, the timeline stack, the payment
+ * rows and the title rows all say "misc licensing" in the same ink. These are
+ * the warm-palette tones from globals.css, not new colours.
+ */
+export const budgetSourceColors: Record<BudgetSource, string> = {
+  misc_licensing: "var(--deep-teal)",
+  internal: "var(--ink-muted)",
+  donor_funded: "var(--guild-gold-ink)",
+  other: "var(--tone-slate-line)"
+};
+
+export function getBudgetSourceColor(value: string | null | undefined) {
+  return budgetSourceColors[(value ?? "misc_licensing") as BudgetSource] ?? budgetSourceColors.other;
+}
