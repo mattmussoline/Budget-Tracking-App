@@ -11,7 +11,18 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**", ".open-next/**", ".wrangler/**", "node_modules/**", "playwright-report/**", "test-results/**", "next-env.d.ts"]
+    // docs/mockups holds the external design handoffs verbatim, including the
+    // Claude Design prototype runtime. It is reference material, not app code.
+    ignores: [
+      ".next/**",
+      ".open-next/**",
+      ".wrangler/**",
+      "node_modules/**",
+      "playwright-report/**",
+      "test-results/**",
+      "next-env.d.ts",
+      "docs/mockups/**"
+    ]
   }
 ];
 

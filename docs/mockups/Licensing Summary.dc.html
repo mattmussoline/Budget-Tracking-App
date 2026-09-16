@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #327fef; text-decoration: none; }
+    a:hover { color: #1f63c9; }
+    input, select, textarea, button { font: inherit; }
+    input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid #327fef; outline-offset: 1px; }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:#f7f1e6;color:#172033;font-family:'Manrope',Helvetica,Arial,sans-serif;font-size:14px;">
+  <header style="position:sticky;top:0;z-index:30;border-bottom:1px solid #e7dfce;background:#fffcf6;">
+    <div style="max-width:1600px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;padding:10px 40px;min-height:62px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:28px;">
+        <span style="font-family:'Instrument Serif',Georgia,serif;font-size:20px;">Licensing</span>
+        <nav style="display:flex;align-items:center;gap:4px;">
+          <span style="display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#5f6879;">Roadmap</span>
+          <span style="display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:8px;font-size:14px;font-weight:600;background:#e8f1fe;color:#327fef;">Licensing Summary</span>
+          <span style="display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#5f6879;">Content Review</span>
+          <span style="display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#5f6879;">Co-Production</span>
+        </nav>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <sc-for list="{{ fyTabs }}" as="tab" hint-placeholder-count="3">
+            <button type="button" onClick="{{ tab.onSelect }}" style="{{ tab.buttonStyle }}">{{ tab.label }}</button>
+          </sc-for>
+          <button type="button" onClick="{{ onAddFY }}" style="display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:6px 12px;border:1px solid #e7dfce;background:#fff;border-radius:8px;font-size:12px;font-weight:600;color:#172033;cursor:pointer;">+ Add fiscal year</button>
+        </div>
+        <span aria-hidden="true" style="width:1px;height:20px;background:#e7dfce;"></span>
+        <span style="font-size:13px;color:#5f6879;">matt.mussoline@augustineinstitute.org</span>
+        <button type="button" style="min-height:32px;padding:6px 10px;border:1px solid #e7dfce;background:#fff;border-radius:8px;font-size:12px;font-weight:600;color:#172033;cursor:pointer;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-start;max-width:1600px;margin:0 auto;">
+    <aside style="flex:0 0 280px;min-width:240px;border-right:1px solid #e7dfce;background:#fffcf6;padding:28px 22px;display:grid;gap:26px;align-self:stretch;position:sticky;top:62px;max-height:calc(100vh - 62px);overflow-y:auto;overflow-x:hidden;">
+
+      <section style="display:grid;gap:10px;">
+        <span style="font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#8c93a1;">Fiscal year health</span>
+        <span style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:{{ healthColor }};">{{ healthLabel }}</span>
+        <div style="height:5px;background:#ece6da;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;border-radius:3px;{{ healthBarStyle }}"></div>
+        </div>
+        <span style="font-size:12px;color:#5f6879;">{{ percentUsedLabel }}</span>
+      </section>
+
+      <section style="display:grid;gap:12px;border-top:1px solid #e7dfce;padding-top:20px;">
+        <sc-for list="{{ budgetRows }}" as="row" hint-placeholder-count="4">
+          <div style="display:grid;gap:6px;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+              <span style="font-size:13px;font-weight:600;color:#5f6879;">{{ row.label }}</span>
+              <span style="font-family:'Instrument Serif',Georgia,serif;font-size:22px;">{{ row.value }}</span>
+            </div>
+            <sc-if value="{{ row.hasBar }}" hint-placeholder-val="{{ false }}">
+              <div style="height:4px;background:#ece6da;border-radius:2px;overflow:hidden;">
+                <div style="height:100%;border-radius:2px;background:{{ row.barColor }};width:{{ row.barPercentStr }}"></div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="display:grid;gap:10px;border-top:1px solid #e7dfce;padding-top:20px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+          <span style="font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#8c93a1;">Needs attention</span>
+          <span style="font-size:11px;font-weight:700;color:#a4343a;">{{ attentionCount }} open</span>
+        </div>
+        <sc-if value="{{ hasNoAttention }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:12px;color:#8c93a1;">Nothing needs attention right now.</span>
+        </sc-if>
+        <div style="display:grid;gap:8px;">
+          <sc-for list="{{ attentionItems }}" as="item" hint-placeholder-count="2">
+            <div style="display:grid;gap:3px;border-left:3px solid {{ item.dot }};padding:4px 0 4px 10px;">
+              <span style="font-size:12.5px;font-weight:600;">{{ item.title }}</span>
+              <span style="font-size:11.5px;color:#5f6879;">{{ item.detail }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display:grid;gap:10px;border-top:1px solid #e7dfce;padding-top:20px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+          <span style="font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#8c93a1;">Budget sources</span>
+          <span style="font-size:11px;font-weight:700;color:#5f6879;">{{ budgetSourceTotal }} tracked</span>
+        </div>
+        <div style="display:grid;gap:6px;">
+          <sc-for list="{{ budgetSourceRows }}" as="row" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;">
+              <span style="color:#172033;">{{ row.label }}</span>
+              <span style="font-weight:700;color:#5f6879;">{{ row.count }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display:grid;gap:12px;border-top:1px solid #e7dfce;padding-top:20px;">
+        <div style="display:grid;gap:2px;">
+          <h2 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:17px;">Edit fiscal year</h2>
+          <p style="margin:0;font-size:12px;color:#5f6879;">Update the label, fiscal calendar, or total budget.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;">
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Label
+            <input type="text" value="{{ fyForm.label }}" onChange="{{ onFyLabelChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;color:#172033;"/>
+          </label>
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Fiscal year
+            <input type="number" value="{{ fyForm.fiscalYear }}" onChange="{{ onFyYearChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;color:#172033;"/>
+          </label>
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">FY starts in
+            <select value="{{ fyForm.startMonth }}" onChange="{{ onFyStartChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;color:#172033;">
+              <sc-for list="{{ monthStartOptions }}" as="opt" hint-placeholder-count="12">
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Budget
+            <input type="text" value="{{ fyForm.budget }}" onChange="{{ onFyBudgetChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;color:#172033;"/>
+          </label>
+        </div>
+        <button type="button" onClick="{{ onFySave }}" style="min-height:36px;padding:8px 14px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;font-weight:600;color:#172033;cursor:pointer;">Save budget settings</button>
+      </section>
+
+      <section style="display:grid;gap:12px;border-top:1px solid #e7dfce;padding-top:20px;">
+        <div style="display:grid;gap:2px;">
+          <h2 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:17px;">Add content</h2>
+          <p style="margin:0;font-size:12px;color:#5f6879;">The first quarterly payment is prorated automatically.</p>
+        </div>
+        <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Title
+          <input type="text" placeholder="Jesus Thirsts" value="{{ addForm.title }}" onChange="{{ onAddTitleChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+        </label>
+        <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Provider
+          <input type="text" placeholder="Provider name" value="{{ addForm.provider }}" onChange="{{ onAddProviderChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+        </label>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;">
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Payment amount
+            <input type="text" placeholder="1200" value="{{ addForm.amount }}" onChange="{{ onAddAmountChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+          </label>
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Cadence
+            <select value="{{ addForm.cadence }}" onChange="{{ onAddCadenceChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+              <option value="">Select</option>
+              <sc-for list="{{ cadenceOptions }}" as="opt" hint-placeholder-count="2">
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;">
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Added month
+            <select value="{{ addForm.addedMonth }}" onChange="{{ onAddMonthChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+              <option value="">Select</option>
+              <sc-for list="{{ monthOptions }}" as="opt" hint-placeholder-count="12">
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+          <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Budget source
+            <select value="{{ addForm.budgetSource }}" onChange="{{ onAddSourceChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+              <sc-for list="{{ budgetSourceOptions }}" as="opt" hint-placeholder-count="4">
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+        </div>
+        <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Notes
+          <input type="text" placeholder="Optional context" value="{{ addForm.notes }}" onChange="{{ onAddNotesChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+        </label>
+        <button type="button" onClick="{{ onAddSubmit }}" style="min-height:38px;padding:8px 14px;border:1px solid #327fef;background:#327fef;color:#fff;border-radius:0;font-size:13px;font-weight:600;cursor:pointer;">Add title</button>
+      </section>
+    </aside>
+
+    <main style="flex:1 1 640px;min-width:0;padding:32px 40px 64px;display:grid;gap:32px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;">
+        <div style="display:grid;gap:6px;max-width:640px;">
+          <h1 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:40px;line-height:1.05;">{{ fyLabel }}</h1>
+          <p style="margin:0;font-size:14px;color:#5f6879;">Titles, providers, payment cadence, quarter proration, committed spend, and remaining budget in one place.</p>
+        </div>
+        <span style="display:inline-flex;align-items:center;min-height:30px;padding:6px 12px;border-radius:8px;background:#e8f1fe;color:#327fef;font-size:13px;font-weight:600;">{{ fyRangeLabel }}</span>
+      </div>
+
+      <section style="display:grid;gap:12px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;">
+          <h2 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:24px;">Licensing summary</h2>
+          <p style="margin:0;font-size:13px;color:#5f6879;">Quick signals for how the licensing year is taking shape.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+          <sc-for list="{{ insightTiles }}" as="tile" hint-placeholder-count="3">
+            <div style="border:1px solid #e7dfce;background:#fffcf6;padding:18px 20px;display:grid;gap:6px;min-width:0;">
+              <span style="font-size:11.5px;font-weight:600;color:#5f6879;">{{ tile.label }}</span>
+              <span style="font-family:'Instrument Serif',Georgia,serif;font-size:30px;line-height:1;">{{ tile.value }}</span>
+              <span style="font-size:12px;color:#8c93a1;">{{ tile.detail }}</span>
+              <sc-if value="{{ tile.secondary }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:12px;color:#8c93a1;">{{ tile.secondary }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+          <div style="border:1px solid #e7dfce;background:#fffcf6;padding:18px 20px;display:flex;align-items:center;gap:18px;min-width:0;">
+            <svg width="{{ pieSize }}" height="{{ pieSize }}" viewBox="0 0 84 84" style="flex-shrink:0;transform:rotate(-90deg);">
+              <circle cx="{{ pieCenter }}" cy="{{ pieCenter }}" r="{{ pieRadius }}" fill="none" stroke="#ece6da" stroke-width="{{ pieStrokeWidth }}"></circle>
+              <sc-for list="{{ pieSlices }}" as="slice" hint-placeholder-count="4">
+                <circle cx="{{ pieCenter }}" cy="{{ pieCenter }}" r="{{ pieRadius }}" fill="none" stroke="{{ slice.color }}" stroke-width="{{ pieStrokeWidth }}" stroke-dasharray="{{ slice.dashArray }}" stroke-dashoffset="{{ slice.dashOffset }}"></circle>
+              </sc-for>
+            </svg>
+            <div style="display:grid;gap:5px;min-width:0;flex:1;">
+              <span style="font-size:11.5px;font-weight:600;color:#5f6879;">Active providers</span>
+              <sc-for list="{{ topProviders }}" as="p" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;">
+                  <span style="display:flex;align-items:center;gap:6px;min-width:0;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:{{ p.color }};flex-shrink:0;"></span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.provider }}</span>
+                  </span>
+                  <span style="color:#8c93a1;flex-shrink:0;">{{ p.licenseSharePercent }}%</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="display:grid;gap:14px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;">
+          <h2 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:24px;">Committed by quarter</h2>
+          <p style="margin:0;font-size:13px;color:#5f6879;">{{ licenseCountLabel }}</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">
+          <sc-for list="{{ quarters }}" as="q" hint-placeholder-count="4">
+            <div style="border:1px solid #e7dfce;{{ q.borderTopStyle }}background:#fffcf6;padding:18px 20px;display:grid;gap:10px;min-width:0;align-self:start;">
+              <button type="button" onClick="{{ q.onToggle }}" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:none;border:none;padding:0;cursor:pointer;text-align:left;min-width:0;width:100%;">
+                <div style="display:grid;gap:3px;">
+                  <span style="font-family:'Instrument Serif',Georgia,serif;font-size:18px;">Quarter {{ q.quarter }}</span>
+                  <span style="font-size:11.5px;color:#8c93a1;">{{ q.rangeLabel }}
+                    <sc-if value="{{ q.isCurrent }}" hint-placeholder-val="{{ false }}"><span style="color:#176c72;font-weight:600;">· Current quarter</span></sc-if>
+                  </span>
+                </div>
+                <span style="width:24px;height:24px;border:1px solid #e7dfce;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;color:#5f6879;flex-shrink:0;">{{ q.toggleSymbol }}</span>
+              </button>
+              <span style="font-family:'Instrument Serif',Georgia,serif;font-size:28px;color:{{ q.totalColor }};">{{ q.totalLabel }}</span>
+              <div style="height:5px;background:#ece6da;">
+                <div style="height:100%;background:{{ q.barColor }};width:{{ q.barPercentStr }}"></div>
+              </div>
+              <sc-if value="{{ q.isOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;border-top:1px solid #e7dfce;padding-top:12px;">
+                  <sc-for list="{{ q.months }}" as="m" hint-placeholder-count="3">
+                    <div style="border:1px solid #e7dfce;{{ m.bgStyle }}padding:12px;display:grid;gap:8px;min-width:0;align-self:start;">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;width:100%;">
+                        <div style="display:grid;gap:1px;min-width:0;">
+                          <span style="font-family:'Instrument Serif',Georgia,serif;font-size:15px;">{{ m.label }}</span>
+                          <sc-if value="{{ m.isCurrentMonth }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:600;color:#176c72;">Current month</span></sc-if>
+                        </div>
+                        <span style="font-size:12px;font-weight:600;color:#5f6879;flex-shrink:0;white-space:nowrap;">{{ m.totalLabel }}</span>
+                      </div>
+                      <div style="display:grid;gap:6px;min-width:0;width:100%;box-sizing:border-box;">
+                        <sc-for list="{{ m.payments }}" as="p" hint-placeholder-count="2">
+                          <div style="border:1px solid #e7dfce;background:#fff;min-width:0;width:100%;box-sizing:border-box;">
+                            <button type="button" onClick="{{ p.onToggle }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:none;border:none;cursor:pointer;text-align:left;">
+                              <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+                                <span style="width:7px;height:7px;border-radius:50%;{{ p.providerDot }};flex-shrink:0;"></span>
+                                <span style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ p.title }}</span>
+                              </span>
+                              <span style="font-size:12.5px;font-weight:600;flex-shrink:0;white-space:nowrap;">{{ p.amountLabel }}</span>
+                            </button>
+                            <sc-if value="{{ p.isExpanded }}" hint-placeholder-val="{{ false }}">
+                              <div style="border-top:1px solid #e7dfce;padding:8px 10px;display:grid;gap:6px;">
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                  <sc-if value="{{ p.isFirstPayment }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px;font-weight:700;color:#5f6879;background:#ece6da;padding:2px 6px;">FIRST</span></sc-if>
+                                  <sc-if value="{{ p.isProrated }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px;font-weight:700;color:#8a6a15;background:#fbf3e2;padding:2px 6px;">PRORATED</span></sc-if>
+                                </div>
+                                <span style="font-size:11px;color:#5f6879;">{{ p.provider }}</span>
+                                <span style="font-size:9.5px;font-weight:700;color:#5f6879;background:#ece6da;padding:2px 6px;width:fit-content;">{{ p.budgetSourceLabel }}</span>
+                                <button type="button" onClick="{{ p.onEdit }}" style="width:fit-content;font-size:11px;font-weight:600;color:#172033;border:1px solid #e7dfce;background:#fff;padding:4px 8px;cursor:pointer;">Edit</button>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display:grid;gap:14px;" id="edit-content-section">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:grid;gap:2px;">
+            <h2 style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:24px;">Edit content</h2>
+            <p style="margin:0;font-size:13px;color:#5f6879;">Adjust titles, providers, payment amounts, cadence, or added month.</p>
+          </div>
+          <input type="search" placeholder="Search titles or providers" value="{{ search }}" onChange="{{ onSearchChangeHandler }}" style="min-height:36px;min-width:240px;padding:0 12px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+        </div>
+        <div style="border:1px solid #e7dfce;background:#fff;">
+          <div style="display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1.4fr) 110px 90px 70px 60px;gap:12px;padding:10px 16px;border-bottom:1px solid #e7dfce;background:#fffcf6;font-size:10.5px;font-weight:600;color:#8c93a1;text-transform:uppercase;letter-spacing:0.04em;">
+            <span>Title</span><span>Provider</span><span style="text-align:right;">Installment</span><span>Cadence</span><span>Added</span><span></span>
+          </div>
+          <sc-for list="{{ licenseRows }}" as="row" hint-placeholder-count="6">
+            <div id="{{ row.domId }}" style="border-bottom:1px solid #e7dfce;">
+              <button type="button" onClick="{{ row.onToggle }}" style="{{ row.leftBorder }};width:100%;display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1.4fr) 110px 90px 70px 60px;gap:12px;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;align-items:center;">
+                <span style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.title }}</span>
+                <span style="font-size:13px;color:#5f6879;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.provider }}</span>
+                <span style="font-size:13px;text-align:right;">{{ row.installmentLabel }}</span>
+                <span style="font-size:12.5px;color:#5f6879;">{{ row.cadenceLabel }}</span>
+                <span style="font-size:12.5px;color:#5f6879;">{{ row.addedLabel }}</span>
+                <span style="font-size:12px;font-weight:600;color:#327fef;">{{ row.editLabel }}</span>
+              </button>
+              <sc-if value="{{ row.isEditing }}" hint-placeholder-val="{{ false }}">
+                <div style="border-top:1px solid #e7dfce;background:#fffcf6;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Title
+                    <input type="text" value="{{ editDraft.title }}" onChange="{{ onEditTitleChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Provider
+                    <input type="text" value="{{ editDraft.provider }}" onChange="{{ onEditProviderChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Amount
+                    <input type="text" value="{{ editDraft.installment }}" onChange="{{ onEditInstallmentChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Cadence
+                    <select value="{{ editDraft.cadence }}" onChange="{{ onEditCadenceChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+                      <sc-for list="{{ cadenceOptions }}" as="opt" hint-placeholder-count="2">
+                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                      </sc-for>
+                    </select>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Added month
+                    <select value="{{ editDraft.addedMonth }}" onChange="{{ onEditMonthChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+                      <sc-for list="{{ monthOptions }}" as="opt" hint-placeholder-count="12">
+                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                      </sc-for>
+                    </select>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;">Budget source
+                    <select value="{{ editDraft.budgetSource }}" onChange="{{ onEditSourceChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 8px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;">
+                      <sc-for list="{{ budgetSourceOptions }}" as="opt" hint-placeholder-count="4">
+                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                      </sc-for>
+                    </select>
+                  </label>
+                  <label style="display:grid;gap:4px;font-size:11px;font-weight:600;color:#5f6879;grid-column:span 2;">Notes
+                    <input type="text" value="{{ editDraft.notes }}" onChange="{{ onEditNotesChange }}" style="width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border:1px solid #e7dfce;background:#fff;border-radius:0;font-size:13px;"/>
+                  </label>
+                  <div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;grid-column:1/-1;">
+                    <button type="button" onClick="{{ row.onDelete }}" style="min-height:34px;padding:6px 12px;border:1px solid #e8cfd3;background:#f7e9ea;color:#a4343a;border-radius:0;font-size:12.5px;font-weight:600;cursor:pointer;">Delete</button>
+                    <button type="button" onClick="{{ row.onSave }}" style="min-height:34px;padding:6px 14px;border:1px solid #327fef;background:#327fef;color:#fff;border-radius:0;font-size:12.5px;font-weight:600;cursor:pointer;">Save</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ hasNoLicenseRows }}" hint-placeholder-val="{{ false }}">
+            <p style="padding:20px 16px;font-size:13px;color:#8c93a1;margin:0;">No content matches your search.</p>
+          </sc-if>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+function formatCurrency(cents) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format((cents || 0) / 100);
+}
+function formatCurrencyWhole(cents) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((cents || 0) / 100);
+}
+function dollarsToCents(value) {
+  const normalized = String(value == null ? "" : value).replace(/[$,]/g, "").trim();
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.round(parsed * 100);
+}
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const BUDGET_SOURCE_OPTIONS = [
+  { value: "misc_licensing", label: "Misc licensing budget" },
+  { value: "internal_production", label: "Internal production" },
+  { value: "donor_funded", label: "Donor-funded budget" },
+  { value: "other", label: "Other budget" }
+];
+function getBudgetSourceLabel(value) {
+  const found = BUDGET_SOURCE_OPTIONS.find((o) => o.value === value);
+  return found ? found.label : "Other budget";
+}
+const PROVIDER_PALETTE = ["#1f63c9", "#12585d", "#3d6136", "#8a6a15", "#9a5427", "#8f2b31", "#5b4270", "#5f6879"];
+
+function getQuarterForFiscalMonth(fm) { return Math.floor((fm - 1) / 3) + 1; }
+function getQuarterPaymentFraction(fm) { const m = ((fm - 1) % 3) + 1; return (4 - m) / 3; }
+function getCalendarMonth(fm, startMonth) { return ((startMonth - 1 + (fm - 1)) % 12) + 1; }
+function getFiscalMonths(startMonth) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const fm = i + 1;
+    const cal = getCalendarMonth(fm, startMonth);
+    return { index: fm, calendarMonth: cal, label: MONTH_NAMES[cal - 1], quarter: getQuarterForFiscalMonth(fm) };
+  });
+}
+function calculateLicenseSchedule(license) {
+  const budgetSource = license.budgetSource || "misc_licensing";
+  if (license.cadence === "yearly") {
+    return [{ licenseId: license.id, title: license.title, provider: license.provider, cadence: license.cadence, budgetSource, fiscalMonth: license.addedFiscalMonth, quarter: getQuarterForFiscalMonth(license.addedFiscalMonth), amountCents: license.installmentCents, isProrated: false, isFirstPayment: true }];
+  }
+  const firstQuarter = getQuarterForFiscalMonth(license.addedFiscalMonth);
+  const firstAmount = Math.round(license.installmentCents * getQuarterPaymentFraction(license.addedFiscalMonth));
+  const payments = [{ licenseId: license.id, title: license.title, provider: license.provider, cadence: license.cadence, budgetSource, fiscalMonth: license.addedFiscalMonth, quarter: firstQuarter, amountCents: firstAmount, isProrated: firstAmount !== license.installmentCents, isFirstPayment: true }];
+  for (let q = firstQuarter + 1; q <= 4; q++) {
+    payments.push({ licenseId: license.id, title: license.title, provider: license.provider, cadence: license.cadence, budgetSource, fiscalMonth: (q - 1) * 3 + 1, quarter: q, amountCents: license.installmentCents, isProrated: false, isFirstPayment: false });
+  }
+  return payments;
+}
+function getCurrentFiscalMonthIndex(fiscalYear, startMonth, now) {
+  const fyStart = new Date(fiscalYear - 1, startMonth - 1, 1);
+  const fyEnd = new Date(fiscalYear, startMonth - 1, 1);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (monthStart < fyStart || monthStart >= fyEnd) return null;
+  return (now.getFullYear() - fyStart.getFullYear()) * 12 + now.getMonth() - fyStart.getMonth() + 1;
+}
+function getHealth(remainingPercent) {
+  if (remainingPercent < 0) return { label: "Over budget", color: "#a4343a" };
+  if (remainingPercent < 30) return { label: "Watch closely", color: "#8a6a15" };
+  return { label: "On track", color: "#176c72" };
+}
+function buildModel(fy, today) {
+  const fiscalMonths = getFiscalMonths(fy.startMonth);
+  const payments = fy.licenses.flatMap(calculateLicenseSchedule);
+  const months = fiscalMonths.map((fm) => {
+    const monthPayments = payments.filter((p) => p.fiscalMonth === fm.index);
+    return Object.assign({}, fm, { payments: monthPayments, totalCents: monthPayments.reduce((s, p) => s + p.amountCents, 0) });
+  });
+  const currentFiscalMonth = getCurrentFiscalMonthIndex(fy.fiscalYear, fy.startMonth, today);
+  const currentFiscalQuarter = currentFiscalMonth ? getQuarterForFiscalMonth(currentFiscalMonth) : null;
+  const totalSpentCents = payments.filter((p) => p.budgetSource === "misc_licensing").reduce((s, p) => s + p.amountCents, 0);
+  const otherBudgetSpentCents = payments.filter((p) => p.budgetSource !== "misc_licensing").reduce((s, p) => s + p.amountCents, 0);
+  const remainingCents = fy.budgetCents - totalSpentCents;
+  const percentUsed = fy.budgetCents ? Math.round((totalSpentCents / fy.budgetCents) * 100) : 0;
+  const remainingPercent = fy.budgetCents ? Math.round((remainingCents / fy.budgetCents) * 100) : 0;
+  const licenseCount = fy.licenses.length;
+  const quarterlyLicenseCount = fy.licenses.filter((l) => l.cadence === "quarterly").length;
+  const yearlyLicenseCount = licenseCount - quarterlyLicenseCount;
+  const totalInstallment = fy.licenses.reduce((s, l) => s + l.installmentCents, 0);
+  const averageInstallmentCents = licenseCount ? Math.round(totalInstallment / licenseCount) : 0;
+  const quarterlyCents = payments.filter((p) => p.cadence === "quarterly").reduce((s, p) => s + p.amountCents, 0);
+  const yearlyCents = payments.filter((p) => p.cadence === "yearly").reduce((s, p) => s + p.amountCents, 0);
+  const providerNames = Array.from(new Set(fy.licenses.map((l) => l.provider))).sort((a, b) => a.localeCompare(b));
+  let providers = providerNames.map((name, i) => {
+    const count = fy.licenses.filter((l) => l.provider === name).length;
+    return { provider: name, licenseCount: count, licenseSharePercent: licenseCount ? Math.round((count / licenseCount) * 100) : 0, color: PROVIDER_PALETTE[i % PROVIDER_PALETTE.length] };
+  });
+  providers = providers.sort((a, b) => b.licenseCount - a.licenseCount);
+  const budgetSourceCounts = BUDGET_SOURCE_OPTIONS.map((opt) => ({ label: opt.label, value: opt.value, count: fy.licenses.filter((l) => (l.budgetSource || "misc_licensing") === opt.value).length })).filter((row) => row.count > 0);
+
+  return { fiscalMonths, months, payments, currentFiscalMonth, currentFiscalQuarter, totalSpentCents, otherBudgetSpentCents, remainingCents, percentUsed, remainingPercent, licenseCount, quarterlyLicenseCount, yearlyLicenseCount, averageInstallmentCents, quarterlyCents, yearlyCents, providers, budgetSourceCounts };
+}
+function buildAttention(fy, model) {
+  const items = [];
+  const zeroRate = fy.licenses.filter((l) => l.installmentCents === 0);
+  if (zeroRate.length) {
+    items.push({ id: "zero-rate", dot: "#c79a3c", title: zeroRate.length + " title" + (zeroRate.length === 1 ? "" : "s") + " have no confirmed rate", detail: zeroRate.slice(0, 3).map((l) => l.title).join(", ") + (zeroRate.length > 3 ? ", \u2026" : "") });
+  }
+  const avg = model.averageInstallmentCents;
+  const candidates = fy.licenses.filter((l) => avg > 0 && l.installmentCents > avg * 4).sort((a, b) => b.installmentCents - a.installmentCents);
+  const big = candidates[0];
+  if (big) {
+    const multiple = Math.round(big.installmentCents / avg);
+    items.push({ id: "big-" + big.id, dot: "#a4343a", title: big.title + " is " + multiple + "x the average installment", detail: formatCurrency(big.installmentCents) + " \u2014 confirm before it posts." });
+  }
+  return items;
+}
+
+class Component extends DCLogic {
+  state = {
+    activeFY: 27,
+    fiscalYears: {
+      27: {
+        label: "FY2027", fiscalYear: 2027, startMonth: 7, budgetCents: 4000000,
+        licenses: [
+          { id: "l1", title: "Into Great Silence", provider: "Philip Gr\u00f6ning", installmentCents: 2250000, cadence: "yearly", addedFiscalMonth: 1, budgetSource: "misc_licensing", notes: "" },
+          { id: "l2", title: "The Genius of G.K. Chesterton", provider: "Ave Maria University", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 1, budgetSource: "other", notes: "" },
+          { id: "l3", title: "The Ulmas: A Blessed Family", provider: "Ignatius Press", installmentCents: 25000, cadence: "quarterly", addedFiscalMonth: 1, budgetSource: "misc_licensing", notes: "" },
+          { id: "l4", title: "God's Princesses: St. Clare of Assisi", provider: "Herald Entertainment", installmentCents: 0, cadence: "quarterly", addedFiscalMonth: 2, budgetSource: "other", notes: "" },
+          { id: "l5", title: "The Life and Teachings of St. Augustine", provider: "Ave Maria University", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "other", notes: "" },
+          { id: "l6", title: "The Missionary of St. Joseph", provider: "Ignatius Press", installmentCents: 100000, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "misc_licensing", notes: "" },
+          { id: "l7", title: "Triumph of the Heart", provider: "Spirit Juice Studios", installmentCents: 2500000, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "donor_funded", notes: "" },
+          { id: "l8", title: "Owlegories Season 2", provider: "Wonderborn", installmentCents: 850000, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "internal_production", notes: "" },
+          { id: "l9", title: "An Introduction to Sacramental Theology", provider: "Ave Maria University", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 3, budgetSource: "other", notes: "" },
+          { id: "l10", title: "Cabrini", provider: "Angel Studios", installmentCents: 20000000, cadence: "yearly", addedFiscalMonth: 3, budgetSource: "donor_funded", notes: "" },
+          { id: "l11", title: "God Above All: The Life of Mother Mar\u00eda F\u00e9lix Torres", provider: "Herald Entertainment", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 3, budgetSource: "other", notes: "" },
+          { id: "l12", title: "Mother Teresa I God's Princesses", provider: "Herald Entertainment", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 3, budgetSource: "other", notes: "" },
+          { id: "l13", title: "Verbum Dei Podcast", provider: "Servants of Christ Jesus", installmentCents: 200000, cadence: "yearly", addedFiscalMonth: 3, budgetSource: "misc_licensing", notes: "" },
+          { id: "l14", title: "Benjamin Cello Season 3", provider: "Kin Media", installmentCents: 600000, cadence: "quarterly", addedFiscalMonth: 4, budgetSource: "internal_production", notes: "" },
+          { id: "l15", title: "Lead Kindly Light", provider: "Lumine", installmentCents: 0, cadence: "quarterly", addedFiscalMonth: 4, budgetSource: "misc_licensing", notes: "" }
+        ]
+      },
+      28: {
+        label: "FY2028", fiscalYear: 2028, startMonth: 7, budgetCents: 4500000,
+        licenses: [
+          { id: "l16", title: "Lenten Reflections", provider: "Ave Maria University", installmentCents: 350000, cadence: "yearly", addedFiscalMonth: 1, budgetSource: "misc_licensing", notes: "" },
+          { id: "l17", title: "Kids Rosary Minutes", provider: "Wonderborn", installmentCents: 120000, cadence: "quarterly", addedFiscalMonth: 1, budgetSource: "internal_production", notes: "" },
+          { id: "l18", title: "Advent At Home", provider: "Ignatius Press", installmentCents: 0, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "other", notes: "" }
+        ]
+      },
+      26: {
+        label: "FY2026", fiscalYear: 2026, startMonth: 7, budgetCents: 3500000,
+        licenses: [
+          { id: "l19", title: "Saints Alive", provider: "Herald Entertainment", installmentCents: 1800000, cadence: "yearly", addedFiscalMonth: 1, budgetSource: "misc_licensing", notes: "" },
+          { id: "l20", title: "Parish Kitchen", provider: "Northstar Studios", installmentCents: 720000, cadence: "yearly", addedFiscalMonth: 2, budgetSource: "donor_funded", notes: "" },
+          { id: "l21", title: "Desert Fathers", provider: "Harbor Light Media", installmentCents: 260000, cadence: "quarterly", addedFiscalMonth: 3, budgetSource: "misc_licensing", notes: "" },
+          { id: "l22", title: "Little Way Adventures", provider: "Bluebird Learning", installmentCents: 315000, cadence: "quarterly", addedFiscalMonth: 4, budgetSource: "internal_production", notes: "" }
+        ]
+      }
+    },
+    expandedQuartersByFY: { 27: [1], 28: [1], 26: [1] },
+    expandedPayments: {},
+    search: "",
+    editingId: null,
+    editDraft: null,
+    addDraft: { title: "", provider: "", amount: "", cadence: "", addedMonth: "", budgetSource: "misc_licensing", notes: "" },
+    fyDraft: { label: "FY2027", fiscalYear: "2027", startMonth: "7", budget: "40000" }
+  };
+
+  bindField(stateKey, field) {
+    return (e) => {
+      const value = e.target.value;
+      this.setState((s) => ({ [stateKey]: Object.assign({}, s[stateKey], { [field]: value }) }));
+    };
+  }
+
+  setActiveFY(id) {
+    this.setState((s) => {
+      const fy = s.fiscalYears[id];
+      return {
+        activeFY: id, editingId: null, editDraft: null, search: "",
+        fyDraft: { label: fy.label, fiscalYear: String(fy.fiscalYear), startMonth: String(fy.startMonth), budget: String(fy.budgetCents / 100) }
+      };
+    });
+  }
+
+  toggleQuarter(q) {
+    this.setState((s) => {
+      const current = s.expandedQuartersByFY[s.activeFY] || [];
+      const next = current.includes(q) ? current.filter((x) => x !== q) : current.concat([q]);
+      return { expandedQuartersByFY: Object.assign({}, s.expandedQuartersByFY, { [s.activeFY]: next }) };
+    });
+  }
+
+  togglePayment(key) {
+    this.setState((s) => ({ expandedPayments: Object.assign({}, s.expandedPayments, { [key]: !s.expandedPayments[key] }) }));
+  }
+
+  openEditLicense(license) {
+    this.setState({
+      editingId: license.id,
+      editDraft: {
+        title: license.title, provider: license.provider, installment: String(license.installmentCents / 100),
+        cadence: license.cadence, addedMonth: String(license.addedFiscalMonth), budgetSource: license.budgetSource || "misc_licensing", notes: license.notes || ""
+      }
+    });
+    setTimeout(() => {
+      const el = document.getElementById("license-row-" + license.id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+  }
+
+  closeEdit() { this.setState({ editingId: null, editDraft: null }); }
+
+  saveEdit(licenseId) {
+    this.setState((s) => {
+      const fy = s.fiscalYears[s.activeFY];
+      const d = s.editDraft;
+      const licenses = fy.licenses.map((l) => l.id === licenseId ? Object.assign({}, l, {
+        title: d.title, provider: d.provider, installmentCents: dollarsToCents(d.installment),
+        cadence: d.cadence, addedFiscalMonth: Number(d.addedMonth) || l.addedFiscalMonth, budgetSource: d.budgetSource, notes: d.notes
+      }) : l);
+      return { fiscalYears: Object.assign({}, s.fiscalYears, { [s.activeFY]: Object.assign({}, fy, { licenses }) }), editingId: null, editDraft: null };
+    });
+  }
+
+  deleteLicense(licenseId) {
+    this.setState((s) => {
+      const fy = s.fiscalYears[s.activeFY];
+      return { fiscalYears: Object.assign({}, s.fiscalYears, { [s.activeFY]: Object.assign({}, fy, { licenses: fy.licenses.filter((l) => l.id !== licenseId) }) }), editingId: null, editDraft: null };
+    });
+  }
+
+  submitAdd() {
+    const d = this.state.addDraft;
+    if (!d.title.trim() || !d.provider.trim() || !d.cadence || !d.addedMonth) return;
+    this.setState((s) => {
+      const fy = s.fiscalYears[s.activeFY];
+      const newLicense = {
+        id: "new-" + Date.now(), title: d.title.trim(), provider: d.provider.trim(), installmentCents: dollarsToCents(d.amount),
+        cadence: d.cadence, addedFiscalMonth: Number(d.addedMonth), budgetSource: d.budgetSource, notes: d.notes
+      };
+      return {
+        fiscalYears: Object.assign({}, s.fiscalYears, { [s.activeFY]: Object.assign({}, fy, { licenses: [newLicense].concat(fy.licenses) }) }),
+        addDraft: { title: "", provider: "", amount: "", cadence: "", addedMonth: "", budgetSource: "misc_licensing", notes: "" }
+      };
+    });
+  }
+
+  saveFySettings() {
+    this.setState((s) => {
+      const d = s.fyDraft;
+      const fy = s.fiscalYears[s.activeFY];
+      return {
+        fiscalYears: Object.assign({}, s.fiscalYears, { [s.activeFY]: Object.assign({}, fy, {
+          label: d.label, fiscalYear: Number(d.fiscalYear) || fy.fiscalYear, startMonth: Number(d.startMonth) || fy.startMonth, budgetCents: dollarsToCents(d.budget)
+        }) })
+      };
+    });
+  }
+
+  addFiscalYear() {
+    this.setState((s) => {
+      const ids = Object.keys(s.fiscalYears).map(Number);
+      const newId = Math.max.apply(null, ids) + 1;
+      const newFY = { label: "FY20" + newId, fiscalYear: 2000 + newId, startMonth: 7, budgetCents: 4000000, licenses: [] };
+      return {
+        fiscalYears: Object.assign({}, s.fiscalYears, { [newId]: newFY }),
+        activeFY: newId,
+        expandedQuartersByFY: Object.assign({}, s.expandedQuartersByFY, { [newId]: [1] }),
+        editingId: null, editDraft: null,
+        addDraft: { title: "", provider: "", amount: "", cadence: "", addedMonth: "", budgetSource: "misc_licensing", notes: "" },
+        fyDraft: { label: newFY.label, fiscalYear: String(newFY.fiscalYear), startMonth: String(newFY.startMonth), budget: String(newFY.budgetCents / 100) }
+      };
+    });
+  }
+
+  setSearch(value) { this.setState({ search: value }); }
+
+  renderVals() {
+    const today = new Date(2026, 8, 16);
+    const state = this.state;
+    const fyIds = Object.keys(state.fiscalYears).map(Number).sort((a, b) => b - a);
+    const fyTabs = fyIds.map((id) => {
+      const active = id === state.activeFY;
+      return {
+        id, label: "FY" + id, onSelect: () => this.setActiveFY(id),
+        buttonStyle: "display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border:1px solid " + (active ? "#327fef" : "#e7dfce") + ";background:" + (active ? "#e8f1fe" : "#fff") + ";border-radius:8px;font-size:13px;font-weight:600;color:" + (active ? "#327fef" : "#172033") + ";cursor:pointer;"
+      };
+    });
+
+    const fy = state.fiscalYears[state.activeFY];
+    const model = buildModel(fy, today);
+    const health = getHealth(model.remainingPercent);
+    const attention = buildAttention(fy, model);
+
+    const startName = MONTH_NAMES[fy.startMonth - 1];
+    const endMonthIdx = (fy.startMonth + 10) % 12;
+    const endName = MONTH_NAMES[endMonthIdx];
+    const startYear = fy.startMonth === 1 ? fy.fiscalYear : fy.fiscalYear - 1;
+    const endYear = fy.fiscalYear;
+    const fyRangeLabel = startName + " " + startYear + " \u2013 " + endName + " " + endYear;
+
+    const monthOptions = model.fiscalMonths.map((m) => ({ label: m.label, value: String(m.index) }));
+    const cadenceOptions = [{ label: "Quarterly", value: "quarterly" }, { label: "Yearly", value: "yearly" }];
+    const monthStartOptions = MONTH_NAMES.map((name, i) => ({ label: name, value: String(i + 1) }));
+
+    const budgetRows = [
+      { label: "Budget", value: formatCurrencyWhole(fy.budgetCents), hasBar: false },
+      { label: "Committed", value: formatCurrencyWhole(model.totalSpentCents), hasBar: true, barColor: health.color, barPercentStr: Math.min(100, model.percentUsed) + "%" },
+      { label: "Other budgets", value: formatCurrencyWhole(model.otherBudgetSpentCents), hasBar: false },
+      { label: "Remaining", value: formatCurrencyWhole(model.remainingCents), hasBar: false }
+    ];
+
+    const insightTiles = [
+      { label: "Content pieces", value: String(model.licenseCount), detail: model.quarterlyLicenseCount + " quarterly / " + model.yearlyLicenseCount + " yearly", secondary: "" },
+      { label: "Average rate", value: formatCurrency(model.averageInstallmentCents), detail: "Average installment amount", secondary: "" },
+      { label: "Cadence mix", value: model.quarterlyLicenseCount + " / " + model.yearlyLicenseCount, detail: formatCurrency(model.quarterlyCents) + " quarterly", secondary: formatCurrency(model.yearlyCents) + " yearly" }
+    ];
+
+    const pieSize = 84, pieStrokeWidth = 13;
+    const pieRadius = (pieSize - pieStrokeWidth) / 2;
+    const circumference = 2 * Math.PI * pieRadius;
+    let running = 0;
+    const pieSlices = model.providers.map((p) => {
+      const share = p.licenseSharePercent;
+      const dashArray = ((share / 100) * circumference) + " " + circumference;
+      const dashOffset = -((running / 100) * circumference);
+      running += share;
+      return { key: p.provider, dashArray, dashOffset, color: p.color };
+    });
+    const providerTotal = model.providers.reduce((s, p) => s + p.licenseCount, 0);
+    const topProviders = model.providers.slice(0, 4);
+
+    const openQuarters = state.expandedQuartersByFY[state.activeFY] || [];
+    const quarterTotals = [1, 2, 3, 4].map((q) => model.months.filter((m) => m.quarter === q).reduce((s, m) => s + m.totalCents, 0));
+    const busiest = Math.max.apply(null, quarterTotals.concat([1]));
+    const providerColorByName = {};
+    model.providers.forEach((p) => { providerColorByName[p.provider] = p.color; });
+
+    const quarters = [1, 2, 3, 4].map((q) => {
+      const qMonths = model.months.filter((m) => m.quarter === q);
+      const totalCents = quarterTotals[q - 1];
+      const isCurrent = model.currentFiscalQuarter === q;
+      const isOpen = openQuarters.indexOf(q) !== -1;
+      const rangeLabel = qMonths.length ? qMonths[0].label + " \u2013 " + qMonths[qMonths.length - 1].label : "";
+      const months = qMonths.map((m) => ({
+        index: m.index, label: m.label, isCurrentMonth: model.currentFiscalMonth === m.index,
+        totalLabel: formatCurrency(m.totalCents), bgStyle: model.currentFiscalMonth === m.index ? "background:#e4f0f0;" : "background:#fff;",
+        payments: m.payments.map((p) => {
+          const key = p.licenseId + "-" + p.fiscalMonth;
+          const isExpanded = Boolean(state.expandedPayments[key]);
+          const license = fy.licenses.find((l) => l.id === p.licenseId);
+          return {
+            key, title: p.title, providerDot: "background:" + (providerColorByName[p.provider] || "#5f6879"),
+            amountLabel: formatCurrency(p.amountCents), isExpanded, isProrated: p.isProrated, isFirstPayment: p.isFirstPayment,
+            provider: p.provider, budgetSourceLabel: getBudgetSourceLabel(p.budgetSource),
+            onToggle: () => this.togglePayment(key), onEdit: () => { if (license) this.openEditLicense(license); }
+          };
+        })
+      }));
+      return {
+        quarter: q, rangeLabel, isCurrent, isOpen, totalLabel: formatCurrency(totalCents),
+        totalColor: isCurrent ? "#176c72" : "#172033", barColor: isCurrent ? "#176c72" : "#b3a996",
+        barPercentStr: Math.round((totalCents / busiest) * 100) + "%",
+        borderTopStyle: isCurrent ? "border-top:2px solid #176c72;" : "",
+        toggleSymbol: isOpen ? "\u2013" : "+", months, onToggle: () => this.toggleQuarter(q)
+      };
+    });
+
+    const search = state.search.trim().toLowerCase();
+    const filteredLicenses = fy.licenses.filter((l) => !search || l.title.toLowerCase().indexOf(search) !== -1 || l.provider.toLowerCase().indexOf(search) !== -1);
+    const licenseRows = filteredLicenses.map((l) => {
+      const color = providerColorByName[l.provider] || "#5f6879";
+      const isEditing = state.editingId === l.id;
+      const monthLabel = model.fiscalMonths.find((m) => m.index === l.addedFiscalMonth);
+      return {
+        id: l.id, domId: "license-row-" + l.id, leftBorder: "border-left:3px solid " + color,
+        title: l.title, provider: l.provider, installmentLabel: formatCurrency(l.installmentCents),
+        cadenceLabel: l.cadence === "quarterly" ? "Quarterly" : "Yearly",
+        addedLabel: monthLabel ? monthLabel.label.slice(0, 3) : "\u2014",
+        isEditing, editLabel: isEditing ? "Close" : "Edit",
+        onToggle: () => (isEditing ? this.closeEdit() : this.openEditLicense(l)),
+        onDelete: () => this.deleteLicense(l.id), onSave: () => this.saveEdit(l.id)
+      };
+    });
+
+    return {
+      fyTabs, onAddFY: () => this.addFiscalYear(),
+      fyLabel: fy.label, fyRangeLabel,
+      licenseCountLabel: model.licenseCount + " content " + (model.licenseCount === 1 ? "title" : "titles") + " tracked. Click a quarter to expand its months.",
+
+      healthLabel: health.label, healthColor: health.color,
+      healthBarStyle: "width:" + Math.min(100, model.percentUsed) + "%;background:" + health.color,
+      percentUsedLabel: model.percentUsed + "% used",
+
+      budgetRows,
+      attentionItems: attention, attentionCount: attention.length, hasNoAttention: attention.length === 0,
+      budgetSourceRows: model.budgetSourceCounts, budgetSourceTotal: model.licenseCount,
+
+      fyForm: state.fyDraft,
+      onFyLabelChange: this.bindField("fyDraft", "label"), onFyYearChange: this.bindField("fyDraft", "fiscalYear"),
+      onFyStartChange: this.bindField("fyDraft", "startMonth"), onFyBudgetChange: this.bindField("fyDraft", "budget"),
+      onFySave: () => this.saveFySettings(), monthStartOptions,
+
+      addForm: state.addDraft,
+      onAddTitleChange: this.bindField("addDraft", "title"), onAddProviderChange: this.bindField("addDraft", "provider"),
+      onAddAmountChange: this.bindField("addDraft", "amount"), onAddCadenceChange: this.bindField("addDraft", "cadence"),
+      onAddMonthChange: this.bindField("addDraft", "addedMonth"), onAddSourceChange: this.bindField("addDraft", "budgetSource"),
+      onAddNotesChange: this.bindField("addDraft", "notes"), onAddSubmit: () => this.submitAdd(),
+      monthOptions, cadenceOptions, budgetSourceOptions: BUDGET_SOURCE_OPTIONS,
+
+      insightTiles, pieSize, pieCenter: pieSize / 2, pieRadius, pieStrokeWidth, pieSlices,
+      topProviders, providerSummaryLabel: model.providers.length + " active provider" + (model.providers.length === 1 ? "" : "s"),
+      providerSummarySub: providerTotal + " content piece" + (providerTotal === 1 ? "" : "s"),
+
+      quarters,
+
+      search: state.search, onSearchChangeHandler: (e) => this.setSearch(e.target.value),
+      licenseRows, hasNoLicenseRows: licenseRows.length === 0,
+
+      editDraft: state.editDraft || { title: "", provider: "", installment: "", cadence: "", addedMonth: "", budgetSource: "misc_licensing", notes: "" },
+      onEditTitleChange: this.bindField("editDraft", "title"), onEditProviderChange: this.bindField("editDraft", "provider"),
+      onEditInstallmentChange: this.bindField("editDraft", "installment"), onEditCadenceChange: this.bindField("editDraft", "cadence"),
+      onEditMonthChange: this.bindField("editDraft", "addedMonth"), onEditSourceChange: this.bindField("editDraft", "budgetSource"),
+      onEditNotesChange: this.bindField("editDraft", "notes")
+    };
+  }
+}
+
+</script>
+</body>
+</html>

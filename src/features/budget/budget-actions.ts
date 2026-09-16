@@ -57,11 +57,6 @@ const providerColorSchema = z.object({
   colorKey: z.enum(providerColorOptions.map((color) => color.key) as [string, ...string[]])
 });
 
-const attentionDismissalSchema = z.object({
-  fiscalYearId: z.string().uuid(),
-  attentionKey: z.string().trim().min(1)
-});
-
 export async function createFiscalYear(formData: FormData) {
   const admin = createSupabaseAdminClient();
   if (!admin) {
@@ -383,32 +378,6 @@ export async function updateProviderColor(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
-}
-
-export async function dismissNeedsAttentionItem(formData: FormData) {
-  const admin = createSupabaseAdminClient();
-  if (!admin) {
-    return;
-  }
-
-  const parsed = attentionDismissalSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    throw new Error("Choose a valid attention item to complete.");
-  }
-
-  const session = await requireInternalSession();
-
-  const { error } = await admin.from("attention_dismissals").upsert({
-    fiscal_year_id: parsed.data.fiscalYearId,
-    attention_key: parsed.data.attentionKey,
-    dismissed_by_email: session.email
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidateFiscalYearPages();
 }
 
 async function ensureSupabaseUserId(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, email: string) {
