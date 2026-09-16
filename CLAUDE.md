@@ -34,6 +34,12 @@ For ordinary code changes, use the relevant subset of:
   - signed-out protected pages, such as `/content-review`, redirect to `/login`
   - relevant public demo pages return 200
 
+## Design Rules
+
+- Form fields must contrast with the surface they sit on. Never put a field on a background that matches its own fill (warm-on-warm, white-on-white) — it reads as static text and people don't realise they can type in it. Give it a different background, a border, or both.
+- Prefer editable-in-place over set-once. If a field is stored on a record, the detail view should let you change it. Never make someone delete and re-create a record to fix one value.
+- When a label sits next to a count, write the label as a plural ("Acquisition Targets  2", not "Acquisition Target  2"). Status pills on individual rows stay singular — only the counted heading pluralises.
+
 ## Working Rules
 
 - Check `git status` before editing, committing, pushing, or deploying.
