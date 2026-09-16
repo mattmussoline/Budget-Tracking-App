@@ -20,7 +20,7 @@ export default function LoginPage() {
           width={600}
           height={192}
           priority
-          className="h-8 w-auto"
+          className="h-8 w-auto self-start"
         />
         <div className="grid max-w-lg gap-5">
           <h1 className="font-display text-5xl leading-[1.06] xl:text-6xl">
