@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Image from "next/image";
 import { KeyRound, Mail } from "lucide-react";
 import { allowedEmailDomainText } from "@/lib/auth/domain-access";
 import { SoftButton } from "@/components/ui/soft-button";
@@ -13,7 +14,14 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       <div className="hidden flex-col justify-between gap-10 bg-augustine-blue p-14 text-white lg:flex xl:p-16">
-        <span className="font-display text-2xl">Licensing</span>
+        <Image
+          src="/formed-logo-white.png"
+          alt="Formed"
+          width={600}
+          height={192}
+          priority
+          className="h-8 w-auto"
+        />
         <div className="grid max-w-lg gap-5">
           <h1 className="font-display text-5xl leading-[1.06] xl:text-6xl">
             Every title, rate, and quarter in one place.

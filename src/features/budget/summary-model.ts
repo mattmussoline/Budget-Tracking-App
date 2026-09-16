@@ -33,6 +33,10 @@ export type SummaryAttentionItem = {
   title: string;
   detail: string;
   color: string;
+  /** The rows this item is about, so the rail can filter the table down to them. */
+  licenseIds: string[];
+  /** What clicking the item is for, shown as the chip label once the filter is on. */
+  actionLabel: string;
 };
 
 export type SummaryBudgetLine = {
@@ -104,7 +108,9 @@ export function buildSummaryAttention(licenses: ContentLicense[], averageInstall
       id: "zero-rate",
       title: `${unpriced.length} ${unpriced.length === 1 ? "title has" : "titles have"} no confirmed rate`,
       detail: unpriced.length > 3 ? `${named}, …` : named,
-      color: "var(--tone-amber-line)"
+      color: "var(--tone-amber-line)",
+      licenseIds: unpriced.map((license) => license.id),
+      actionLabel: `${unpriced.length} ${unpriced.length === 1 ? "title" : "titles"} with no confirmed rate`
     });
   }
 
@@ -117,7 +123,9 @@ export function buildSummaryAttention(licenses: ContentLicense[], averageInstall
       id: `outlier-${outlier.id}`,
       title: `${outlier.title} is ${Math.round(outlier.installmentCents / averageInstallmentCents)}x the average installment`,
       detail: `${formatCurrency(outlier.installmentCents)} on ${getBudgetSourceLabel(outlier.budgetSource).toLowerCase()}.`,
-      color: "var(--danger)"
+      color: "var(--danger)",
+      licenseIds: [outlier.id],
+      actionLabel: outlier.title
     });
   }
 

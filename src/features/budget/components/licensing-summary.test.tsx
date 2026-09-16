@@ -57,12 +57,13 @@ const licenses: ContentLicense[] = [
   }
 ];
 
-function renderSummary(options: { mode?: "demo" | "live" } = {}) {
+function renderSummary(options: { mode?: "demo" | "live"; licenses?: ContentLicense[] } = {}) {
+  const rows = options.licenses ?? licenses;
   const model = buildDashboardModel({
     fiscalYear: fiscalYear.fiscal_year,
     fiscalYearStartMonth: fiscalYear.fiscal_year_start_month,
     budgetCents: fiscalYear.budget_cents,
-    licenses,
+    licenses: rows,
     now: new Date(2026, 8, 16)
   });
 
@@ -70,8 +71,8 @@ function renderSummary(options: { mode?: "demo" | "live" } = {}) {
     <LicensingSummary
       fiscalYear={fiscalYear}
       fiscalYears={[fiscalYear]}
-      view={buildLicensingSummaryView({ model, licenses })}
-      licenses={licenses}
+      view={buildLicensingSummaryView({ model, licenses: rows })}
+      licenses={rows}
       providerColorOverrides={{}}
       mode={options.mode ?? "live"}
       userEmail="matt.mussoline@augustineinstitute.org"
@@ -102,6 +103,28 @@ describe("LicensingSummary", () => {
     expect(screen.getByText("Needs attention")).toBeVisible();
     expect(screen.getByText("Budget lines")).toBeVisible();
     expect(screen.getByText("2 titles")).toBeVisible();
+  });
+
+  it("narrows the title list to the rows an attention item names", () => {
+    const unpriced: ContentLicense = {
+      ...licenses[0],
+      id: "license-3",
+      title: "The Genius of GK Chesterton",
+      installmentCents: 0
+    };
+    renderSummary({ licenses: [...licenses, unpriced] });
+
+    const trigger = screen.getByRole("button", { name: /1 title has no confirmed rate/ });
+    fireEvent.click(trigger);
+
+    const table = screen.getByTestId("all-titles");
+    expect(within(table).getByText("The Genius of GK Chesterton")).toBeVisible();
+    expect(within(table).queryByText("Cabrini")).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: /Needs attention: 1 title with no confirmed rate/ }));
+
+    expect(within(table).getByText("Cabrini")).toBeVisible();
   });
 
   it("opens on the current quarter and lists only that quarter's payments", () => {
@@ -176,7 +199,7 @@ describe("LicensingSummary", () => {
     renderSummary();
 
     for (const [button, dialogName] of [
-      ["+ Add content", "Add content"],
+      ["Add content", "Add content"],
       ["Add or edit fiscal year", "Add or edit fiscal year"],
       ["Invite a teammate", "Invite a teammate"]
     ] as const) {
@@ -194,7 +217,7 @@ describe("LicensingSummary", () => {
   it("asks for a runtime when adding content, because the schema requires one", () => {
     renderSummary();
 
-    fireEvent.click(screen.getByRole("button", { name: "+ Add content" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add content" }));
     const dialog = screen.getByRole("dialog", { name: "Add content" });
 
     expect(within(dialog).getByRole("textbox", { name: "Runtime (minutes)" })).toBeRequired();

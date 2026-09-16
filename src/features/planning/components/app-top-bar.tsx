@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { PlanningNavigation, type PlanningSection } from "./planning-navigation";
 
 type AppTopBarProps = {
@@ -19,7 +20,14 @@ export function AppTopBar({ activeSection, routePrefix = "", right }: AppTopBarP
     <header className="sticky top-0 z-30 border-b border-hairline bg-panel-warm">
       <div className="mx-auto flex min-h-[62px] max-w-[1600px] flex-wrap items-center justify-between gap-x-8 gap-y-2 px-5 py-2 md:px-10">
         <div className="flex min-w-0 flex-wrap items-center gap-x-7 gap-y-1">
-          <span className="font-display text-xl">Licensing</span>
+          <Image
+            src="/formed-logo.png"
+            alt="Formed"
+            width={600}
+            height={192}
+            priority
+            className="h-6 w-auto"
+          />
           <PlanningNavigation activeSection={activeSection} routePrefix={routePrefix} />
         </div>
         {right ? <div className="relative flex min-w-0 flex-wrap items-center justify-end gap-2.5">{right}</div> : null}

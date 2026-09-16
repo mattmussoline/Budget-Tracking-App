@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
@@ -19,6 +19,8 @@ import type { LicensingSummaryView } from "../summary-model";
 import { AddContentModal, FiscalYearModal, InviteModal, type FiscalYearRow } from "./summary-modals";
 
 type Selection = { kind: "quarter" | "month"; value: number };
+
+type AttentionFilter = { id: string; label: string; licenseIds: string[] };
 
 type LicensingSummaryProps = {
   fiscalYear: FiscalYearRow;
@@ -60,6 +62,8 @@ export function LicensingSummary({
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modal, setModal] = useState<"add" | "fy" | "invite" | null>(null);
+  /* Set by the "Needs attention" rail: pins the table to just the rows that item is about. */
+  const [attentionFilter, setAttentionFilter] = useState<AttentionFilter | null>(null);
 
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
@@ -87,19 +91,39 @@ export function LicensingSummary({
   }`;
 
   const normalizedSearch = search.trim().toLowerCase();
+  const attentionIds = attentionFilter ? new Set(attentionFilter.licenseIds) : null;
   const visibleLicenses = licenses.filter(
     (license) =>
-      !normalizedSearch ||
-      license.title.toLowerCase().includes(normalizedSearch) ||
-      license.provider.toLowerCase().includes(normalizedSearch)
+      (!attentionIds || attentionIds.has(license.id)) &&
+      (!normalizedSearch ||
+        license.title.toLowerCase().includes(normalizedSearch) ||
+        license.provider.toLowerCase().includes(normalizedSearch))
   );
+
+  function scrollToRow(licenseId: string) {
+    window.setTimeout(() => {
+      document.getElementById(`license-row-${licenseId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+  }
 
   function jumpToEditor(licenseId: string) {
     setEditingId(licenseId);
     setSearch("");
-    window.setTimeout(() => {
-      document.getElementById(`license-row-${licenseId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 60);
+    setAttentionFilter(null);
+    scrollToRow(licenseId);
+  }
+
+  /**
+   * An attention item is only useful if you can act on it, so clicking one narrows
+   * the table to the rows it names and opens the first for editing.
+   */
+  function openAttentionItem(item: LicensingSummaryView["attention"][number]) {
+    const [firstId] = item.licenseIds;
+    if (!firstId) return;
+    setSearch("");
+    setAttentionFilter({ id: item.id, label: item.actionLabel, licenseIds: item.licenseIds });
+    setEditingId(firstId);
+    scrollToRow(firstId);
   }
 
   return (
@@ -180,14 +204,23 @@ export function LicensingSummary({
             ) : (
               <div className="grid min-w-0 gap-2">
                 {view.attention.map((item) => (
-                  <div
+                  <button
                     key={item.id}
-                    className="grid min-w-0 gap-0.5 border-l-[3px] py-1 pl-2.5"
+                    type="button"
+                    onClick={() => openAttentionItem(item)}
+                    aria-pressed={attentionFilter?.id === item.id}
+                    className={cn(
+                      "grid min-w-0 gap-0.5 border-l-[3px] py-1 pl-2.5 pr-1.5 text-left transition-colors hover:bg-tone-slate-bg",
+                      attentionFilter?.id === item.id && "bg-tone-slate-bg"
+                    )}
                     style={{ borderLeftColor: item.color }}
                   >
                     <span className="text-[12.5px] font-semibold [text-wrap:pretty]">{item.title}</span>
                     <span className="text-[11.5px] text-muted [text-wrap:pretty]">{item.detail}</span>
-                  </div>
+                    <span className="text-[11px] font-semibold text-formed-blue">
+                      {item.licenseIds.length === 1 ? "Fix this title →" : `Review ${item.licenseIds.length} titles →`}
+                    </span>
+                  </button>
                 ))}
               </div>
             )}
@@ -215,14 +248,15 @@ export function LicensingSummary({
             </div>
           </section>
 
-          <section className="grid content-start gap-2 border-t border-hairline pt-5">
-            <SoftButton variant="primary" className="h-[42px] min-h-0 w-full py-0 text-sm" onClick={() => setModal("add")}>
-              + Add content
+          <section className="grid content-start gap-2.5 border-t border-hairline pt-5">
+            <SoftButton variant="primary" className="w-full justify-center rounded-none" onClick={() => setModal("add")}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add content
             </SoftButton>
-            <SoftButton variant="secondary" className="h-[38px] min-h-0 w-full py-0 text-[13px]" onClick={() => setModal("fy")}>
+            <SoftButton variant="secondary" className="w-full justify-center rounded-none" onClick={() => setModal("fy")}>
               Add or edit fiscal year
             </SoftButton>
-            <SoftButton variant="secondary" className="h-[38px] min-h-0 w-full py-0 text-[13px]" onClick={() => setModal("invite")}>
+            <SoftButton variant="secondary" className="w-full justify-center rounded-none" onClick={() => setModal("invite")}>
               Invite a teammate
             </SoftButton>
           </section>
@@ -465,6 +499,17 @@ export function LicensingSummary({
                 <p className="text-[13px] text-muted [text-wrap:pretty]">
                   Click a title to adjust its provider, amount, cadence, month, or budget line.
                 </p>
+                {attentionFilter ? (
+                  <button
+                    type="button"
+                    onClick={() => setAttentionFilter(null)}
+                    className="mt-1 inline-flex min-w-0 items-center gap-1.5 self-start rounded-lg border border-formed-blue bg-formed-blue-soft px-2.5 py-1 text-[12px] font-semibold text-formed-blue transition-colors hover:border-hairline-strong"
+                  >
+                    <span className="min-w-0 truncate">Needs attention: {attentionFilter.label}</span>
+                    <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="sr-only">Clear filter</span>
+                  </button>
+                ) : null}
               </div>
               <label className="min-w-[240px]">
                 <span className="sr-only">Search titles or providers</span>
