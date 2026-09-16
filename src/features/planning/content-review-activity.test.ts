@@ -55,6 +55,25 @@ describe("summarizeRecap", () => {
     const summary = summarizeRecap([], items, 7, now);
     expect(summary.days).toEqual([]);
     expect(summary.reviewsTouched).toBe(0);
+    expect(summary.outcomes).toEqual([]);
+    expect(summary.headline).toBe("Nothing moved in the last 7 days.");
+  });
+
+  it("groups status changes into where each review landed", () => {
+    const summary = summarizeRecap(updates, items, 7, now);
+    expect(summary.outcomes.map((outcome) => [outcome.label, outcome.titles])).toEqual([
+      ["Rejected", ["Old Stone Abbey"]],
+      ["Contracted", ["The Chosen"]]
+    ]);
+    expect(summary.addedTitles).toEqual(["Old Stone Abbey"]);
+  });
+
+  it("writes a plain-English headline instead of raw counters", () => {
+    const summary = summarizeRecap(updates, items, 7, now);
+    expect(summary.headline).toContain("You moved 2 reviews forward in the last 7 days.");
+    expect(summary.headline).toContain("1 to Rejected and 1 to Contracted.");
+    expect(summary.headline).toContain("newly contracted rate");
+    expect(summary.headline).toContain("added 1 new title and logged 1 update");
   });
 });
 

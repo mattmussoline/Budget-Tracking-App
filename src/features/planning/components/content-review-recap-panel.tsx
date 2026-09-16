@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/components/ui/soft-surface";
-import { RECAP_RANGES, type RecapRange, describeRecapEntry, summarizeRecap } from "../content-review-activity";
+import { RECAP_RANGES, type RecapRange, describeRecapEntry, summarizeMyNotes, summarizeRecap } from "../content-review-activity";
 import { REVIEW_STATUSES, TONE_SWATCH_CLASSES } from "../planning-constants";
 import { formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ContentReviewUpdate } from "../planning-types";
@@ -17,11 +17,15 @@ type ContentReviewRecapPanelProps = {
   onSelect: (itemId: string) => void;
 };
 
-/** Weekly recap: a right-hand slide-over with a 7/14/30 day switch, a one-line summary, and recent activity. */
-export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: ContentReviewRecapPanelProps) {
+/** Weekly recap: a wide centred modal with a 7/14/30 day switch, a one-line summary, and recent activity. */
+export function ContentReviewRecapPanel({ items, updates, currentUserEmail, onClose, onSelect }: ContentReviewRecapPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [rangeDays, setRangeDays] = useState<RecapRange>(7);
   const summary = useMemo(() => summarizeRecap(updates, items, rangeDays), [updates, items, rangeDays]);
+  const myNotes = useMemo(
+    () => summarizeMyNotes(updates, items, rangeDays, currentUserEmail),
+    [updates, items, rangeDays, currentUserEmail]
+  );
   const statusToneByStatus = useMemo(() => new Map(REVIEW_STATUSES.map((option) => [option.value, option.tone])), []);
   const titleId = "content-review-recap-title";
 
@@ -49,21 +53,20 @@ export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: C
     closeDialog();
   }
 
-  const summaryLine = `${summary.reviewsTouched} ${summary.reviewsTouched === 1 ? "review" : "reviews"} touched, ${summary.statusChanges} status ${summary.statusChanges === 1 ? "change" : "changes"}, ${summary.notesLogged} ${summary.notesLogged === 1 ? "update" : "updates"} logged` +
-    (summary.contractedCount ? `, ${summary.contractedCount} contracted (${formatOptionalCurrency(summary.contractedRateCents)})` : "");
+  const countLine = `${summary.reviewsTouched} ${summary.reviewsTouched === 1 ? "review" : "reviews"} touched · ${summary.statusChanges} status ${summary.statusChanges === 1 ? "change" : "changes"} · ${summary.notesLogged} ${summary.notesLogged === 1 ? "update" : "updates"} logged` +
+    (summary.contractedCount ? ` · ${summary.contractedCount} contracted (${formatOptionalCurrency(summary.contractedRateCents)})` : "");
 
   return createPortal(
     <dialog
       ref={dialogRef}
-      open
-      style={{ display: "block", visibility: "visible", animation: "fadein 150ms ease" }}
+      style={{ visibility: "visible", animation: "fadein 150ms ease" }}
       aria-labelledby={titleId}
       onClick={closeFromBackdrop}
       onKeyDown={closeFromEscape}
       onClose={onClose}
-      className="fixed inset-y-0 right-0 z-[70] m-0 block h-full w-[calc(100%-2rem)] max-w-[420px] bg-panel p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/40"
+      className="fixed left-1/2 top-1/2 z-[70] m-0 block max-h-[88vh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 bg-panel p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/50 backdrop:backdrop-blur-md md:w-[calc(100%-4rem)]"
     >
-      <div className="flex h-full flex-col">
+      <div className="flex max-h-[88vh] flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-formed-blue">Review activity</p>
@@ -74,32 +77,81 @@ export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: C
           </button>
         </header>
 
-        <div data-testid="content-review-recap-content" className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-6">
-          <div role="group" aria-label="Recap range" className="flex w-fit gap-1 bg-panel-warm p-1">
-            {RECAP_RANGES.map((range) => (
-              <button
-                key={range}
-                type="button"
-                aria-pressed={rangeDays === range}
-                onClick={() => setRangeDays(range)}
-                className={cn(
-                  "min-h-8 px-3 text-xs font-semibold uppercase tracking-wide transition",
-                  rangeDays === range ? "bg-augustine-blue text-white" : "text-muted hover:text-foreground"
-                )}
-              >
-                {range}d
-              </button>
-            ))}
+        <div data-testid="content-review-recap-content" className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div role="group" aria-label="Recap range" className="flex w-fit gap-1 bg-panel-warm p-1">
+              {RECAP_RANGES.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  aria-pressed={rangeDays === range}
+                  onClick={() => setRangeDays(range)}
+                  className={cn(
+                    "min-h-8 px-3 text-xs font-semibold uppercase tracking-wide transition",
+                    rangeDays === range ? "bg-augustine-blue text-white" : "text-muted hover:text-foreground"
+                  )}
+                >
+                  {range}d
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{countLine}</p>
           </div>
 
-          <p className="text-sm font-medium leading-relaxed">{summaryLine}.</p>
+          <section className="grid gap-4 bg-panel-warm p-5">
+            <div className="grid gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-formed-blue">What you got done</h3>
+              <p className="text-base font-medium leading-relaxed">{summary.headline}</p>
+              {myNotes.noteCount > 0 ? (
+                <p className="text-sm font-medium leading-relaxed text-muted">{myNotes.overviewText}</p>
+              ) : null}
+            </div>
+
+            {summary.outcomes.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {summary.outcomes.map((outcome) => {
+                  const tone = statusToneByStatus.get(outcome.status) ?? "slate";
+                  return (
+                    <div key={outcome.status} className="grid content-start gap-1.5 bg-panel p-3">
+                      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+                        <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0", TONE_SWATCH_CLASSES[tone])} />
+                        {outcome.label}
+                        <span className="text-muted">{outcome.titles.length}</span>
+                      </p>
+                      <ul className="grid gap-0.5">
+                        {outcome.titles.map((title) => (
+                          <li key={title} className="truncate text-sm font-medium" title={title}>{title}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {myNotes.themes.length > 0 ? (
+              <div className="grid gap-1.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">Your notes were mostly about</h4>
+                <ul className="flex flex-wrap gap-1.5">
+                  {myNotes.themes.slice(0, 4).map((theme) => (
+                    <li key={theme.label} className="bg-panel px-2.5 py-1 text-xs font-semibold">
+                      {theme.label} <span className="text-muted">{theme.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
 
           {summary.days.length === 0 ? (
             <p className="bg-panel-warm p-4 text-sm font-bold text-muted">No review activity in the last {summary.rangeDays} days.</p>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Day by day</h3>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {summary.days.map((day) => (
-                <section key={day.key} className="grid gap-2">
+                <section key={day.key} className="grid content-start gap-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{day.label}</h3>
                   <ul className="grid gap-1.5">
                     {day.entries.map((entry) => {
@@ -123,6 +175,7 @@ export function ContentReviewRecapPanel({ items, updates, onClose, onSelect }: C
                   </ul>
                 </section>
               ))}
+              </div>
             </div>
           )}
         </div>

@@ -41,6 +41,9 @@ export function formatDayLabel(iso: string, now: Date = new Date()) {
 export type RecapEntry = ContentReviewUpdate & { title: string };
 export type RecapDay = { key: string; label: string; entries: RecapEntry[] };
 
+/** One "here's where things landed" bucket: every review that reached this status in the window. */
+export type RecapOutcome = { status: ReviewStatus; label: string; titles: string[] };
+
 export type RecapSummary = {
   rangeDays: RecapRange;
   reviewsTouched: number;
@@ -50,6 +53,9 @@ export type RecapSummary = {
   contractedCount: number;
   contractedRateCents: number;
   rejectedCount: number;
+  outcomes: RecapOutcome[];
+  addedTitles: string[];
+  headline: string;
   days: RecapDay[];
 };
 
@@ -87,17 +93,90 @@ export function summarizeRecap(
     else days.push({ key, label: formatDayLabel(update.createdAt, now), entries: [entry] });
   }
 
+  const outcomes = buildOutcomes(inRange, titleById);
+  const addedTitles = [
+    ...new Set(
+      inRange
+        .filter((update) => update.kind === "created")
+        .map((update) => titleById.get(update.itemId) ?? "Deleted review")
+    )
+  ];
+
+  const reviewsTouched = new Set(inRange.map((update) => update.itemId)).size;
+  const notesLogged = inRange.filter((update) => update.kind === "note").length;
+  const contractedRateCents = [...contractedItemIds].reduce((total, id) => total + (rateById.get(id) ?? 0), 0);
+
   return {
     rangeDays,
-    reviewsTouched: new Set(inRange.map((update) => update.itemId)).size,
-    notesLogged: inRange.filter((update) => update.kind === "note").length,
+    reviewsTouched,
+    notesLogged,
     statusChanges: inRange.filter((update) => update.kind === "status_change").length,
     reviewsAdded: inRange.filter((update) => update.kind === "created").length,
     contractedCount: contracts.length,
-    contractedRateCents: [...contractedItemIds].reduce((total, id) => total + (rateById.get(id) ?? 0), 0),
+    contractedRateCents,
     rejectedCount: inRange.filter((update) => update.kind === "status_change" && update.toStatus === "rejected").length,
+    outcomes,
+    addedTitles,
+    headline: buildRecapHeadline(rangeDays, reviewsTouched, notesLogged, addedTitles.length, outcomes, contracts.length, contractedRateCents),
     days
   };
+}
+
+/** Groups the window's status changes by where each review ended up, in the board's own status order. */
+function buildOutcomes(inRange: ContentReviewUpdate[], titleById: Map<string, string>): RecapOutcome[] {
+  const byStatus = new Map<ReviewStatus, Set<string>>();
+  for (const update of inRange) {
+    if (update.kind !== "status_change" || !update.toStatus) continue;
+    const titles = byStatus.get(update.toStatus) ?? new Set<string>();
+    titles.add(titleById.get(update.itemId) ?? "Deleted review");
+    byStatus.set(update.toStatus, titles);
+  }
+
+  return REVIEW_STATUSES.filter((option) => byStatus.has(option.value)).map((option) => ({
+    status: option.value,
+    label: option.label,
+    titles: [...(byStatus.get(option.value) ?? [])].sort((a, b) => a.localeCompare(b))
+  }));
+}
+
+/** Plain-English "what you got done" line that leads the recap, instead of raw counters. */
+function buildRecapHeadline(
+  rangeDays: RecapRange,
+  reviewsTouched: number,
+  notesLogged: number,
+  addedCount: number,
+  outcomes: RecapOutcome[],
+  contractedCount: number,
+  contractedRateCents: number
+) {
+  if (reviewsTouched === 0) return `Nothing moved in the last ${rangeDays} days.`;
+
+  const sentences = [
+    `You moved ${reviewsTouched} ${reviewsTouched === 1 ? "review" : "reviews"} forward in the last ${rangeDays} days.`
+  ];
+
+  const decided = outcomes.filter((outcome) => outcome.status !== "not_started");
+  if (decided.length > 0) {
+    const phrases = decided.map((outcome) => `${outcome.titles.length} to ${outcome.label}`);
+    sentences.push(`${joinWithAnd(phrases)}.`);
+  }
+
+  if (contractedCount > 0 && contractedRateCents > 0) {
+    sentences.push(`That's ${formatOptionalCurrency(contractedRateCents)} in newly contracted rate.`);
+  }
+
+  const tail: string[] = [];
+  if (addedCount > 0) tail.push(`added ${addedCount} new ${addedCount === 1 ? "title" : "titles"}`);
+  if (notesLogged > 0) tail.push(`logged ${notesLogged} ${notesLogged === 1 ? "update" : "updates"}`);
+  if (tail.length > 0) sentences.push(`Along the way you ${joinWithAnd(tail)}.`);
+
+  return sentences.join(" ");
+}
+
+function joinWithAnd(parts: string[]) {
+  if (parts.length <= 1) return parts.join("");
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 }
 
 export function describeRecapEntry(entry: RecapEntry) {
@@ -110,6 +189,8 @@ export function describeRecapEntry(entry: RecapEntry) {
 export function buildRecapText(summary: RecapSummary) {
   const lines = [
     `Content review recap — last ${summary.rangeDays} days`,
+    "",
+    summary.headline,
     "",
     `Reviews touched: ${summary.reviewsTouched}`,
     `Updates logged: ${summary.notesLogged}`,
