@@ -1,6 +1,6 @@
 # Budget Tracking App Memory
 
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 ## Current Production
 
@@ -18,6 +18,10 @@ Last updated: 2026-09-15
 - Public demo pages live under `/demo/*` and must use privacy-preserving sample data.
 
 ## Durable Patterns
+
+- A rail or panel that is a CSS grid **and** stretches to the viewport height (`self-stretch`, or a flex child in a full-height row) will stretch its own grid rows to fill the leftover space, because `align-content` defaults to `stretch`. On the Licensing Summary rail this rendered the action buttons at 57px instead of the 42px the design asked for, and pushed the sections apart — it reads as "the buttons are too big" when the real cause is the container. `content-start` on the grid pins rows to their own height. Check this before re-tuning any size in a full-height rail.
+- The Licensing Summary's needs-attention list is deliberately the *design prototype's* two rules — titles with no confirmed rate, and the one installment above 4x the average — not `buildNeedsAttentionItems`. Matt chose this on 2026-09-16. `attention-model.ts`, the `dismissNeedsAttentionItem` action and the `attention_dismissals` table are still in the repo but nothing reads them any more; deleting them is an open decision, not an oversight.
+- Provider colour overrides survived the removal of the pie chart: the picker now lives in a `<details>` under the provider ranking in "Where the money goes", and those colours paint the ranking bars. Without that move, `provider_color_overrides` rows would still be stored and rendered but no longer editable anywhere.
 
 - Planning and review data should persist server-side through Supabase-backed server actions, not local-only React state.
 - For `contentEditable` notes fields, do not rewrite `innerHTML` during `onInput`; let the browser accept text while focused and linkify URLs on blur or external updates.
@@ -41,6 +45,8 @@ Last updated: 2026-09-15
 - Alignment classes in the Content Review queue grid must go on the cell element itself, not on an inner `inline-flex` button. `SortHeader` had `justify-end` on its button, where it silently did nothing — the header never moved. The cell (`<span role="columnheader">`) carries `flex` plus the `justify-*` class; the button just holds the text.
 
 ## Recent Release Notes
+
+- 2026-09-16 (shipped) - Rebuilt the Licensing Summary (`/dashboard`) on the external "Licensing Summary v2" design handoff. Three parts: a 280px sticky left rail (`licensing-summary.tsx`) holding fiscal-year health, needs attention, budget lines with bars, and the three page actions; a "When the money goes out" section pairing a four-card quarter strip with a twelve-month stacked timeline (teal = misc licensing, slate = other budget lines) where clicking either filters a payment detail list below; and provider/cadence rankings plus an "All titles" table with search and inline row editing. Add content, Add or edit fiscal year and Invite a teammate are centred modals (`summary-modals.tsx`) at Matt's explicit request — the handoff had them top-aligned. All derivation moved into a pure `summary-model.ts` so the client component only tracks which quarter, month, row or modal is open. **Front-end only — no Supabase migration; every server action, the Supabase wiring and the prorated-quarterly math are unchanged.** Commit `f4870c5` pushed to `main`, `cf:build` succeeded first try, deployed to Cloudflare Workers (version `5d0ce410-0d9d-4412-8a90-e40b656f486d`), smoke-checked live: `/login` 200, `/content-review` and `/roadmap` 307-redirect signed out, all three `/demo/*` pages 200, and the live `/demo/dashboard` HTML confirmed to carry the new section headings and to no longer contain "Cadence mix", "Committed by quarter", "Edit content" or the pie tooltip. 241 tests pass (24 new across `summary-model.test.ts` and `licensing-summary.test.tsx`). Deleted with their tests: `summary-metrics`, `dashboard-insights`, `provider-pie-chart`, `provider-summary`, `dashboard-popout`, `month-board`, `license-manager`, `fiscal-year-manager`, `share-panel`, `content-license-form`, `cadence-summary`.
 
 - 2026-09-15 (shipped) - Content Review queue polish: the `acquisition_target` group heading now reads "Acquisition Targets" (plural, via `GROUP_HEADING_LABELS` in `content-review-dashboard.tsx`, so only the counted heading pluralises and the row status pills stay singular), and the Rate column header and values are centre-aligned. The header alignment had been a no-op — see the Durable Patterns entry on grid-cell alignment. Commit `cdc0860` pushed to `main`, deployed to Cloudflare Workers (version `21a2f99e-fe95-452c-885e-d0ec9e3e554f`), smoke-checked live: `/login` 200, `/content-review` 307-redirects signed out, `/demo/content-review` 200, and the live demo HTML confirmed to carry both the plural heading and the centred column. **Front-end only — no Supabase migration.** Three `cf:build` failures preceded the good build, all stale-`.next` artefacts rather than code problems (see Durable Patterns). A concurrent Roadmap session was committing to `main` throughout; `cdc0860`'s file content is present in `deda18e`, and production serves both changes.
 
