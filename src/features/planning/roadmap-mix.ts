@@ -1,12 +1,10 @@
-import { TONE_CLASSES, type PlanningTone } from "./planning-constants";
-import type { RoadmapCategory, RoadmapItem } from "./planning-types";
+import type { RoadmapItem } from "./planning-types";
 
-export type MixDimensionKey = "provider" | "genre" | "format" | "category";
+export type MixDimensionKey = "provider" | "genre" | "format";
 
 /**
- * One selected Mix row. `value` is the raw grouping key — the trimmed field for
- * provider/genre/format, the category id for category — with "" meaning the
- * item has no value for that dimension.
+ * One selected Mix row. `value` is the trimmed field this row groups on, with
+ * "" meaning the item has no value for that dimension.
  */
 export type MixFilter = { key: MixDimensionKey; value: string; label: string };
 
@@ -14,7 +12,6 @@ export type MixRow = {
   value: string;
   name: string;
   rank: number;
-  titles: number;
   minutes: number;
   /** Bar width, relative to the top row of this list rather than to the total. */
   percent: number;
@@ -31,13 +28,11 @@ export type MixList = {
 const FALLBACK_NAMES: Record<MixDimensionKey, string> = {
   provider: "No provider",
   genre: "No genre",
-  format: "No format",
-  category: "No category"
+  format: "No format"
 };
 
 /** The raw grouping key for one item on one dimension. "" means "no value". */
 export function getMixValue(item: RoadmapItem, key: MixDimensionKey) {
-  if (key === "category") return item.categoryId ?? "";
   return (item[key] ?? "").trim();
 }
 
@@ -46,19 +41,15 @@ export function matchesMixFilter(item: RoadmapItem, filter: MixFilter | null) {
 }
 
 /**
- * Rank the roadmap by provider, genre, format and category — summing minutes,
- * counting titles, sorting by minutes then by count.
+ * Rank the roadmap by provider, genre and format — summing minutes, sorting by
+ * minutes then by how many titles contributed them. Category is deliberately
+ * absent: the rail's key already ranks and filters by category.
  *
  * Pass the category-filtered items only. Ranking the Mix-filtered list would
  * collapse each list to the single row that is already selected.
  */
-export function buildRoadmapMix(items: RoadmapItem[], categories: RoadmapCategory[], activeFilter: MixFilter | null): MixList[] {
-  const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
-  const nameOf = (key: MixDimensionKey, value: string) => {
-    if (!value) return FALLBACK_NAMES[key];
-    if (key === "category") return categoryNameById.get(value) ?? FALLBACK_NAMES.category;
-    return value;
-  };
+export function buildRoadmapMix(items: RoadmapItem[], activeFilter: MixFilter | null): MixList[] {
+  const nameOf = (key: MixDimensionKey, value: string) => value || FALLBACK_NAMES[key];
 
   const dimension = (key: MixDimensionKey, label: string): MixList => {
     const totals = new Map<string, { titles: number; minutes: number }>();
@@ -82,7 +73,6 @@ export function buildRoadmapMix(items: RoadmapItem[], categories: RoadmapCategor
         value,
         name: nameOf(key, value),
         rank: index + 1,
-        titles: entry.titles,
         minutes: entry.minutes,
         percent: Math.round((entry.minutes / topMinutes) * 100),
         isActive: Boolean(activeFilter && activeFilter.key === key && activeFilter.value === value)
@@ -90,15 +80,9 @@ export function buildRoadmapMix(items: RoadmapItem[], categories: RoadmapCategor
     };
   };
 
-  return [dimension("provider", "Provider"), dimension("genre", "Genre"), dimension("format", "Format"), dimension("category", "Category")];
+  return [dimension("provider", "Provider"), dimension("genre", "Genre"), dimension("format", "Format")];
 }
 
 export function buildMixFilter(list: MixList, row: MixRow): MixFilter {
   return { key: list.key, value: row.value, label: `${list.label}: ${row.name}` };
-}
-
-/** Tone for a category row, so the Category list can carry its key color. */
-export function getCategoryTone(categories: RoadmapCategory[], categoryId: string): PlanningTone {
-  const colorKey = categories.find((category) => category.id === categoryId)?.colorKey;
-  return (colorKey && colorKey in TONE_CLASSES ? colorKey : "slate") as PlanningTone;
 }

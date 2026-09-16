@@ -57,7 +57,7 @@ export function AddRoadmapModal({
       type="button"
       onClick={openDialog}
       aria-label={triggerAriaLabel}
-      className={cn("inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-formed-blue bg-formed-blue px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:border-formed-blue-hover hover:bg-formed-blue-hover", triggerClassName)}
+      className={cn("inline-flex min-h-10 items-center justify-center gap-2 border border-formed-blue bg-formed-blue px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:border-formed-blue-hover hover:bg-formed-blue-hover", triggerClassName)}
     >
       {triggerIcon}
       {triggerLabel}

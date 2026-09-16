@@ -61,12 +61,12 @@ export function getRoadmapMonthKey(value: string | null | undefined) {
 export function formatRoadmapDateLabel(value: string | null | undefined) {
   if (isExactRoadmapDate(value)) return formatRoadmapDate(value!);
   if (isMonthTbdRoadmapDate(value) || value === "TBD") return "TBD";
-  return value?.trim() || "Unscheduled";
+  return value?.trim() || "No date yet";
 }
 
 /**
  * Board-row date: "Jul 21". The month column already carries the month, so a
- * month-TBD or undated item keeps the short "TBD" / "Unscheduled" wording.
+ * month-TBD or undated item keeps the short "TBD" / "No date yet" wording.
  */
 export function formatRoadmapDateShortLabel(value: string | null | undefined) {
   if (!isExactRoadmapDate(value)) return formatRoadmapDateLabel(value);

@@ -12,9 +12,11 @@ type CategoryManagerModalProps = {
   fiscalYearId: string;
   categories: RoadmapCategory[];
   isDemo?: boolean;
+  /** Renders the trigger as a plain blue text link, as the Roadmap rail does under its key. */
+  asLink?: boolean;
 };
 
-export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: CategoryManagerModalProps) {
+export function CategoryManagerModal({ fiscalYearId, categories, isDemo, asLink }: CategoryManagerModalProps) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -147,9 +149,15 @@ export function CategoryManagerModal({ fiscalYearId, categories, isDemo }: Categ
   };
 
   return <>
-    <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-hairline bg-panel px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-hairline-strong">
-      <KeyRound className="h-4 w-4" aria-hidden="true" />Manage key
-    </button>
+    {asLink ? (
+      <button ref={triggerRef} type="button" onClick={openDialog} className="text-[13px] font-semibold text-formed-blue transition-colors hover:text-formed-blue-hover">
+        Manage key
+      </button>
+    ) : (
+      <button ref={triggerRef} type="button" onClick={openDialog} className="inline-flex min-h-10 items-center justify-center gap-2 border border-hairline bg-panel px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-hairline-strong">
+        <KeyRound className="h-4 w-4" aria-hidden="true" />Manage key
+      </button>
+    )}
     <dialog ref={dialogRef} aria-labelledby="manage-key-title" onClick={closeFromBackdrop} onKeyDown={closeFromEscape} onClose={() => triggerRef.current?.focus()} className="m-auto w-[calc(100%-2rem)] max-w-2xl rounded-xl bg-white p-0 text-foreground shadow-2xl backdrop:bg-augustine-blue/60">
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline p-4 sm:p-5">

@@ -27,7 +27,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
 
   if (!admin) {
     return (
-      <PlanningShell activeSection="roadmap">
+      <PlanningShell activeSection="roadmap" fullBleed>
         <RoadmapDashboard pageTitle="Roadmap" pageDescription="Add Supabase env vars to save roadmap and ongoing series changes." fiscalYearId="00000000-0000-0000-0000-000000000000" roadmapItems={[]} ongoingSeries={[]} categories={[]} fiscalYearStartMonth={parseMonthAnchor(null)} startMonth={parseMonthAnchor(null)} monthCount={6} isDemo />
       </PlanningShell>
     );
@@ -131,9 +131,10 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   return (
     <PlanningShell
       activeSection="roadmap"
+      fullBleed
       topBarRight={<TopBarChip>FY{String(activeFiscalYear.fiscal_year).slice(-2)}</TopBarChip>}
     >
-      <RoadmapDashboard pageTitle="Roadmap" pageDescription="Plan releases by month, rank the fiscal year at a glance, and hand titles off to Licensing Summary or ClickUp." fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} fiscalYearLabel={`FY${String(activeFiscalYear.fiscal_year).slice(-2)}`} />
+      <RoadmapDashboard pageTitle="Roadmap" summaryHref={`/dashboard?fy=${activeFiscalYear.id}`} fiscalYearId={activeFiscalYear.id} roadmapItems={roadmapItems} ongoingSeries={ongoingSeries} categories={categories} fiscalYearStartMonth={getFiscalYearStartMonth(activeFiscalYear.fiscal_year)} startMonth={startMonth} monthCount={monthCount} fiscalYearLabel={`FY${String(activeFiscalYear.fiscal_year).slice(-2)}`} />
     </PlanningShell>
   );
 }

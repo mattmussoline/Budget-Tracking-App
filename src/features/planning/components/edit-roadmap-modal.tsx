@@ -62,6 +62,8 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
   };
 
   const isTbd = item.releaseDate === "TBD" || isMonthTbdRoadmapDate(item.releaseDate);
+  /** Backlog cards flag anything without a real date in red, including items with no date at all. */
+  const isUndated = isTbd || !item.releaseDate;
   const statusMeta = ROADMAP_STATUS_META[item.status] ?? ROADMAP_STATUS_META.planned;
 
   return <>
@@ -100,18 +102,20 @@ export function EditRoadmapModal({ item, category, isDemo, isOpen: controlledIsO
       type="button"
       onClick={openDialog}
       aria-label={`Edit ${item.title}`}
-      className={cn("w-full rounded-md border-l-4 bg-white p-3 text-left transition-transform hover:-translate-y-0.5", TONE_CLASSES[tone].accent)}
+      className={cn("grid w-full grid-cols-[3px_minmax(0,1fr)] border border-hairline bg-panel text-left transition-colors hover:bg-panel-warm")}
     >
-      <p className="font-semibold leading-tight">{item.title}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {item.featuredInIndividualMarketing ? <span className="inline-flex items-center gap-1 rounded-full bg-guild-gold-soft px-2 py-1 text-[9px] font-semibold uppercase text-guild-gold-ink ring-1 ring-guild-gold" title="Individual marketing campaign spotlight">
-          <Star className="h-3 w-3 fill-amber-400 text-guild-gold-ink" aria-hidden="true" />
-          Spotlight
-        </span> : null}
-        {category ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-semibold uppercase", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
-        {item.provider ? <span className="rounded-full bg-panel-warm px-2 py-1 text-[9px] font-bold">{item.provider}</span> : null}
-        {item.releaseDate ? <span className={cn("rounded-full px-2 py-1 text-[9px] font-bold", isTbd ? "bg-danger-soft text-danger" : "bg-panel-warm")}>{formatRoadmapDateLabel(item.releaseDate)}</span> : null}
-      </div>
+      <span className={cn("block", TONE_SWATCH_CLASSES[tone])} />
+      <span className="grid gap-2 px-3.5 py-3">
+        <span className="flex items-start gap-2">
+          <span className="min-w-0 flex-1 text-[14.5px] font-semibold leading-snug">{item.title}</span>
+          {item.featuredInIndividualMarketing ? <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-guild-gold text-guild-gold-ink" aria-label="Individual marketing campaign" /> : null}
+        </span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {category ? <span className={cn("px-2 py-1 text-[11px] font-semibold", TONE_CLASSES[tone].chip)}>{category.name}</span> : null}
+          {item.provider ? <span className="text-xs text-muted">{item.provider}</span> : null}
+          {isUndated ? <span className="bg-danger-soft px-2 py-1 text-[11px] font-semibold text-danger">{formatRoadmapDateLabel(item.releaseDate)}</span> : item.releaseDate ? <span className="text-xs font-semibold text-foreground">{formatRoadmapDateShortLabel(item.releaseDate)}</span> : null}
+        </span>
+      </span>
     </button>}
     {isOpen ? createPortal(<dialog
       ref={dialogRef}

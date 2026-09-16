@@ -77,10 +77,10 @@ describe("RoadmapDashboard", () => {
 
     expect(backlog).toHaveAttribute("open");
     expect(backlog).toHaveClass("self-start");
-    expect(backlogSummary).toHaveClass("py-3");
+    expect(backlogSummary).toHaveClass("py-4");
     expect(backlogSummary).not.toHaveClass("min-h-16");
     expect(within(backlogSummary!).getByText("Expand Backlog section")).toBeInTheDocument();
-    expect(within(screen.getByTestId("backlog-other-content")).getByText("In progress")).toBeVisible();
+    expect(within(screen.getByTestId("backlog-other-content")).getByText("Undated — needs a release date")).toBeVisible();
 
     expect(screen.getByText("Undated Film")).toBeVisible();
     expect(screen.getByText("Future Film")).toBeVisible();
@@ -170,7 +170,7 @@ describe("RoadmapDashboard", () => {
     expect(within(present).queryByText("Undated Film")).not.toBeInTheDocument();
   });
 
-  it("ranks the Mix by minutes across provider, genre, format and category", () => {
+  it("ranks the Mix by minutes across provider, genre and format only", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const mix = screen.getByTestId("roadmap-mix");
@@ -181,20 +181,18 @@ describe("RoadmapDashboard", () => {
     expect(providers).toHaveLength(3);
     expect(providers[0]).toHaveTextContent("No provider");
     expect(providers[0]).toHaveTextContent("203");
-    expect(providers[0]).toHaveTextContent("3 titles");
     expect(providers[1]).toHaveTextContent("Thomistic");
     expect(providers[1]).toHaveTextContent("188");
     expect(providers[2]).toHaveTextContent("Augustine Institute");
     expect(providers[2]).toHaveTextContent("100");
 
-    // Categories rank by their own minutes, with uncategorised titles falling back.
-    const categoryRows = within(screen.getByTestId("roadmap-mix-category")).getAllByRole("button");
-    expect(categoryRows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("No category"),
-      expect.stringContaining("Kids"),
-      expect.stringContaining("Parish"),
-      expect.stringContaining("Adult")
-    ]);
+    // Rows carry the minutes only — the title count that fed them is not shown.
+    expect(providers[0]).not.toHaveTextContent("3 titles");
+    expect(within(mix).queryByText(/\d+ titles?$/)).not.toBeInTheDocument();
+
+    // Category is the rail key's job, so the Mix does not repeat it.
+    expect(screen.queryByTestId("roadmap-mix-category")).not.toBeInTheDocument();
+    expect(within(mix).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Provider", "Genre", "Format"]);
   });
 
   it("filters the roadmap from a Mix row without collapsing the list it came from", () => {
@@ -252,19 +250,21 @@ describe("RoadmapDashboard", () => {
     expect(screen.getByText("Aquinas 101")).toBeVisible();
   });
 
-  it("splits backlog into in-progress and released groups with released months sorted newest first", () => {
+  it("splits backlog into undated, outside-the-window and released groups with released months sorted newest first", () => {
     vi.setSystemTime(new Date("2027-03-15T12:00:00Z"));
 
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const releasedGroup = screen.getByTestId("backlog-released-content");
-    const otherGroup = screen.getByTestId("backlog-other-content");
+    const undatedGroup = screen.getByTestId("backlog-other-content");
+    const outsideGroup = screen.getByTestId("backlog-outside-window");
     const backlog = screen.getByTestId("roadmap-backlog");
 
     expect(releasedGroup).not.toHaveAttribute("open");
-    expect(otherGroup).toHaveAttribute("open");
+    expect(undatedGroup).toHaveAttribute("open");
+    expect(outsideGroup).toHaveAttribute("open");
 
-    expect(backlog.textContent).toMatch(/In progress2.*Already released content3/);
+    expect(backlog.textContent).toMatch(/Undated — needs a release date1.*Outside this window1.*Already released content3/);
 
     fireEvent.click(within(releasedGroup).getByText("Already released content"));
 
@@ -281,8 +281,8 @@ describe("RoadmapDashboard", () => {
     expect(within(novemberGroup).getByText("Past Film")).toBeVisible();
     expect(within(releasedGroup).queryByText("Future Film")).not.toBeInTheDocument();
     expect(within(releasedGroup).queryByText("Undated Film")).not.toBeInTheDocument();
-    expect(within(otherGroup).getByText("Future Film")).toBeVisible();
-    expect(within(otherGroup).getByText("Undated Film")).toBeVisible();
+    expect(within(outsideGroup).getByText("Future Film")).toBeVisible();
+    expect(within(undatedGroup).getByText("Undated Film")).toBeVisible();
   });
 
   it("shows and edits the exact release date", () => {
@@ -667,24 +667,28 @@ describe("RoadmapDashboard", () => {
     expect(confirm).toHaveBeenCalledWith("Delete Practicing Catholic? This cannot be undone.");
   });
 
-  it("lets long month lists grow and opens a roadmap focus view", () => {
+  it("scrolls the month board inside one fixed-height viewport and focuses a single month", () => {
     render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
 
     const timeline = screen.getByTestId("roadmap-month-scroll");
-    expect(timeline).toHaveClass("overflow-x-auto");
-    expect(timeline).not.toHaveClass("h-[70vh]", "md:h-[600px]");
-    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[286px]");
+    expect(timeline).toHaveClass("h-[440px]", "overflow-auto");
+    expect(screen.getAllByTestId("roadmap-month-column")[0]).toHaveClass("w-[300px]");
+    expect(screen.getAllByTestId("roadmap-month-column")).toHaveLength(6);
 
-    fireEvent.click(screen.getByRole("button", { name: "Expand roadmap" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus January 2027" }));
 
+    expect(screen.getAllByTestId("roadmap-month-column")).toHaveLength(1);
     expect(screen.getByRole("heading", { name: "January 2027" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "February 2027" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Ongoing series cadence" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Exit focus view" })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Exit focus view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all months" }));
 
-    expect(screen.getByRole("heading", { name: "Ongoing series cadence" })).toBeVisible();
+    expect(screen.getAllByTestId("roadmap-month-column")).toHaveLength(6);
+  });
+
+  it("puts the window range, title count and secured minutes in the page summary line", () => {
+    render(<RoadmapDashboard fiscalYearId="00000000-0000-0000-0000-000000000028" roadmapItems={roadmapItems} ongoingSeries={series} categories={categories} startMonth="2027-01" monthCount={6} isDemo />);
+
+    expect(screen.getByText("6 titles · Jan 2027 – Jun 2027 · 403 minutes secured")).toBeVisible();
   });
 
   it("separates ongoing series rows with a hairline instead of zebra fills", () => {

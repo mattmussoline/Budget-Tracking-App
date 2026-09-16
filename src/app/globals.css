@@ -107,6 +107,7 @@ body {
   font-family: var(--font-body);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -131,7 +132,39 @@ textarea {
 .font-display {
   font-family: var(--font-display);
   font-weight: 400;
-  letter-spacing: -0.01em;
+  /*
+   * Instrument Serif ships a single 400 weight with fairly tight sidebearings.
+   * The old -0.01em on top of that made large headings read as cramped and
+   * slightly smeared, so display type now sits at its natural tracking.
+   */
+  letter-spacing: 0;
+  font-synthesis-weight: none;
+}
+
+/*
+ * The Roadmap's fixed-height panels scroll inside themselves, so their
+ * scrollbars are part of the page furniture rather than an OS overlay.
+ */
+/*
+ * No `scrollbar-width` here on purpose: setting it makes Chrome ignore the
+ * ::-webkit-scrollbar rules and fall back to macOS overlay bars, which hide
+ * until you scroll. These panels need a bar you can see before you touch it.
+ */
+.roadmap-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.roadmap-scroll::-webkit-scrollbar-track {
+  background: var(--panel-warm);
+}
+
+.roadmap-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+.roadmap-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
 }
 
 /*

@@ -25,6 +25,7 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
     <PlanningShell
       activeSection="roadmap"
       routePrefix="/demo"
+      fullBleed
       topBarRight={<>
         <TopBarChip>FY26</TopBarChip>
         <TopBarDivider />
@@ -33,7 +34,7 @@ export default async function DemoRoadmapPage({ searchParams }: DemoRoadmapPageP
     >
       <RoadmapDashboard
         pageTitle="Roadmap Demo"
-        pageDescription="Explore a fake content roadmap: plan releases by month, rank the year by provider, genre, format and category, and try the Licensing Summary and ClickUp handoff controls."
+        summaryHref="/demo/dashboard"
         fiscalYearId="demo-fy26"
         roadmapItems={demoRoadmapItems}
         ongoingSeries={demoOngoingSeries}

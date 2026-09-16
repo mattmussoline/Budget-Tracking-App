@@ -15,6 +15,11 @@ type PlanningShellProps = {
   actions?: ReactNode;
   /** Account-level controls for the top bar, such as the fiscal-year switcher. */
   topBarRight?: ReactNode;
+  /**
+   * Drops the main gutter so a page can run its own left rail flush to the
+   * viewport edge. The Roadmap uses this; every other page stays padded.
+   */
+  fullBleed?: boolean;
   children: ReactNode;
 };
 
@@ -25,12 +30,13 @@ export function PlanningShell({
   routePrefix = "",
   actions,
   topBarRight,
+  fullBleed,
   children
 }: PlanningShellProps) {
   return (
     <div className="min-h-screen bg-parchment">
       <AppTopBar activeSection={activeSection} routePrefix={routePrefix} right={topBarRight} />
-      <main className="mx-auto grid min-w-0 max-w-[1920px] gap-5 px-5 pb-12 pt-8 md:px-10">
+      <main className={fullBleed ? "min-w-0" : "mx-auto grid min-w-0 max-w-[1920px] gap-5 px-5 pb-12 pt-8 md:px-10"}>
         {title ? <PageHead title={title} description={description ?? ""} actions={actions} /> : null}
         {children}
       </main>
