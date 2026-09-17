@@ -93,15 +93,36 @@ export function getFiscalYearHealth(remainingPercent: number): SummaryHealth {
   return { label: "On track", color: "var(--deep-teal)" };
 }
 
+/** The dismissal key for "this title's $0 rate is confirmed, not just unset." */
+export function zeroRateAttentionKey(licenseId: string): string {
+  return `zero-rate:${licenseId}`;
+}
+
+/**
+ * The dismissal key for "this title's outlier amount is verified correct."
+ * The amount is baked into the key so a later change to the installment makes
+ * the old dismissal stop matching and the flag reappears on its own.
+ */
+export function outlierAttentionKey(licenseId: string, installmentCents: number): string {
+  return `outlier:${licenseId}:${installmentCents}`;
+}
+
 /**
  * The two things about a licensing year that are almost always worth a second
  * look: titles nobody has priced yet, and the one deal big enough to distort
- * the whole budget.
+ * the whole budget. Either can be dismissed once confirmed, so a title already
+ * cleared via `dismissedKeys` drops out here rather than reappearing forever.
  */
-export function buildSummaryAttention(licenses: ContentLicense[], averageInstallmentCents: number): SummaryAttentionItem[] {
+export function buildSummaryAttention(
+  licenses: ContentLicense[],
+  averageInstallmentCents: number,
+  dismissedKeys: ReadonlySet<string> = new Set()
+): SummaryAttentionItem[] {
   const items: SummaryAttentionItem[] = [];
 
-  const unpriced = licenses.filter((license) => license.installmentCents === 0);
+  const unpriced = licenses.filter(
+    (license) => license.installmentCents === 0 && !dismissedKeys.has(zeroRateAttentionKey(license.id))
+  );
   if (unpriced.length > 0) {
     const named = unpriced.slice(0, 3).map((license) => license.title).join(", ");
     items.push({
@@ -115,7 +136,12 @@ export function buildSummaryAttention(licenses: ContentLicense[], averageInstall
   }
 
   const outlier = licenses
-    .filter((license) => averageInstallmentCents > 0 && license.installmentCents > averageInstallmentCents * 4)
+    .filter(
+      (license) =>
+        averageInstallmentCents > 0 &&
+        license.installmentCents > averageInstallmentCents * 4 &&
+        !dismissedKeys.has(outlierAttentionKey(license.id, license.installmentCents))
+    )
     .sort((a, b) => b.installmentCents - a.installmentCents)[0];
 
   if (outlier) {
@@ -134,10 +160,12 @@ export function buildSummaryAttention(licenses: ContentLicense[], averageInstall
 
 export function buildLicensingSummaryView({
   model,
-  licenses
+  licenses,
+  dismissedAttentionKeys = new Set()
 }: {
   model: DashboardModel;
   licenses: ContentLicense[];
+  dismissedAttentionKeys?: ReadonlySet<string>;
 }): LicensingSummaryView {
   const payments = model.months.flatMap((month) => month.payments);
 
@@ -241,7 +269,7 @@ export function buildLicensingSummaryView({
     months,
     maxMonthCents: Math.max(1, ...months.map((month) => month.totalCents)),
     quarters,
-    attention: buildSummaryAttention(licenses, averageInstallmentCents),
+    attention: buildSummaryAttention(licenses, averageInstallmentCents, dismissedAttentionKeys),
     budgetLines,
     titleCount: licenseCount,
     providers,

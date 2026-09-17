@@ -15,6 +15,7 @@ vi.mock("../budget-actions", () => ({
   createFiscalYear: vi.fn(),
   deleteContentLicense: vi.fn(),
   deleteFiscalYear: vi.fn(),
+  dismissAttentionItem: vi.fn(),
   pinFiscalYear: vi.fn(),
   removeCollaborator: vi.fn(),
   updateContentLicense: vi.fn(),

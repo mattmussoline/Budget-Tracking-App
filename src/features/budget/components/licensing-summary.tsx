@@ -11,11 +11,11 @@ import { TopBarDivider } from "@/features/planning/components/app-top-bar";
 import { formatCurrency, formatCurrencyWholeDollars } from "@/lib/currency";
 import { monthNames } from "@/lib/months";
 import { logout } from "../auth-actions";
-import { deleteContentLicense, updateContentLicense, updateProviderColor } from "../budget-actions";
+import { deleteContentLicense, dismissAttentionItem, updateContentLicense, updateProviderColor } from "../budget-actions";
 import { budgetSourceOptions, getBudgetSourceColor } from "../budget-source";
 import type { ContentLicense } from "../budget-types";
 import { getProviderColorMap, providerColorOptions, type ProviderColorOverrides } from "../provider-colors";
-import type { LicensingSummaryView } from "../summary-model";
+import { outlierAttentionKey, zeroRateAttentionKey, type LicensingSummaryView } from "../summary-model";
 import { AddContentModal, FiscalYearModal, InviteModal, type FiscalYearRow } from "./summary-modals";
 
 type Selection = { kind: "quarter" | "month"; value: number };
@@ -68,6 +68,9 @@ export function LicensingSummary({
   const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
   );
+  /* Which rows are currently flagged, so their editor can offer a matching confirm action. */
+  const zeroRateFlaggedIds = new Set(view.attention.find((item) => item.id === "zero-rate")?.licenseIds ?? []);
+  const outlierFlaggedIds = new Set(view.attention.find((item) => item.id.startsWith("outlier-"))?.licenseIds ?? []);
   const providerColorMap = getProviderColorMap(providerOptions, providerColorOverrides);
   const monthOptions = view.months.map((month) => ({ label: month.label, value: String(month.index) }));
   const monthLabelByIndex = new Map(view.months.map((month) => [month.index, month.shortLabel]));
@@ -643,6 +646,32 @@ export function LicensingSummary({
                                 className="min-h-9 text-sm"
                               />
                             </div>
+                            {zeroRateFlaggedIds.has(license.id) || outlierFlaggedIds.has(license.id) ? (
+                              <div className="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-3">
+                                {zeroRateFlaggedIds.has(license.id) ? (
+                                  <SoftButton
+                                    form={`confirm-zero-rate-${license.id}`}
+                                    type="submit"
+                                    variant="secondary"
+                                    className="min-h-9 px-3 py-2 text-xs"
+                                    disabled={isDemo}
+                                  >
+                                    Confirm $0 rate is correct
+                                  </SoftButton>
+                                ) : null}
+                                {outlierFlaggedIds.has(license.id) ? (
+                                  <SoftButton
+                                    form={`verify-outlier-${license.id}`}
+                                    type="submit"
+                                    variant="secondary"
+                                    className="min-h-9 px-3 py-2 text-xs"
+                                    disabled={isDemo}
+                                  >
+                                    Verified, this amount is correct
+                                  </SoftButton>
+                                ) : null}
+                              </div>
+                            ) : null}
                             <div className="flex items-end justify-end gap-2 sm:col-span-2 xl:col-span-3">
                               <SoftButton
                                 form={`delete-license-${license.id}`}
@@ -667,6 +696,22 @@ export function LicensingSummary({
                           <form id={`delete-license-${license.id}`} action={deleteContentLicense}>
                             <input type="hidden" name="licenseId" value={license.id} />
                           </form>
+                          {zeroRateFlaggedIds.has(license.id) ? (
+                            <form id={`confirm-zero-rate-${license.id}`} action={dismissAttentionItem}>
+                              <input type="hidden" name="fiscalYearId" value={fiscalYear.id} />
+                              <input type="hidden" name="attentionKey" value={zeroRateAttentionKey(license.id)} />
+                            </form>
+                          ) : null}
+                          {outlierFlaggedIds.has(license.id) ? (
+                            <form id={`verify-outlier-${license.id}`} action={dismissAttentionItem}>
+                              <input type="hidden" name="fiscalYearId" value={fiscalYear.id} />
+                              <input
+                                type="hidden"
+                                name="attentionKey"
+                                value={outlierAttentionKey(license.id, license.installmentCents)}
+                              />
+                            </form>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ContentLicense } from "./budget-types";
 import { buildDashboardModel } from "./dashboard-model";
-import { buildLicensingSummaryView, buildSummaryAttention, getFiscalYearHealth } from "./summary-model";
+import {
+  buildLicensingSummaryView,
+  buildSummaryAttention,
+  getFiscalYearHealth,
+  outlierAttentionKey,
+  zeroRateAttentionKey
+} from "./summary-model";
 
 const licenses: ContentLicense[] = [
   {
@@ -119,6 +125,60 @@ describe("buildSummaryAttention", () => {
 
   it("says nothing when every title is priced and none is an outlier", () => {
     expect(buildSummaryAttention([licenses[0], licenses[1]], 1137500)).toEqual([]);
+  });
+
+  it("drops a title once its $0 rate is confirmed", () => {
+    const dismissed = new Set([zeroRateAttentionKey("l4")]);
+
+    expect(buildSummaryAttention(licenses, 5568750, dismissed)).toEqual([]);
+  });
+
+  it("drops the outlier once its amount is verified", () => {
+    const evenSlate: ContentLicense[] = ["a", "b", "c", "d", "e"].map((id) => ({
+      id,
+      title: `Title ${id}`,
+      provider: "Provider",
+      installmentCents: 100000,
+      cadence: "yearly" as const,
+      addedFiscalMonth: 1
+    }));
+    const cabrini: ContentLicense = {
+      id: "cabrini",
+      title: "Cabrini",
+      provider: "Angel Studios",
+      installmentCents: 2000000,
+      cadence: "yearly",
+      addedFiscalMonth: 3,
+      budgetSource: "donor_funded"
+    };
+    const dismissed = new Set([outlierAttentionKey("cabrini", cabrini.installmentCents)]);
+
+    expect(buildSummaryAttention([...evenSlate, cabrini], 416667, dismissed)).toEqual([]);
+  });
+
+  it("re-flags a verified outlier if its amount changes afterward", () => {
+    const evenSlate: ContentLicense[] = ["a", "b", "c", "d", "e"].map((id) => ({
+      id,
+      title: `Title ${id}`,
+      provider: "Provider",
+      installmentCents: 100000,
+      cadence: "yearly" as const,
+      addedFiscalMonth: 1
+    }));
+    const cabrini: ContentLicense = {
+      id: "cabrini",
+      title: "Cabrini",
+      provider: "Angel Studios",
+      installmentCents: 2000000,
+      cadence: "yearly",
+      addedFiscalMonth: 3,
+      budgetSource: "donor_funded"
+    };
+    const staleDismissal = new Set([outlierAttentionKey("cabrini", cabrini.installmentCents - 1)]);
+
+    const items = buildSummaryAttention([...evenSlate, cabrini], 416667, staleDismissal);
+
+    expect(items.map((item) => item.id)).toEqual(["outlier-cabrini"]);
   });
 });
 
