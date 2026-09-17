@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -64,17 +64,53 @@ export function LicensingSummary({
   const [modal, setModal] = useState<"add" | "fy" | "invite" | null>(null);
   /* Set by the "Needs attention" rail: pins the table to just the rows that item is about. */
   const [attentionFilter, setAttentionFilter] = useState<AttentionFilter | null>(null);
+  /* Attention keys confirmed/verified in this session, hidden immediately rather than
+     waiting on the server round trip that `dismissAttentionItem` kicks off. */
+  const [locallyResolvedKeys, setLocallyResolvedKeys] = useState<ReadonlySet<string>>(new Set());
 
-  const providerOptions = Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b)
+  const providerOptions = useMemo(
+    () => Array.from(new Set(licenses.map((license) => license.provider).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [licenses]
+  );
+  const licenseById = useMemo(() => new Map(licenses.map((license) => [license.id, license])), [licenses]);
+  const visibleAttention = useMemo(
+    () =>
+      view.attention
+        .map((item) => ({
+          ...item,
+          licenseIds: item.licenseIds.filter((id) => {
+            const license = licenseById.get(id);
+            const key = item.id === "zero-rate"
+              ? zeroRateAttentionKey(id)
+              : outlierAttentionKey(id, license?.installmentCents ?? 0);
+            return !locallyResolvedKeys.has(key);
+          })
+        }))
+        .filter((item) => item.licenseIds.length > 0),
+    [view.attention, licenseById, locallyResolvedKeys]
   );
   /* Which rows are currently flagged, so their editor can offer a matching confirm action. */
-  const zeroRateFlaggedIds = new Set(view.attention.find((item) => item.id === "zero-rate")?.licenseIds ?? []);
-  const outlierFlaggedIds = new Set(view.attention.find((item) => item.id.startsWith("outlier-"))?.licenseIds ?? []);
-  const providerColorMap = getProviderColorMap(providerOptions, providerColorOverrides);
-  const monthOptions = view.months.map((month) => ({ label: month.label, value: String(month.index) }));
-  const monthLabelByIndex = new Map(view.months.map((month) => [month.index, month.shortLabel]));
-  const cadenceByLicenseId = new Map(licenses.map((license) => [license.id, license.cadence]));
+  const zeroRateFlaggedIds = useMemo(
+    () => new Set(visibleAttention.find((item) => item.id === "zero-rate")?.licenseIds ?? []),
+    [visibleAttention]
+  );
+  const outlierFlaggedIds = useMemo(
+    () => new Set(visibleAttention.find((item) => item.id.startsWith("outlier-"))?.licenseIds ?? []),
+    [visibleAttention]
+  );
+  const providerColorMap = useMemo(
+    () => getProviderColorMap(providerOptions, providerColorOverrides),
+    [providerOptions, providerColorOverrides]
+  );
+  const monthOptions = useMemo(
+    () => view.months.map((month) => ({ label: month.label, value: String(month.index) })),
+    [view.months]
+  );
+  const monthLabelByIndex = useMemo(
+    () => new Map(view.months.map((month) => [month.index, month.shortLabel])),
+    [view.months]
+  );
+  const cadenceByLicenseId = useMemo(() => new Map(licenses.map((license) => [license.id, license.cadence])), [licenses]);
 
   const selectedMonths =
     selection.kind === "month"
@@ -200,13 +236,13 @@ export function LicensingSummary({
           <section className="grid gap-2.5 border-t border-hairline pt-5">
             <div className="flex min-w-0 items-baseline justify-between gap-2">
               <span className={eyebrowClass}>Needs attention</span>
-              <span className="shrink-0 text-[11px] font-bold text-danger">{view.attention.length} open</span>
+              <span className="shrink-0 text-[11px] font-bold text-danger">{visibleAttention.length} open</span>
             </div>
-            {view.attention.length === 0 ? (
+            {visibleAttention.length === 0 ? (
               <span className="text-xs text-faint">Nothing needs attention right now.</span>
             ) : (
               <div className="grid min-w-0 gap-2">
-                {view.attention.map((item) => (
+                {visibleAttention.map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -655,6 +691,10 @@ export function LicensingSummary({
                                     variant="secondary"
                                     className="min-h-9 px-3 py-2 text-xs"
                                     disabled={isDemo}
+                                    onClick={() => {
+                                      const key = zeroRateAttentionKey(license.id);
+                                      setLocallyResolvedKeys((prev) => new Set(prev).add(key));
+                                    }}
                                   >
                                     Confirm $0 rate is correct
                                   </SoftButton>
@@ -666,6 +706,10 @@ export function LicensingSummary({
                                     variant="secondary"
                                     className="min-h-9 px-3 py-2 text-xs"
                                     disabled={isDemo}
+                                    onClick={() => {
+                                      const key = outlierAttentionKey(license.id, license.installmentCents);
+                                      setLocallyResolvedKeys((prev) => new Set(prev).add(key));
+                                    }}
                                   >
                                     Verified, this amount is correct
                                   </SoftButton>

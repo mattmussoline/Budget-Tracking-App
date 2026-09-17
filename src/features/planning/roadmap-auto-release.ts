@@ -48,25 +48,28 @@ export async function syncReleasedRoadmapFormedLinks(
     throw new Error(error.message);
   }
 
-  for (const item of data ?? []) {
-    const suggestion = await findFormedLink(item.title);
-    if (!suggestion.formedUrl && !suggestion.candidateUrl) continue;
+  await Promise.all(
+    (data ?? []).map(async (item) => {
+      const suggestion = await findFormedLink(item.title);
+      // Persist "" (not null) when nothing was found, so this item stops matching the
+      // `.is("formed_url_candidate", null)` filter above and isn't re-fetched from
+      // watch.formed.org on every subsequent dashboard load.
+      const { error: updateError } = await admin
+        .from("roadmap_items")
+        .update({
+          formed_url: suggestion.formedUrl,
+          formed_url_candidate: suggestion.formedUrl ? null : suggestion.candidateUrl ?? ""
+        })
+        .eq("id", item.id)
+        .eq("fiscal_year_id", fiscalYearId)
+        .is("formed_url", null)
+        .is("formed_url_candidate", null);
 
-    const { error: updateError } = await admin
-      .from("roadmap_items")
-      .update({
-        formed_url: suggestion.formedUrl,
-        formed_url_candidate: suggestion.formedUrl ? null : suggestion.candidateUrl
-      })
-      .eq("id", item.id)
-      .eq("fiscal_year_id", fiscalYearId)
-      .is("formed_url", null)
-      .is("formed_url_candidate", null);
-
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
-  }
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+    })
+  );
 }
 
 export async function findExactFormedLink(title: string) {
