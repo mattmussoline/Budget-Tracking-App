@@ -34,7 +34,11 @@ export default async function CoproductionPage({ searchParams }: CoproductionPag
     );
   }
 
-  const sessionPromise = requireInternalSession();
+  // Resolve the session before any Supabase call. Racing them in one Promise.all
+  // means a Supabase rejection can settle first and surface as a 500, swallowing
+  // the signed-out redirect to /login. The check is local HMAC work, so awaiting
+  // it up front costs no round trip.
+  await requireInternalSession();
   const paramsPromise = searchParams;
 
   const [{ data: fiscalYears, error: fiscalYearsError }, params] = await Promise.all([
@@ -42,8 +46,7 @@ export default async function CoproductionPage({ searchParams }: CoproductionPag
       .from("fiscal_years")
       .select("id,label,fiscal_year,is_pinned")
       .order("fiscal_year", { ascending: false }),
-    paramsPromise,
-    sessionPromise
+    paramsPromise
   ]);
 
   if (fiscalYearsError) {
