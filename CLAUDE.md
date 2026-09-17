@@ -20,6 +20,10 @@ Always deploy production releases to Cloudflare Workers:
 
 Do not use Vercel CLI, Vercel MCP tools, Vercel project lookup, or Vercel aliases for this app unless Matt explicitly overrides this instruction in the same turn.
 
+## Shortcuts
+
+- When Matt types `pcd`, treat it as: commit the current change (only the intentional files, per Working Rules), push to `main`, then run the Deployment Rule steps (`cf:build`, `cf:deploy`, live smoke checks). Apply the same commit-message and staging judgment as any other commit — `pcd` is shorthand for the request, not a license to skip the Working Rules.
+
 ## Standard Verification
 
 For ordinary code changes, use the relevant subset of:
