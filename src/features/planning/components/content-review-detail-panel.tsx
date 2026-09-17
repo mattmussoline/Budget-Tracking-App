@@ -277,9 +277,9 @@ export function ContentReviewDetailPanel({
             value={titleDraft}
             onChange={(event) => setTitleDraft(event.target.value)}
             onFocus={() => setIsTitleFocused(true)}
-            onBlur={(event) => {
+            onBlur={() => {
               setIsTitleFocused(false);
-              commitTitle(event);
+              commitTitle();
             }}
             onKeyDown={(event) => fieldKeyDown(event, () => setTitleDraft(item.title))}
             style={{ fontFamily: "var(--font-cormorant-garamond)" }}
