@@ -12,6 +12,7 @@ import { notesHtmlToPlainText } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
+import { TitleCaps } from "./title-caps";
 
 /** The panel can be widened by dragging its left edge; the chosen width is remembered per browser. */
 const PANEL_MIN_WIDTH = 320;
@@ -66,6 +67,8 @@ export function ContentReviewDetailPanel({
 }: ContentReviewDetailPanelProps) {
   const status = REVIEW_STATUSES.find((option) => option.value === item.reviewStatus) ?? REVIEW_STATUSES[0];
   const [titleDraft, setTitleDraft] = useState(item.title);
+  const [isTitleFocused, setIsTitleFocused] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [rateDraft, setRateDraft] = useState(formatOptionalCurrency(item.proposedRateCents));
   const [providerDraft, setProviderDraft] = useState(item.provider ?? "");
   const [minutesDraft, setMinutesDraft] = useState(item.minutes != null ? String(item.minutes) : "");
@@ -265,17 +268,36 @@ export function ContentReviewDetailPanel({
           </button>
         </div>
 
-        <h2 className="mb-2">
+        <h2 className="relative mb-2">
           <input
+            ref={titleInputRef}
             aria-label="Review title"
             placeholder="Untitled review"
             disabled={isDemo}
             value={titleDraft}
             onChange={(event) => setTitleDraft(event.target.value)}
-            onBlur={commitTitle}
+            onFocus={() => setIsTitleFocused(true)}
+            onBlur={(event) => {
+              setIsTitleFocused(false);
+              commitTitle(event);
+            }}
             onKeyDown={(event) => fieldKeyDown(event, () => setTitleDraft(item.title))}
-            className="-mx-1.5 w-[calc(100%+12px)] border-0 bg-transparent px-1.5 py-0.5 font-display text-[26px] leading-[1.15] normal-case tracking-normal outline-none transition placeholder:text-faint hover:bg-panel focus:bg-panel focus:ring-2 focus:ring-formed-blue disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            style={{ fontFamily: "var(--font-cormorant-garamond)" }}
+            className={cn(
+              "-mx-1.5 w-[calc(100%+12px)] border-0 bg-transparent px-1.5 py-0.5 text-[26px] uppercase leading-[1.15] tracking-[.02em] outline-none transition placeholder:text-faint hover:bg-panel focus:bg-panel focus:ring-2 focus:ring-formed-blue disabled:cursor-not-allowed disabled:hover:bg-transparent",
+              isTitleFocused ? "" : "text-transparent placeholder:text-transparent"
+            )}
           />
+          {!isTitleFocused ? (
+            <div
+              aria-hidden="true"
+              onClick={() => titleInputRef.current?.focus()}
+              style={{ fontFamily: "var(--font-cormorant-garamond)" }}
+              className="absolute inset-0 cursor-text overflow-hidden text-nowrap px-1.5 py-0.5 text-[26px] leading-[1.15] tracking-[.02em] transition hover:bg-panel"
+            >
+              {titleDraft ? <TitleCaps text={titleDraft} /> : <span className="text-faint normal-case">Untitled review</span>}
+            </div>
+          ) : null}
         </h2>
 
         <DetailRow label="Status">

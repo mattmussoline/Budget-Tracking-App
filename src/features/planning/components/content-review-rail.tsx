@@ -12,6 +12,7 @@ import {
 } from "../content-review-queue";
 import { REVIEW_STATUSES, TONE_BORDER_L_CLASSES, TONE_INK_CLASSES, TONE_SWATCH_CLASSES } from "../planning-constants";
 import type { ContentReviewItem } from "../planning-types";
+import { TitleCaps } from "./title-caps";
 
 type ContentReviewRailProps = {
   items: ContentReviewItem[];
@@ -53,9 +54,10 @@ export function ContentReviewRail({ items, priorities, lane, canEdit, onSelectLa
                 <button
                   type="button"
                   onClick={() => onSelectPriority(item.id)}
+                  style={{ fontFamily: "var(--font-cormorant-garamond)" }}
                   className="min-w-0 flex-1 truncate text-left text-[13.5px] font-semibold leading-[1.35] [overflow-wrap:anywhere] hover:text-formed-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-formed-blue"
                 >
-                  {label}
+                  {item.title ? <TitleCaps text={item.title} /> : label}
                 </button>
                 <button
                   type="button"

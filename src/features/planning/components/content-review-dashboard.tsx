@@ -38,6 +38,7 @@ import { ContentReviewPrioritiesPicker } from "./content-review-priorities-picke
 import { ContentReviewRail } from "./content-review-rail";
 import { ContentReviewRecapPanel } from "./content-review-recap-panel";
 import { ContentReviewToast, type ContentReviewToastState } from "./content-review-toast";
+import { TitleCaps } from "./title-caps";
 
 type ContentReviewDashboardProps = {
   pageTitle?: string;
@@ -553,7 +554,12 @@ function QueueRow({ item, selected, onSelect }: { item: ContentReviewItem; selec
     >
       <span className="flex min-w-0 items-center gap-2">
         {item.inFocus ? <Star className="h-3.5 w-3.5 shrink-0 fill-tone-amber-line text-tone-amber-line" aria-hidden="true" /> : null}
-        <span className="min-w-0 text-[14px] font-semibold leading-[1.35] [overflow-wrap:anywhere] [text-wrap:pretty]">{item.title || "Untitled review"}</span>
+        <span
+          className="min-w-0 text-[14px] font-semibold leading-[1.35] [overflow-wrap:anywhere] [text-wrap:pretty]"
+          style={{ fontFamily: "var(--font-cormorant-garamond)" }}
+        >
+          {item.title ? <TitleCaps text={item.title} /> : "Untitled review"}
+        </span>
         {item.isCoproductionOpportunity ? <span className="shrink-0 border border-formed-blue-border bg-formed-blue-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[.06em] text-formed-blue-hover">CO-PROD</span> : null}
       </span>
       <span className="flex items-center gap-1.5">
