@@ -9,6 +9,7 @@ import { dollarsToCents } from "@/lib/currency";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { budgetSourceOptions } from "./budget-source";
 import { providerColorOptions } from "./provider-colors";
+import { zeroRateAttentionKey } from "./summary-model";
 
 const fiscalYearSchema = z.object({
   label: z.string().min(1),
@@ -49,6 +50,11 @@ const deleteLicenseSchema = z.object({
 
 const fiscalYearIdSchema = z.object({
   fiscalYearId: z.string().uuid()
+});
+
+const dismissAttentionItemSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  attentionKey: z.string().trim().min(1)
 });
 
 const providerColorSchema = z.object({
@@ -257,6 +263,42 @@ export async function updateContentLicense(formData: FormData) {
     })
     .eq("id", parsed.data.licenseId)
     .eq("fiscal_year_id", parsed.data.fiscalYearId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Moving off $0 retires the old "confirmed $0" dismissal, so if the rate is
+  // ever set back to zero later, it flags again until reconfirmed.
+  if (installmentCents !== 0) {
+    await admin
+      .from("attention_dismissals")
+      .delete()
+      .eq("fiscal_year_id", parsed.data.fiscalYearId)
+      .eq("attention_key", zeroRateAttentionKey(parsed.data.licenseId));
+  }
+
+  revalidatePath("/dashboard");
+}
+
+export async function dismissAttentionItem(formData: FormData) {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    return;
+  }
+
+  const parsed = dismissAttentionItemSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error("Could not dismiss that attention item.");
+  }
+
+  const session = await requireInternalSession();
+
+  const { error } = await admin.from("attention_dismissals").upsert({
+    fiscal_year_id: parsed.data.fiscalYearId,
+    attention_key: parsed.data.attentionKey,
+    dismissed_by_email: session.email
+  });
 
   if (error) {
     throw new Error(error.message);

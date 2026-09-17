@@ -13,6 +13,7 @@ type BudgetDashboardProps = {
   model: DashboardModel | null;
   licenses: ContentLicense[];
   providerColorOverrides?: ProviderColorOverrides;
+  dismissedAttentionKeys?: ReadonlySet<string>;
   mode: "demo" | "live";
   userEmail?: string;
   allowedEmails?: string[];
@@ -29,6 +30,7 @@ export function BudgetDashboard({
   model,
   licenses,
   providerColorOverrides = {},
+  dismissedAttentionKeys = new Set(),
   mode,
   userEmail,
   allowedEmails = []
@@ -50,7 +52,7 @@ export function BudgetDashboard({
     <LicensingSummary
       fiscalYear={fiscalYear}
       fiscalYears={fiscalYears}
-      view={buildLicensingSummaryView({ model, licenses })}
+      view={buildLicensingSummaryView({ model, licenses, dismissedAttentionKeys })}
       licenses={licenses}
       providerColorOverrides={providerColorOverrides}
       mode={mode}

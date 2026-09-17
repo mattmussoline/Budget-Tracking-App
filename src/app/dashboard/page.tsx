@@ -70,7 +70,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const [
     { data: licenseRows, error: licensesError },
     { data: providerColorRows, error: providerColorError },
-    { data: accessRows, error: accessError }
+    { data: accessRows, error: accessError },
+    { data: attentionDismissalRows, error: attentionDismissalsError }
   ] = await Promise.all([
     admin
       .from("content_licenses")
@@ -84,7 +85,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     admin
       .from("app_access_invites")
       .select("email")
-      .order("email", { ascending: true })
+      .order("email", { ascending: true }),
+    admin
+      .from("attention_dismissals")
+      .select("attention_key")
+      .eq("fiscal_year_id", activeFiscalYear.id)
   ]);
 
   if (licensesError) {
@@ -97,6 +102,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   if (accessError) {
     throw new Error(accessError.message);
+  }
+
+  if (attentionDismissalsError) {
+    throw new Error(attentionDismissalsError.message);
   }
 
   const licenses: ContentLicense[] = (licenseRows ?? []).map((license) => ({
@@ -113,6 +122,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const providerColorOverrides: ProviderColorOverrides = Object.fromEntries(
     (providerColorRows ?? []).map((row) => [row.provider, row.color_key as ProviderColorKey])
   );
+  const dismissedAttentionKeys = new Set((attentionDismissalRows ?? []).map((row) => row.attention_key));
 
   const model = buildDashboardModel({
     fiscalYear: activeFiscalYear.fiscal_year,
@@ -128,6 +138,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       model={model}
       licenses={licenses}
       providerColorOverrides={providerColorOverrides}
+      dismissedAttentionKeys={dismissedAttentionKeys}
       mode="live"
       userEmail={session.email}
       allowedEmails={(accessRows ?? []).map((row) => row.email)}
