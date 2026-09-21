@@ -5,7 +5,14 @@ import { type MouseEvent as ReactMouseEvent, useLayoutEffect, useRef } from "rea
 import { cn } from "@/components/ui/soft-surface";
 import { NOTE_LINK_CLASS, isEmptyNotesHtml, renderNotesHtml, sanitizeNotesHtml } from "../rich-text";
 
-type RichTextNotesProps = { label: string; value: string; onChange: (value: string) => void; disabled?: boolean };
+type RichTextNotesProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  /** Fires with the sanitized value once formatting or a toolbar command settles, e.g. on blur. */
+  onCommit?: (value: string) => void;
+  disabled?: boolean;
+};
 
 const TOOLBAR_ACTIONS = [
   { command: "bold", label: "Bold", shortcut: "Cmd+B", Icon: Bold },
@@ -15,7 +22,7 @@ const TOOLBAR_ACTIONS = [
   { command: "insertOrderedList", label: "Numbered list", shortcut: null, Icon: ListOrdered }
 ] as const;
 
-export function RichTextNotes({ label, value, onChange, disabled }: RichTextNotesProps) {
+export function RichTextNotes({ label, value, onChange, onCommit, disabled }: RichTextNotesProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const isEditingRef = useRef(false);
 
@@ -43,7 +50,9 @@ export function RichTextNotes({ label, value, onChange, disabled }: RichTextNote
     linkifyEditor(editor);
     const sanitized = sanitizeNotesHtml(editor.innerHTML);
     editor.innerHTML = sanitized;
-    onChange(isEmptyNotesHtml(sanitized) ? "" : sanitized);
+    const next = isEmptyNotesHtml(sanitized) ? "" : sanitized;
+    onChange(next);
+    onCommit?.(next);
   }
 
   return <div className="grid gap-2 text-xs font-semibold uppercase tracking-wide">

@@ -8,10 +8,10 @@ import { sendReviewToRoadmap } from "../planning-actions";
 import { CONTENT_FORMATS, CONTENT_GENRES, REVIEW_STATUSES, TONE_CLASSES } from "../planning-constants";
 import { dollarsToOptionalCents, formatOptionalCurrency } from "../planning-model";
 import type { ContentReviewItem, ContentReviewUpdate, ReviewStatus } from "../planning-types";
-import { notesHtmlToPlainText } from "../rich-text";
 import { ColoredSelect } from "./colored-select";
 import { ContentReviewUpdateLog } from "./content-review-update-log";
 import { ProviderCombobox } from "./provider-combobox";
+import { RichTextNotes } from "./rich-text-notes";
 import { TitleCaps } from "./title-caps";
 
 /** The panel can be widened by dragging its left edge; the chosen width is remembered per browser. */
@@ -73,7 +73,7 @@ export function ContentReviewDetailPanel({
   const [providerDraft, setProviderDraft] = useState(item.provider ?? "");
   const [minutesDraft, setMinutesDraft] = useState(item.minutes != null ? String(item.minutes) : "");
   const [linkDraft, setLinkDraft] = useState(item.reviewLink ?? "");
-  const [noteDraft, setNoteDraft] = useState(notesHtmlToPlainText(item.notes));
+  const [noteDraft, setNoteDraft] = useState(item.notes ?? "");
   const [showMore, setShowMore] = useState(false);
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null);
   const [isPipelinePending, startPipelineTransition] = useTransition();
@@ -150,7 +150,7 @@ export function ContentReviewDetailPanel({
     setProviderDraft(item.provider ?? "");
     setMinutesDraft(item.minutes != null ? String(item.minutes) : "");
     setLinkDraft(item.reviewLink ?? "");
-    setNoteDraft(notesHtmlToPlainText(item.notes));
+    setNoteDraft(item.notes ?? "");
     setShowMore(false);
     setPipelineMessage(null);
   }, [item.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -405,6 +405,16 @@ export function ContentReviewDetailPanel({
           </div>
         </DetailRow>
 
+        <div className="border-t border-hairline py-3">
+          <RichTextNotes
+            label="Notes"
+            value={noteDraft}
+            disabled={isDemo}
+            onChange={setNoteDraft}
+            onCommit={(next) => onFieldCommit({ notes: next })}
+          />
+        </div>
+
         <div className="flex flex-wrap items-center gap-3 border-t border-hairline py-2.5">
           <button
             type="button"
@@ -426,18 +436,6 @@ export function ContentReviewDetailPanel({
 
         {showMore ? (
           <div className="grid gap-3 border-t border-hairline py-3" style={{ animation: "fadein 150ms ease" }}>
-            <label className="grid gap-1.5 text-xs font-semibold text-muted">
-              Notes
-              <textarea
-                aria-label="Notes"
-                rows={4}
-                disabled={isDemo}
-                value={noteDraft}
-                onChange={(event) => setNoteDraft(event.target.value)}
-                onBlur={() => onFieldCommit({ notes: noteDraft })}
-                className="min-h-24 w-full resize-y border border-hairline bg-panel px-3 py-2 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue box-border"
-              />
-            </label>
             <label className="flex items-center gap-2 text-xs font-semibold text-muted">
               <input
                 type="checkbox"
