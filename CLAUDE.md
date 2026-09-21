@@ -23,6 +23,7 @@ Do not use Vercel CLI, Vercel MCP tools, Vercel project lookup, or Vercel aliase
 ## Shortcuts
 
 - When Matt types `pcd`, treat it as: commit the current change (only the intentional files, per Working Rules), push to `main`, then run the Deployment Rule steps (`cf:build`, `cf:deploy`, live smoke checks). Apply the same commit-message and staging judgment as any other commit — `pcd` is shorthand for the request, not a license to skip the Working Rules.
+- `cpd` is a known mistyping of `pcd` and means the same thing. Matt confirmed this on 2026-09-17. It still triggers a real push and production deploy, so apply the same Working Rules judgment.
 
 ## Standard Verification
 
