@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronRight, ChevronUp, History, Plus, Search, SlidersHorizontal, Star } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import {
   type QueueFilters,
@@ -118,12 +118,45 @@ export function ContentReviewDashboard({
   const heading = laneHeading(lane, laneBase.length, records.filter((item) => item.id !== "draft").length);
   const isGrouped = lane === "all" && !sort && filters.search.trim() === "";
 
+  // A shared review link (`?item=<id>`) opens straight to that review's detail panel.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = new URLSearchParams(window.location.search).get("item");
+    if (id && items.some((entry) => entry.id === id)) setSelectedId(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function syncSelectionToUrl(id: string | null) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set("item", id);
+    else url.searchParams.delete("item");
+    window.history.replaceState(null, "", url.toString());
+  }
+
   function selectItem(id: string) {
     setSelectedId(id);
+    syncSelectionToUrl(id);
   }
 
   function closeDetail() {
     setSelectedId(null);
+    syncSelectionToUrl(null);
+  }
+
+  function copyReviewLink(itemId: string) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("item", itemId);
+    const link = url.toString();
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(link)
+        .then(() => setToast({ message: "Link copied." }))
+        .catch(() => setToast({ message: "Couldn't copy the link — copy it from the address bar instead." }));
+    } else {
+      setToast({ message: "Couldn't copy the link — copy it from the address bar instead." });
+    }
   }
 
   function selectLane(nextLane: QueueLane) {
@@ -261,7 +294,7 @@ export function ContentReviewDashboard({
   function deleteItem(itemId: string) {
     if (isDemo) return;
     setRecords((current) => current.filter((entry) => entry.id !== itemId));
-    if (selectedId === itemId) setSelectedId(null);
+    if (selectedId === itemId) closeDetail();
     const formData = new FormData();
     formData.set("fiscalYearId", fiscalYearId);
     formData.set("itemId", itemId);
@@ -315,7 +348,7 @@ export function ContentReviewDashboard({
           persistFocus(saved.id, true);
         }
         setLane(saved.reviewStatus);
-        setSelectedId(saved.id);
+        selectItem(saved.id);
         setShowAdd(false);
       } catch {
         // Keep the modal open so the values are not lost on a failed save.
@@ -472,6 +505,7 @@ export function ContentReviewDashboard({
           isDemo={isDemo}
           updates={selectedUpdates}
           onClose={closeDetail}
+          onCopyLink={() => copyReviewLink(selected.id)}
           onStatusChange={(status) => changeStatus(selected.id, status)}
           onFieldCommit={(patch) => commitFields(selected.id, patch)}
           onTogglePriority={() => togglePriority(selected.id)}

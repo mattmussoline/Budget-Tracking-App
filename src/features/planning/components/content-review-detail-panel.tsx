@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, Link2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import { isPriorityListFull } from "../content-review-queue";
@@ -42,6 +42,7 @@ type ContentReviewDetailPanelProps = {
   isDemo?: boolean;
   updates: ContentReviewUpdate[];
   onClose: () => void;
+  onCopyLink: () => void;
   onStatusChange: (status: ReviewStatus) => void;
   onFieldCommit: (patch: Partial<ContentReviewItem>) => void;
   onTogglePriority: () => void;
@@ -58,6 +59,7 @@ export function ContentReviewDetailPanel({
   isDemo,
   updates,
   onClose,
+  onCopyLink,
   onStatusChange,
   onFieldCommit,
   onTogglePriority,
@@ -256,16 +258,27 @@ export function ContentReviewDetailPanel({
         className="absolute left-0 top-0 z-10 hidden h-full w-[9px] -translate-x-1/2 cursor-col-resize touch-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-transparent hover:after:bg-formed-blue focus-visible:outline-none focus-visible:after:bg-formed-blue min-[1126px]:block"
       />
       <div className="sticky top-[90px] grid min-w-0 gap-1">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <p className="text-[11.5px] font-semibold text-formed-blue">Selected review</p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close selected review"
-            className="flex h-6 w-6 items-center justify-center border border-hairline bg-panel text-muted transition hover:bg-panel-warm"
-          >
-            <X className="h-[13px] w-[13px]" aria-hidden="true" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onCopyLink}
+              aria-label="Copy link to this review"
+              title="Copy link to this review"
+              className="flex h-6 w-6 items-center justify-center border border-hairline bg-panel text-muted transition hover:bg-panel-warm"
+            >
+              <Link2 className="h-[13px] w-[13px]" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close selected review"
+              className="flex h-6 w-6 items-center justify-center border border-hairline bg-panel text-muted transition hover:bg-panel-warm"
+            >
+              <X className="h-[13px] w-[13px]" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <h2 className="relative mb-2">
