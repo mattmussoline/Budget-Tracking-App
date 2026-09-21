@@ -79,7 +79,7 @@ export function RichTextNotes({ label, value, onChange, onCommit, disabled }: Ri
       aria-disabled={disabled}
       aria-label={label}
       className={cn(
-        "min-h-[7rem] break-words rounded-md border-0 bg-panel-warm p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue",
+        "min-h-[7rem] break-words rounded-md border border-hairline-strong bg-panel p-3 text-sm font-medium normal-case tracking-normal outline-none focus:ring-2 focus:ring-formed-blue",
         "[&_p]:min-h-[1.25rem] [&_p:not(:last-child)]:mb-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-bold [&_em]:italic [&_u]:underline",
         disabled && "cursor-not-allowed opacity-60"
       )}
