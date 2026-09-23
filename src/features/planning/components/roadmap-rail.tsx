@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelLeftClose, SlidersHorizontal, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui/soft-surface";
 import type { buildMinutesByBudgetSourceSummary } from "@/features/budget/budget-source";
@@ -22,6 +23,12 @@ type RoadmapRailProps = {
   /** The "Manage key" text link, rendered directly under the category key. */
   manageKey?: ReactNode;
   actions?: ReactNode;
+  /** Wide screens only: the rail is hidden and the summary strip stands in for it. */
+  collapsed: boolean;
+  onCollapse: () => void;
+  /** Below xl the rail is a slide-in drawer rather than a column. */
+  drawerOpen: boolean;
+  onCloseDrawer: () => void;
 };
 
 export function RoadmapRail({
@@ -37,16 +44,38 @@ export function RoadmapRail({
   stats,
   onJumpToBacklog,
   manageKey,
-  actions
+  actions,
+  collapsed,
+  onCollapse,
+  drawerOpen,
+  onCloseDrawer
 }: RoadmapRailProps) {
   const totalMinutes = minutes.reduce((sum, line) => sum + line.minutes, 0);
   const topLine = Math.max(...minutes.map((line) => line.minutes), 1);
 
-  return (
+  return (<>
+    {drawerOpen ? <div aria-hidden="true" onClick={onCloseDrawer} className="fixed inset-0 z-40 bg-black/30 xl:hidden" /> : null}
     <aside
       data-testid="roadmap-rail"
-      className="roadmap-scroll grid content-start gap-6 border-r border-hairline bg-panel-warm px-6 py-6 xl:sticky xl:top-[62px] xl:max-h-[calc(100vh-62px)] xl:overflow-y-auto"
+      aria-label="Roadmap overview"
+      className={cn(
+        // Below xl: an off-canvas drawer. At xl: the sticky left column it has always been.
+        "roadmap-scroll fixed inset-y-0 left-0 z-50 grid w-[320px] max-w-[85vw] content-start gap-6 overflow-y-auto border-r border-hairline bg-panel-warm px-6 py-6 shadow-2xl transition-[transform,visibility] duration-200",
+        drawerOpen ? "visible translate-x-0" : "invisible -translate-x-full",
+        "xl:visible xl:sticky xl:top-[62px] xl:z-auto xl:max-h-[calc(100vh-62px)] xl:w-auto xl:max-w-none xl:translate-x-0 xl:shadow-none xl:transition-none",
+        collapsed && "xl:hidden"
+      )}
     >
+      <div className="-mb-2 flex items-center justify-between gap-2">
+        <RailLabel>Overview</RailLabel>
+        <button type="button" onClick={onCloseDrawer} aria-label="Close overview" className="p-1 text-muted transition-colors hover:text-foreground xl:hidden">
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button type="button" onClick={onCollapse} aria-label="Hide overview" title="Hide overview" className="hidden p-1 text-muted transition-colors hover:text-foreground xl:inline-flex">
+          <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+
       {nextRelease ? (
         <button
           type="button"
@@ -130,6 +159,55 @@ export function RoadmapRail({
 
       {actions ? <div className="grid gap-2.5 border-t border-hairline pt-5">{actions}</div> : null}
     </aside>
+  </>);
+}
+
+type RoadmapRailStripProps = {
+  nextRelease: { id: string; title: string; date: string } | null;
+  onOpenNextRelease: (id: string) => void;
+  totalMinutes: number;
+  filterLabel: string;
+  onClearFilter: () => void;
+  onOpenRail: () => void;
+  /** At xl the strip only shows while the rail is collapsed; below xl it always stands in for the rail. */
+  railCollapsed: boolean;
+};
+
+/** One-line stand-in for the rail: the next release and total minutes stay in view, the rest is one click away. */
+export function RoadmapRailStrip({ nextRelease, onOpenNextRelease, totalMinutes, filterLabel, onClearFilter, onOpenRail, railCollapsed }: RoadmapRailStripProps) {
+  return (
+    <div
+      data-testid="roadmap-rail-strip"
+      className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-hairline bg-panel-warm px-6 py-2.5 text-[13px] md:px-8", !railCollapsed && "xl:hidden")}
+    >
+      {nextRelease ? (
+        <button type="button" onClick={() => onOpenNextRelease(nextRelease.id)} aria-label={`Open next up: ${nextRelease.title}`} className="flex min-w-0 items-baseline gap-2 text-left">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-formed-blue">Next up</span>
+          <span className="truncate font-semibold hover:text-formed-blue">{nextRelease.title}</span>
+          <span className="shrink-0 text-xs text-muted">{formatRoadmapDate(nextRelease.date)}</span>
+        </button>
+      ) : null}
+      <span className="flex items-baseline gap-1.5">
+        <span className="font-display text-[19px] leading-none text-deep-teal">{totalMinutes.toLocaleString()}</span>
+        <span className="text-muted">min secured</span>
+      </span>
+      {filterLabel ? (
+        <span className="inline-flex items-center gap-1.5 border border-formed-blue-border bg-formed-blue-soft px-2 py-0.5 text-xs font-semibold text-formed-blue">
+          {filterLabel}
+          <button type="button" onClick={onClearFilter} aria-label="Clear filter" className="hover:text-formed-blue-hover">
+            <X className="h-3 w-3" aria-hidden="true" />
+          </button>
+        </span>
+      ) : null}
+      <button
+        type="button"
+        onClick={onOpenRail}
+        className="ml-auto inline-flex items-center gap-1.5 border border-hairline-strong bg-panel px-3 py-1.5 text-[12.5px] font-semibold transition-colors hover:border-formed-blue hover:text-formed-blue"
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+        Filters &amp; details
+      </button>
+    </div>
   );
 }
 

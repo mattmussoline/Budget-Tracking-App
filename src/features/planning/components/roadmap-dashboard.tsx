@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Check, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Minus, Plus, Presentation, Send, Star, Trash2 } from "lucide-react";
-import { type FormEvent, type ReactNode, type SelectHTMLAttributes, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, type SelectHTMLAttributes, useEffect, useMemo, useRef, useState } from "react";
 import { SoftButton } from "@/components/ui/soft-button";
 import { SoftInput } from "@/components/ui/soft-input";
 import { SoftSelect } from "@/components/ui/soft-select";
@@ -30,7 +30,7 @@ import { CategoryManagerModal } from "./category-manager-modal";
 import { EditRoadmapModal } from "./edit-roadmap-modal";
 import { RoadmapMix } from "./roadmap-mix";
 import { RoadmapPresent } from "./roadmap-present";
-import { RoadmapRail } from "./roadmap-rail";
+import { RoadmapRail, RoadmapRailStrip } from "./roadmap-rail";
 import { ProviderCombobox } from "./provider-combobox";
 
 type RoadmapDashboardProps = {
@@ -65,6 +65,8 @@ const formatOptions = [{ label: "No format", value: "", tone: "slate" }, ...CONT
 
 type RoadmapFilter = { id: string; label: string };
 
+const RAIL_COLLAPSED_KEY = "roadmap-rail-collapsed";
+
 export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription, summaryHref, fiscalYearId, roadmapItems, ongoingSeries, categories, startMonth, fiscalYearStartMonth = getFiscalYearStartMonthForMonth(startMonth), monthCount, routeBasePath = "/roadmap", fiscalYearLabel, isDemo }: RoadmapDashboardProps) {
   const [focusedMonthKey, setFocusedMonthKey] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<RoadmapFilter | null>(null);
@@ -73,6 +75,28 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription, summa
   const [viewMode, setViewMode] = useState<"cards" | "calendar">("cards");
   const [isPresenting, setIsPresenting] = useState(false);
   const [calendarMonthKey, setCalendarMonthKey] = useState(() => parseMonthAnchor(null));
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const [railDrawerOpen, setRailDrawerOpen] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(RAIL_COLLAPSED_KEY) === "1") setRailCollapsed(true);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (!railDrawerOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setRailDrawerOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [railDrawerOpen]);
+  const setRailCollapsedAndRemember = (next: boolean) => {
+    setRailCollapsed(next);
+    try { window.localStorage.setItem(RAIL_COLLAPSED_KEY, next ? "1" : "0"); } catch {}
+  };
+  /** Wide screens bring the column back; narrower ones slide the same rail in as a drawer. */
+  const openRail = () => {
+    if (window.matchMedia("(min-width: 1280px)").matches) setRailCollapsedAndRemember(false);
+    else setRailDrawerOpen(true);
+  };
   const months = buildMonthWindow(startMonth, monthCount);
   const displayedMonths = focusedMonthKey ? months.filter((month) => month.key === focusedMonthKey) : months;
   const visibleKeys = new Set(months.map((month) => month.key));
@@ -128,8 +152,21 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription, summa
     ? `Filtered to ${filterSummary} — ${visibleItems.length} ${visibleItems.length === 1 ? "title" : "titles"}.`
     : `${roadmapItems.length} ${roadmapItems.length === 1 ? "title" : "titles"} · ${windowRangeLabel} · ${totalSecuredMinutes.toLocaleString()} minutes secured`;
 
-  return <div className="grid min-w-0 xl:grid-cols-[288px_minmax(0,1fr)] xl:items-start">
+  return <div className={cn("grid min-w-0", !railCollapsed && "xl:grid-cols-[288px_minmax(0,1fr)] xl:items-start")}>
+    <RoadmapRailStrip
+      nextRelease={summary.nextRelease}
+      onOpenNextRelease={setActiveRoadmapItemId}
+      totalMinutes={totalSecuredMinutes}
+      filterLabel={filterSummary}
+      onClearFilter={clearAllFilters}
+      onOpenRail={openRail}
+      railCollapsed={railCollapsed}
+    />
     <RoadmapRail
+      collapsed={railCollapsed}
+      onCollapse={() => setRailCollapsedAndRemember(true)}
+      drawerOpen={railDrawerOpen}
+      onCloseDrawer={() => setRailDrawerOpen(false)}
       minutes={minutesByBudgetSource}
       categories={categories.filter((category) => category.isActive)}
       categoryCounts={categoryCounts}
@@ -138,15 +175,15 @@ export function RoadmapDashboard({ pageTitle = "Roadmap", pageDescription, summa
       hasFilter={Boolean(filterSummary)}
       onClearFilter={clearAllFilters}
       nextRelease={summary.nextRelease}
-      onOpenNextRelease={setActiveRoadmapItemId}
+      onOpenNextRelease={(id) => { setRailDrawerOpen(false); setActiveRoadmapItemId(id); }}
       stats={{ released: summary.releasedCount, inProgress: summary.inProgressCount, needsDate: summary.unscheduledCount, backlog: backlog.length }}
-      onJumpToBacklog={jumpToBacklog}
+      onJumpToBacklog={() => { setRailDrawerOpen(false); jumpToBacklog(); }}
       manageKey={<CategoryManagerModal fiscalYearId={fiscalYearId} categories={categories} isDemo={isDemo} asLink />}
       actions={<>
         <AddRoadmapModal triggerClassName="w-full">
           <RoadmapForm fiscalYearId={fiscalYearId} categories={categories} providerOptions={providerOptions} isDemo={isDemo} />
         </AddRoadmapModal>
-        <SoftButton type="button" variant="secondary" className="w-full justify-center rounded-none" onClick={() => { setFocusedMonthKey(null); setIsPresenting(true); }}>
+        <SoftButton type="button" variant="secondary" className="w-full justify-center rounded-none" onClick={() => { setRailDrawerOpen(false); setFocusedMonthKey(null); setIsPresenting(true); }}>
           <Presentation className="h-4 w-4" aria-hidden="true" />
           Present to team
         </SoftButton>
